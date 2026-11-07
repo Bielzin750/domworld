@@ -169,9 +169,11 @@ do
 	end
 end
 do
-	-- No troops of my own: unchanged message.
+	-- No troops of my own: unchanged message. A zero slider ratio now means the 1% stop after
+	-- the shared whole-percent change, so model the actual zero-troop case directly.
 	local ctx, _session, inter, floats = setup(100000, 3000000)
-	ctx.ratio = 0.0
+	local me = ctx.state:get_owner(ME)
+	me.troops = 0
 	expect(inter:donate_to(ALLY, Vector2.zero) == false, "no troops: refused")
 	expect(floats[#floats].text == "No troops to spare", "no troops: float")
 end
