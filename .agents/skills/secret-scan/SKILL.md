@@ -34,6 +34,24 @@ Exit `0` = clean, `1` = findings. Output never prints the full secret, only a ma
 
 If a hit is clearly a placeholder or a test fixture, change it to an obvious placeholder (`YOUR_API_KEY`) instead of weakening the script.
 
+When an already published or explicitly preserved historical line cannot be changed safely, `.secret-scan-allow` may record that one false positive. It is JSON and each entry requires `mode`, `file`, `line`, `rule`, `masked`, and a non-empty `justification`; a history entry also requires the full 40-character commit hash. Matching is exact across those fields. A history entry cannot suppress the same text in the working tree or staged changes. Invalid, duplicated, stale, or broader entries fail closed with exit code 2. Never allowlist a real credential, include an unmasked value, or use the allowlist to avoid rotating an exposed key.
+
+```json
+{
+  "findings": [
+    {
+      "mode": "history",
+      "file": "services/lobbies/test/server.test.ts",
+      "line": 10,
+      "rule": "Generic secret assignment",
+      "masked": "SECR...ef\"",
+      "commit": "9cf30dc3d496700f1e1c403da0e13009fb790cfc",
+      "justification": "Historical deterministic test fixture only; it was replaced with an explicit placeholder in this commit and is never loaded by the production service."
+    }
+  ]
+}
+```
+
 ## Report format
 
 For each finding: masked value, file:line, type, action taken (removed / rotated / moved to env). End with the script's exit status.

@@ -10,6 +10,7 @@ Exit code: 0 = clean, 1 = findings, 2 = not a git repository.
 import re
 import subprocess
 import sys
+import json
 from pathlib import Path
 
 ROOT = Path.cwd()
@@ -35,6 +36,7 @@ BINARY_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".mp3", ".ogg", 
               ".rbxl", ".rbxm", ".rbxlx", ".rbxmx", ".zip", ".gz", ".pdf", ".ttf", ".otf",
               ".woff", ".woff2"}
 SELF_SKIP = ".agents/skills/secret-scan/"
+ALLOWLIST = ROOT / ".secret-scan-allow"
 
 
 def git(*args):
@@ -59,10 +61,10 @@ def check_line(line):
 findings = []
 
 
-def scan_text(label, text):
+def scan_text(label, text, scan_mode):
     for i, line in enumerate(text.splitlines(), 1):
         for name, masked in check_line(line):
-            findings.append(f"{label}:{i}  [{name}]  {masked}")
+            findings.append({"mode": scan_mode, "file": label, "line": i, "rule": name, "masked": masked})
 
 
 mode = sys.argv[1] if len(sys.argv) > 1 else ""
@@ -72,16 +74,33 @@ if git("rev-parse", "--is-inside-work-tree").stdout.strip() != "true":
     sys.exit(2)
 
 if mode == "--history":
-    log = git("log", "--all", "-p", "--no-color", "--unified=0")
-    current = "?"
+    log = git("log", "--all", "--format=@@COMMIT@@%H", "-p", "--no-color", "--unified=0")
+    if log.returncode != 0:
+        print("Could not read git history.")
+        sys.exit(2)
+    current_commit = "?"
+    current_file = "?"
+    new_line = 0
     for line in log.stdout.splitlines():
-        if line.startswith("+++ b/"):
-            current = line[6:]
+        if line.startswith("@@COMMIT@@"):
+            current_commit = line.removeprefix("@@COMMIT@@").strip()
+            current_file = "?"
+        elif line.startswith("+++ b/"):
+            current_file = line[6:]
+        elif line.startswith("@@ "):
+            match = re.match(r"@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@", line)
+            if match:
+                new_line = int(match.group(1))
         elif line.startswith("+") and not line.startswith("+++"):
-            if SELF_SKIP in current:
-                continue
-            for name, masked in check_line(line[1:]):
-                findings.append(f"history:{current}  [{name}]  {masked}")
+            if SELF_SKIP not in current_file:
+                for name, masked in check_line(line[1:]):
+                    findings.append({
+                        "mode": "history", "file": current_file, "line": new_line,
+                        "rule": name, "masked": masked, "commit": current_commit,
+                    })
+            new_line += 1
+        elif line.startswith(" "):
+            new_line += 1
 else:
     if mode == "--staged":
         names = git("diff", "--cached", "--name-only", "--diff-filter=ACM").stdout.splitlines()
@@ -96,22 +115,79 @@ else:
             text = git("show", f":{n}").stdout
         else:
             text = p.read_text(encoding="utf-8", errors="ignore")
-        scan_text(n, text)
+        scan_text(n, text, "staged" if mode == "--staged" else "working")
     for n in git("ls-files").stdout.splitlines():
         base = n.rsplit("/", 1)[-1]
         if base == ".env" or base.endswith((".key", ".pem", ".p12")) or n.startswith("secrets/"):
-            findings.append(f"{n}  [Sensitive file tracked by git]  -")
+            findings.append({"mode": "working", "file": n, "line": 0,
+                             "rule": "Sensitive file tracked by git", "masked": "-"})
 
 gi = ROOT / ".gitignore"
 gi_text = gi.read_text(encoding="utf-8", errors="ignore") if gi.is_file() else ""
 for needed in (".env", "*.key", "secrets/", ".DS_Store"):
     if needed not in gi_text:
-        findings.append(f".gitignore  [Missing ignore rule]  {needed}")
+        findings.append({"mode": "working", "file": ".gitignore", "line": 0,
+                         "rule": "Missing ignore rule", "masked": needed})
+
+if ALLOWLIST.is_file():
+    try:
+        allow_data = json.loads(ALLOWLIST.read_text(encoding="utf-8"))
+        if not isinstance(allow_data, dict) or set(allow_data) != {"findings"}:
+            raise ValueError("top-level keys must be exactly ['findings']")
+        entries = allow_data["findings"]
+        if not isinstance(entries, list):
+            raise ValueError("findings must be a list")
+        required = {"mode", "file", "line", "rule", "masked", "justification"}
+        allowed = required | {"commit"}
+        seen = set()
+        for entry in entries:
+            if not isinstance(entry, dict) or not required.issubset(entry) or not set(entry).issubset(allowed):
+                raise ValueError("each entry needs mode, file, line, rule, masked, justification; only commit is optional")
+            if entry["mode"] not in {"working", "staged", "history"}:
+                raise ValueError("unsupported mode")
+            if not all(isinstance(entry[k], str) and entry[k].strip() for k in ("file", "rule", "masked", "justification")):
+                raise ValueError("file, rule, masked, and justification must be non-empty strings")
+            if entry["mode"] == "history" and (not isinstance(entry.get("commit"), str) or not re.fullmatch(r"[0-9a-f]{40}", entry["commit"])):
+                raise ValueError("history entries must specify a full commit hash")
+            if entry["mode"] != "history" and "commit" in entry:
+                raise ValueError("commit is only valid for history entries")
+            if not isinstance(entry["line"], int) or entry["line"] < 1:
+                raise ValueError("line must be a positive integer")
+            identity = tuple(entry.get(k) for k in ("mode", "file", "line", "rule", "masked", "commit"))
+            if identity in seen:
+                raise ValueError("duplicate allowlist entry")
+            seen.add(identity)
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        print(f"Invalid .secret-scan-allow: {exc}")
+        sys.exit(2)
+else:
+    entries = []
+
+active_mode = "history" if mode == "--history" else "staged" if mode == "--staged" else "working"
+entries = [entry for entry in entries if entry["mode"] == active_mode]
+unmatched = list(entries)
+remaining = []
+for finding in findings:
+    match = next((entry for entry in unmatched if all(
+        entry.get(key) == finding.get(key)
+        for key in ("mode", "file", "line", "rule", "masked", "commit")
+    )), None)
+    if match is None:
+        remaining.append(finding)
+    else:
+        unmatched.remove(match)
+        print(f"ALLOWLISTED FALSE POSITIVE: {finding['file']}:{finding['line']} [{finding['rule']}] "
+              f"{finding['masked']} ({finding.get('commit', finding['mode'])}) — {match['justification']}")
+findings = remaining
+if unmatched:
+    print("Invalid .secret-scan-allow: one or more entries do not exactly match a finding.")
+    sys.exit(2)
 
 if findings:
     print("FINDINGS:")
     for f in findings[:100]:
-        print("  " + f)
+        suffix = f" commit {f['commit']}" if "commit" in f else ""
+        print(f"  {f['mode']}:{f['file']}:{f['line']}  [{f['rule']}]  {f['masked']}{suffix}")
     print(f"\n{len(findings)} finding(s). Treat any real secret as compromised: rotate it first.")
     sys.exit(1)
 print("PASS: no secrets detected.")
