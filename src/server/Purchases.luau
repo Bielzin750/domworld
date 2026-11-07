@@ -92,6 +92,7 @@ type Record = {
 	tutorial_paid: boolean?,
 	--- ever paid Robux (a record from before this field: it has receipts)
 	paid: boolean,
+	admin_revoked: { [string]: boolean },
 	--- the starter pack's offer, once it has been on their screen
 	starter: { started: number, ends: number, used: boolean? }?,
 	--- exclusive items already given (and put on once): Cosmetics.granted
@@ -127,6 +128,17 @@ local busy: { [number]: number } = {}
 --- user id -> a write failed since the record was last read or written: what this server holds may
 --- not be what is stored (Purchases.use keeps a spend before it is stored)
 local doubt: { [number]: boolean } = {}
+
+local function copy_data(value: any): any
+	if type(value) ~= "table" then
+		return value
+	end
+	local out = {}
+	for k, v in value do
+		out[copy_data(k)] = copy_data(v)
+	end
+	return out
+end
 
 --- Every write to a record: UpdateAsync on its key, counted while in flight. Errors as UpdateAsync does.
 local function update(user_id: number, fn: (any) -> any): any
@@ -188,6 +200,7 @@ local function clean(v: any, user_id: number?): Record
 		unlocks = {},
 		paid = false,
 		gifts = {},
+		admin_revoked = {},
 	}
 	if type(v) ~= "table" then
 		v = {}
@@ -222,6 +235,14 @@ local function clean(v: any, user_id: number?): Record
 			end
 		end
 	end
+	if type(v.admin_revoked) == "table" then
+		for id, on in v.admin_revoked do
+			local it = Cosmetics.item(id)
+			if on == true and it ~= nil and it.exclusive == true and Cosmetics.may_own(id, user_id) then
+				rec.admin_revoked[id] = true
+			end
+		end
+	end
 	if type(v.equipped) == "table" then
 		for _, slot in { "skin", "flag" } do
 			local id = v.equipped[slot]
@@ -234,7 +255,7 @@ local function clean(v: any, user_id: number?): Record
 	-- (made for this player: always owned; worn the first time, then their own choice)
 	for _, id in Cosmetics.granted(user_id) do
 		local it = Cosmetics.item(id)
-		if it ~= nil then
+		if it ~= nil and not rec.admin_revoked[id] then
 			rec.owned[id] = true
 			if not rec.gifts[id] then
 				rec.gifts[id] = true
@@ -1001,6 +1022,272 @@ function Purchases.admin_stars(player: any, mode: string, amount: number): (bool
 	remember(player, stored :: Record)
 	notify(player)
 	return true, (stored :: Record).stars
+end
+
+--- Admin-only view of persistent account data. Receipt ids stay server-side; only their count is exposed.
+function Purchases.admin_account(player: any): any
+	local rec = records[player]
+	if rec == nil then
+		return nil
+	end
+	local owned = {}
+	for id, on in rec.owned do
+		if on then
+			table.insert(owned, id)
+		end
+	end
+	table.sort(owned)
+	local unlocks = {}
+	for id, on in rec.unlocks do
+		if on then
+			table.insert(unlocks, id)
+		end
+	end
+	table.sort(unlocks)
+	return {
+		user_id = player.UserId,
+		stars = rec.stars,
+		stars_earned = rec.stars_earned,
+		credits = table.clone(rec.credits),
+		owned = owned,
+		equipped = table.clone(rec.equipped),
+		crates_bought = rec.crates_bought,
+		unlocks = unlocks,
+		paid = rec.paid,
+		receipt_count = #rec.receipts,
+		tutorial_paid = rec.tutorial_paid == true,
+		starter = copy_data(rec.starter),
+		general_day = rec.general_day,
+	}
+end
+
+--- Searchable catalog for this account. Exclusive cosmetics are listed only for their eligible owner.
+function Purchases.admin_catalog(player: any): any
+	local rec = records[player]
+	if rec == nil then
+		return nil
+	end
+	local catalog = { cosmetics = {}, arsenal = {}, credits = {} }
+	local seen_cosmetics: { [string]: boolean } = {}
+	local cosmetic_lists: { any } = {
+		Cosmetics.all(),
+		Cosmetics.exclusives(),
+		Cosmetics.generals(),
+		Cosmetics.shop_items(),
+	}
+	for _, list in cosmetic_lists do
+		for _, listed in list do
+			local id = listed.id
+			local item = Cosmetics.item(id)
+			if
+				type(id) == "string"
+				and item ~= nil
+				and not seen_cosmetics[id]
+				and Cosmetics.may_own(id, player.UserId)
+			then
+				seen_cosmetics[id] = true
+				table.insert(catalog.cosmetics, {
+					id = id,
+					name = string.sub(item.name, 1, 64),
+					kind = item.kind,
+					owned = rec.owned[id] == true,
+				})
+			end
+		end
+	end
+	table.sort(catalog.cosmetics, function(a, b)
+		return a.name == b.name and a.id < b.id or a.name < b.name
+	end)
+	for _, item in Arsenal.ITEMS do
+		table.insert(catalog.arsenal, {
+			id = item.key,
+			name = string.sub(item.title, 1, 64),
+			owned = rec.unlocks[item.key] == true,
+		})
+	end
+	table.sort(catalog.arsenal, function(a, b)
+		return a.name < b.name
+	end)
+	local credit_kinds: { [string]: boolean } = {}
+	for product_key, product in Products do
+		local kind = if product.grants == nil then product_key elseif product.grants == "crate" then "crate" else nil
+		if type(kind) == "string" then
+			credit_kinds[kind] = true
+		end
+	end
+	for kind in credit_kinds do
+		table.insert(catalog.credits, {
+			id = kind,
+			name = if kind == "crate" then "Caixas" elseif kind == "takeover" then "Retomar partida" else kind,
+			amount = rec.credits[kind] or 0,
+		})
+	end
+	table.sort(catalog.credits, function(a, b)
+		return a.name < b.name
+	end)
+	return catalog
+end
+
+--- Server-authoritative account inventory changes. Every operation is persisted by UpdateAsync.
+function Purchases.admin_item(player: any, category: any, id: any, mode: any, amount: any?): (boolean, any)
+	local user_id = tonumber(player and player.UserId)
+	if user_id == nil or user_id ~= user_id or user_id % 1 ~= 0 or user_id <= 0 or user_id == math.huge then
+		return false, "invalid player"
+	end
+	if records[player] == nil or loading[player] ~= nil or busy[user_id] ~= nil then
+		return false, "player profile is not ready"
+	end
+	if type(category) ~= "string" or #category > 16 or type(id) ~= "string" or #id < 1 or #id > 64 then
+		return false, "invalid catalog item"
+	end
+	if category == "cosmetic" or category == "arsenal" then
+		if mode ~= "grant" and mode ~= "revoke" then
+			return false, "invalid item operation"
+		end
+		if category == "cosmetic" then
+			if Cosmetics.item(id) == nil or not Cosmetics.may_own(id, user_id) then
+				return false, "unknown or ineligible cosmetic"
+			end
+		elseif Arsenal.item(id) == nil then
+			return false, "unknown Arsenal item"
+		end
+	elseif category == "credit" then
+		local valid_kind = false
+		for product_key, product in Products do
+			if (product.grants == nil and product_key == id) or product.grants == id then
+				valid_kind = product.grants == nil or product.grants == "crate"
+				if valid_kind then
+					break
+				end
+			end
+		end
+		if not valid_kind then
+			return false, "unknown credit type"
+		end
+		if mode ~= "add" and mode ~= "remove" and mode ~= "set" then
+			return false, "invalid credit operation"
+		end
+		if
+			type(amount) ~= "number"
+			or amount ~= amount
+			or amount % 1 ~= 0
+			or amount < 0
+			or amount > Purchases.MAX_CREDITS
+			or amount == math.huge
+		then
+			return false, "invalid credit amount"
+		end
+	else
+		return false, "unknown inventory category"
+	end
+	local stored: Record? = nil
+	local refused: string? = nil
+	local ok, err = pcall(function()
+		update(user_id, function(old: any): any
+			refused = nil
+			local rec = clean(old, user_id)
+			if category == "cosmetic" then
+				if mode == "grant" then
+					rec.owned[id] = true
+					rec.admin_revoked[id] = nil
+					rec.gifts[id] = true
+				else
+					if not rec.owned[id] then
+						refused = "item is not owned"
+						return nil
+					end
+					rec.owned[id] = nil
+					rec.gifts[id] = nil
+					if rec.equipped.skin == id then
+						rec.equipped.skin = nil
+					end
+					if rec.equipped.flag == id then
+						rec.equipped.flag = nil
+					end
+					local item = Cosmetics.item(id)
+					if item ~= nil and item.exclusive == true then
+						rec.admin_revoked[id] = true
+					end
+				end
+			elseif category == "arsenal" then
+				if mode == "grant" then
+					rec.unlocks[id] = true
+				else
+					if not rec.unlocks[id] then
+						refused = "item is not owned"
+						return nil
+					end
+					rec.unlocks[id] = nil
+				end
+			else
+				local current = rec.credits[id] or 0
+				local next_amount = if mode == "add"
+					then current + amount
+					else if mode == "remove" then math.max(current - amount, 0) else amount
+				if next_amount > Purchases.MAX_CREDITS then
+					refused = "credit balance exceeds 1,000"
+					return nil
+				end
+				rec.credits[id] = next_amount
+			end
+			stored = rec
+			return rec
+		end)
+	end)
+	if not ok or stored == nil then
+		return false, refused or ("store unavailable: " .. tostring(err))
+	end
+	remember(player, stored :: Record)
+	notify(player)
+	return true, Purchases.admin_account(player)
+end
+
+--- Clear gameplay progression while retaining receipt ids and paid status for purchase idempotency.
+--- The previous DataStore record is kept under `admin_backup` for manual restoration.
+function Purchases.admin_reset(player: any): (boolean, string)
+	local user_id = tonumber(player and player.UserId)
+	if user_id == nil or user_id ~= user_id or user_id % 1 ~= 0 or user_id <= 0 or user_id == math.huge then
+		return false, "invalid player"
+	end
+	if records[player] == nil or loading[player] ~= nil or busy[user_id] ~= nil then
+		return false, "player profile is not ready"
+	end
+	local stored: Record? = nil
+	local refused: string? = nil
+	local ok, err = pcall(function()
+		update(user_id, function(old: any): any
+			refused = nil
+			local snapshot = if type(old) == "table" then copy_data(old) else {}
+			snapshot.admin_backup = nil
+			local rec = clean(old, user_id)
+			rec.stars = 0
+			rec.stars_earned = 0
+			rec.credits = {}
+			rec.owned = {}
+			rec.equipped = {}
+			rec.unlocks = {}
+			rec.crates_bought = 0
+			rec.tutorial_paid = nil
+			rec.starter = nil
+			rec.gifts = {}
+			rec.general_day = nil
+			rec.admin_revoked = {}
+			for _, id in Cosmetics.granted(user_id) do
+				rec.owned[id] = true
+			end
+			local out: any = rec
+			out.admin_backup = { created_at = now_s(), data = snapshot }
+			stored = rec
+			return out
+		end)
+	end)
+	if not ok or stored == nil then
+		return false, refused or ("store unavailable: " .. tostring(err))
+	end
+	remember(player, stored :: Record)
+	notify(player)
+	log("admin reset for " .. tostring(user_id) .. "; backup stored in admin_backup")
+	return true, "Conta reiniciada; snapshot salvo para restauração manual."
 end
 
 function Purchases.buy_unlock(player: any, item_key: any): (boolean, string?)

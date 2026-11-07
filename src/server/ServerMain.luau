@@ -1408,8 +1408,8 @@ function ServerMain.start()
 		},
 		log = print,
 	})
-	admin_get_state.OnServerInvoke = function(player: Player): any
-		return admin_service:get_state(player)
+	admin_get_state.OnServerInvoke = function(player: Player, target_user_id: any?): any
+		return admin_service:get_state(player, target_user_id)
 	end
 	admin_action.OnServerInvoke = function(player: Player, request: any): any
 		return admin_service:execute(player, request)
@@ -1506,6 +1506,7 @@ function ServerMain.start()
 		SettingsStore.load(p)
 	end
 	Players.PlayerRemoving:Connect(function(player: Player)
+		admin_service:remove_player(player)
 		server:peer_disconnected(player)
 		listening[player] = nil
 		hop_at[player] = nil

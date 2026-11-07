@@ -1,5 +1,6 @@
 -- DomWorld
 -- Licensed under the GNU AGPL v3 (see LICENSE and NOTICE.md).
+-- Modified for DomWorld, 2026 — see git history for details.
 -- Loaded by Main only after the server confirms this player's administrator access.
 
 --!strict
@@ -369,25 +370,31 @@ end
 function AdminPanel._render_account(self: any)
 	local players = self.state.players or {}
 	self:_label("CONTA · JOGADORES CONECTADOS", 22, C.primary)
-	if #players == 0 then
-		self:_label("Nenhum jogador conectado neste servidor.")
-	end
 	for _, target in players do
-		local name = string.format(
-			"%s   ·   %d   ·   %d Stars   ·   %d cosméticos",
-			target.name,
-			target.user_id,
-			target.stars,
-			target.cosmetics
+		local button = self:_button(
+			self.content,
+			string.format(
+				"%s · %d · %d Stars · %d cosméticos",
+				target.name,
+				target.user_id,
+				target.stars,
+				target.cosmetics
+			),
+			UDim2.new(),
+			UDim2.new(1, -2, 0, 36)
 		)
-		local button = self:_button(self.content, name, UDim2.new(), UDim2.new(1, -2, 0, 36))
 		button.TextXAlignment = Enum.TextXAlignment.Left
 		create("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10) }, button)
 		button.BackgroundColor3 = if target.user_id == self.selected_user then C.primaryDeep else C.surfaceRaised
 		button.Activated:Connect(function()
 			self.selected_user = target.user_id
-			self:_render()
+			self.confirm = nil
+			self:_refresh()
 		end)
+	end
+	if #players == 0 then
+		self:_label("Nenhum jogador conectado neste servidor.")
+		return
 	end
 	local selected = nil
 	for _, target in players do
@@ -397,30 +404,71 @@ function AdminPanel._render_account(self: any)
 		end
 	end
 	if selected == nil then
-		self:_label("Selecione uma conta conectada. As alterações atualizam o saldo de Stars salvo.")
+		self:_label("Selecione uma conta conectada para consultar ou editar os dados persistidos.")
 		return
 	end
+	local account = self.state.account
+	if account == nil or account.user_id ~= selected.user_id then
+		self:_label("Carregando perfil persistido…")
+		return
+	end
+	self:_label(string.format("ALVO · %s (%d)", selected.name, selected.user_id), 24, C.text)
 	self:_label(
-		string.format("ALVO · %s (%d) · SALDO %d STARS", selected.name, selected.user_id, selected.stars),
-		24,
+		string.format(
+			"STARS · %d disponíveis · %d ganhas em partidas · %d recibos Roblox",
+			account.stars,
+			account.stars_earned,
+			account.receipt_count
+		),
+		34,
 		C.text
 	)
-	local amount = self:_input("Stars · adição/remoção até 1M; saldo até 1B", "1000")
-	local row = self:_row()
+	local credit_text = {}
+	for id, count in account.credits do
+		table.insert(credit_text, string.format("%s: %d", id, count))
+	end
+	table.sort(credit_text)
+	self:_label(
+		string.format(
+			"INVENTÁRIO · %d cosméticos · %d Arsenal · caixas compradas: %d · skin: %s · bandeira: %s",
+			#account.owned,
+			#account.unlocks,
+			account.crates_bought,
+			tostring(account.equipped.skin or "nenhuma"),
+			tostring(account.equipped.flag or "nenhuma")
+		),
+		44
+	)
+	self:_label(
+		"Créditos: "
+			.. (if #credit_text > 0 then table.concat(credit_text, " · ") else "nenhum")
+			.. string.format(
+				" · já pagou Robux: %s · tutorial: %s",
+				tostring(account.paid),
+				tostring(account.tutorial_paid)
+			),
+		34
+	)
+	self:_label(
+		"Moedas persistentes: Stars. Ouro existe apenas durante uma partida; gemas, nível e XP não têm campos persistidos neste projeto.",
+		42
+	)
+	local amount = self:_input("Stars · inteiro de 0 a 1.000.000.000", "1000")
+	local currency_row = self:_row()
 	for _, mode in { "add", "remove", "set" } do
 		local label = if mode == "add" then "+ ADICIONAR" elseif mode == "remove" then "− REMOVER" else "DEFINIR"
-		self:_row_button(row, label, function()
+		self:_row_button(currency_row, label, function()
 			local n = tonumber(amount.Text)
-			if n == nil or n % 1 ~= 0 or n < 0 then
-				self.status.Text = "Informe um número inteiro válido."
+			if n == nil or n ~= n or n % 1 ~= 0 or n < 0 or n > 1000000000 or n == math.huge then
+				self.status.Text = "Informe Stars como inteiro de 0 a 1.000.000.000."
 				return
 			end
 			if mode ~= "add" then
-				local confirm_key = string.format("stars:%d:%s:%d", selected.user_id, mode, n)
-				if self.confirm ~= confirm_key or os.clock() - self.confirm_at >= 5 then
-					self.confirm = confirm_key
+				local key = string.format("stars:%d:%s:%d", selected.user_id, mode, n)
+				if self.confirm ~= key or os.clock() - self.confirm_at >= 10 then
+					self.confirm = key
 					self.confirm_at = os.clock()
-					self.status.Text = "Ajuste destrutivo: clique novamente em até 5 segundos para confirmar."
+					self.status.Text = "Ajuste destrutivo: clique novamente em até 10 segundos para confirmar."
 					return
 				end
 				self.confirm = nil
@@ -428,10 +476,191 @@ function AdminPanel._render_account(self: any)
 			self:_invoke({ action = "stars", user_id = selected.user_id, mode = mode, amount = n })
 		end, 142)
 	end
-	self:_label(
-		"Somente Stars estão disponíveis para edição nesta fase. XP, níveis e inventário continuam sem alteração.",
-		38
+	local shortcut_row = self:_row()
+	for _, shortcut in
+		{
+			{ label = "+1K", amount = 1000 },
+			{ label = "+1M", amount = 1000000 },
+			{ label = "+1B", amount = 1000000000 },
+		}
+	do
+		self:_row_button(shortcut_row, shortcut.label, function()
+			self:_invoke({ action = "stars", user_id = selected.user_id, mode = "add", amount = shortcut.amount })
+		end, 80)
+	end
+	self:_label("CATÁLOGO · pesquise e conceda ou revogue itens salvos", 22, C.primary)
+	local category_row = self:_row()
+	local categories = {
+		{ id = "cosmetics", title = "COSMÉTICOS", width = 96 },
+		{ id = "arsenal", title = "ARSENAL", width = 82 },
+		{ id = "credits", title = "CAIXAS", width = 70 },
+	}
+	self.account_category = self.account_category or "cosmetics"
+	for _, category in categories do
+		local button = self:_button(category_row, category.title, UDim2.new(), UDim2.new(0, category.width, 1, 0))
+		button.Activated:Connect(function()
+			self.account_category = category.id
+			self:_render()
+		end)
+		if self.account_category == category.id then
+			button.BackgroundColor3 = C.primaryDeep
+		end
+	end
+	local search = self:_input("Pesquisar no catálogo", self.account_search or "")
+	local credit_amount = self:_input("Quantidade de caixas/créditos · máximo 1.000", "1")
+	local catalog_frame = create("ScrollingFrame", {
+		Name = "AccountCatalog",
+		Size = UDim2.new(1, -2, 0, 260),
+		BackgroundColor3 = C.canvas,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 5,
+		ScrollBarImageColor3 = C.lineStrong,
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		CanvasSize = UDim2.new(),
+	}, self.content) :: ScrollingFrame
+	corner(catalog_frame)
+	local function render_catalog_rows()
+		catalog_frame:ClearAllChildren()
+		create("UIPadding", {
+			PaddingLeft = UDim.new(0, 6),
+			PaddingRight = UDim.new(0, 6),
+			PaddingTop = UDim.new(0, 6),
+			PaddingBottom = UDim.new(0, 6),
+		}, catalog_frame)
+		create("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 5) }, catalog_frame)
+		local catalog = self.state.account_catalog or { cosmetics = {}, arsenal = {}, credits = {} }
+		local entries = catalog[self.account_category] or {}
+		local query = string.lower(self.account_search or "")
+		local shown = 0
+		for _, item in entries do
+			if query == "" or string.find(string.lower(item.name .. " " .. item.id), query, 1, true) ~= nil then
+				shown += 1
+				local row = create(
+					"Frame",
+					{ BackgroundTransparency = 1, Size = UDim2.new(1, -2, 0, 38) },
+					catalog_frame
+				) :: Frame
+				local title = if self.account_category == "credits"
+					then string.format("%s · %d", item.name, item.amount)
+					else string.format(
+						"%s · %s",
+						item.name,
+						if item.owned then "possui" else item.kind or "bloqueado"
+					)
+				create("TextLabel", {
+					Size = UDim2.new(1, -150, 1, 0),
+					BackgroundTransparency = 1,
+					Font = FONT_MEDIUM,
+					Text = title,
+					TextColor3 = C.text,
+					TextSize = 11,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					TextTruncate = Enum.TextTruncate.AtEnd,
+				}, row)
+				local add_mode = if self.account_category == "credits" then "add" else "grant"
+				local remove_mode = if self.account_category == "credits" then "remove" else "revoke"
+				local revoke_button: TextButton? = nil
+				local revoke_label = if self.account_category == "credits" then "−" else "TIRAR"
+				local function invoke_item(mode: string)
+					local category_id = if self.account_category == "cosmetics"
+						then "cosmetic"
+						else self.account_category
+					local n = if self.account_category == "credits" then tonumber(credit_amount.Text) else nil
+					if
+						self.account_category == "credits"
+						and (n == nil or n ~= n or n % 1 ~= 0 or n < 1 or n > 1000 or n == math.huge)
+					then
+						self.status.Text = "Informe uma quantidade inteira entre 1 e 1.000."
+						return
+					end
+					local request = {
+						action = "admin_item",
+						user_id = selected.user_id,
+						category = category_id,
+						item_id = item.id,
+						mode = mode,
+						amount = n,
+					}
+					local destructive = mode == "revoke" or mode == "remove"
+					if destructive then
+						local key = string.format(
+							"item:%d:%s:%s:%s:%s",
+							selected.user_id,
+							category_id,
+							item.id,
+							mode,
+							tostring(n)
+						)
+						if self.confirm ~= key or os.clock() - self.confirm_at >= 10 then
+							self.confirm = key
+							self.confirm_at = os.clock()
+							self.status.Text = "Ação destrutiva: clique novamente em até 10 segundos para confirmar."
+							if revoke_button ~= nil then
+								revoke_button.Text = "CONFIRMAR"
+							end
+							self:_invoke(request)
+							return
+						end
+						self.confirm = nil
+						if revoke_button ~= nil then
+							revoke_button.Text = revoke_label
+						end
+					end
+					self:_invoke(request)
+				end
+				local grant = self:_button(
+					row,
+					if self.account_category == "credits" then "+" else "DAR",
+					UDim2.new(1, -142, 0, 0),
+					UDim2.fromOffset(66, 36)
+				)
+				grant.Activated:Connect(function()
+					invoke_item(add_mode)
+				end)
+				revoke_button = self:_button(row, revoke_label, UDim2.new(1, -70, 0, 0), UDim2.fromOffset(68, 36))
+				revoke_button.Activated:Connect(function()
+					invoke_item(remove_mode)
+				end)
+			end
+		end
+		if shown == 0 then
+			create("TextLabel", {
+				Size = UDim2.new(1, -2, 0, 36),
+				BackgroundTransparency = 1,
+				Font = FONT,
+				Text = "Nenhum item corresponde à pesquisa.",
+				TextColor3 = C.textMuted,
+				TextSize = 11,
+			}, catalog_frame)
+		end
+	end
+	search:GetPropertyChangedSignal("Text"):Connect(function()
+		self.account_search = search.Text
+		render_catalog_rows()
+	end)
+	render_catalog_rows()
+	local reset_key = "reset:" .. tostring(selected.user_id)
+	local reset_row = self:_row()
+	local reset_button = self:_button(
+		reset_row,
+		if self.confirm == reset_key then "CONFIRMAR RESET" else "RESETAR CONTA",
+		UDim2.new(),
+		UDim2.new(0, 188, 1, 0)
 	)
+	reset_button.Activated:Connect(function()
+		if self.confirm ~= reset_key or os.clock() - self.confirm_at >= 10 then
+			self.confirm = reset_key
+			self.confirm_at = os.clock()
+			reset_button.Text = "CONFIRMAR RESET"
+			self.status.Text =
+				"Reset destrutivo: clique novamente em até 10 segundos. Snapshot automático será salvo."
+			self:_invoke({ action = "reset_account", user_id = selected.user_id })
+			return
+		end
+		self.confirm = nil
+		reset_button.Text = "RESETAR CONTA"
+		self:_invoke({ action = "reset_account", user_id = selected.user_id })
+	end)
 end
 
 function AdminPanel._render_map(self: any)
@@ -656,7 +885,7 @@ function AdminPanel._refresh(self: any)
 	self.busy = true
 	task.spawn(function()
 		local ok, state = pcall(function()
-			return self.get_state_remote:InvokeServer()
+			return self.get_state_remote:InvokeServer(self.selected_user)
 		end)
 		if ok and type(state) == "table" and state.ok == true then
 			self.state = state
