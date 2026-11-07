@@ -31,7 +31,7 @@ FrontLayer.MAX_CLUSTERS = 2
 FrontLayer.OUTGOING = Color3.fromRGB(0x3f, 0xa9, 0xf5)
 FrontLayer.INCOMING = Color3.fromRGB(0xf8, 0x71, 0x71)
 FrontLayer.TEXT_PX = 17
-FrontLayer.FONT = Font.fromId(12187365977, Enum.FontWeight.Bold)
+FrontLayer.FONT = Font.fromEnum(Enum.Font.GothamBold)
 FrontLayer.Z = 24
 
 type Slot = { cx: number, cy: number, sx: number, sy: number, dx: number, dy: number, t0: number }

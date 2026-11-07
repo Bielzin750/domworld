@@ -1,9 +1,8 @@
 --!native
 -- Structure icons on the 2D map:
---   * a plate per structure in its kind's shape (Assets/MapSprites: City squircle, Port disc, Factory
---     cog, Defense Post shield, SAM Launcher dome, Missile Silo bullet, Artillery diamond, Airfield
---     runway, Railgun hexagon), fill = the owner's territory colour at HSV value x0.65, rim = the
---     border colour (the territory colour for the local player) at value x0.1, a white glyph inside;
+--   * a plate per structure, drawn from rounded Frames, owner colour and a built-in text glyph; fill
+--     = the owner's territory colour at HSV value x0.65, rim = the border colour (the territory
+--     colour for the local player) at value x0.1;
 --     under construction: grey fill 198 / rim 127;
 --   * size: ICON_SIZE * iconScale px, iconScale = DOT_SCALE (0.3, no glyph)
 --     when zoom <= DOTS_ZOOM, zoom / GROW_ZOOM above GROW_ZOOM, else
@@ -15,12 +14,9 @@
 --     (1-tile black border; fill red < 25 % < orange < 50 % < yellow < 75 % < green): construction
 --     progress, and a SAM's / silo's missile readiness while missiles reload (Ev.STRUCT_SHOTS).
 -- Roblox: pooled plates, positions rewritten only when the camera or the structure set changed. A
--- plate is one ImageLabel with the glyph inside it: the shape's rim and fill in one image
--- (Sprites.shapes_one, tinted with the fill colour: its rim pixels are the grey that makes the rim's
--- tenth of the value). It was a Frame holding a rim image, a fill image, the glyph and a level
--- label, five objects for each of a late game's 500 structures, all laid out again on every camera
--- move (2026-10-08, docs/performance.md). The level label is made when a structure has a level to
--- show. While shapes_one has not loaded, every plate keeps a second image for the fill.
+-- Each plate uses a colourable background with UICorner, UIStroke and a TextLabel glyph. Positions
+-- are written only when the camera or structure set changes. The level label is created only when a
+-- structure has a level to show.
 -- (2026-10-26, phones' slow frames: a plate and its bar remember what they were last given and are
 -- written only what changed, read nothing back from Roblox; a structure's own event redraws that
 -- structure alone, where every SAM shot on the map used to redraw every plate.)
@@ -28,16 +24,6 @@ local RS = game:GetService("ReplicatedStorage")
 local DomWorld = RS:WaitForChild("DomWorld")
 local Rules = require(DomWorld:WaitForChild("Core"):WaitForChild("Rules")) :: any
 local Sprites = require(DomWorld:WaitForChild("Assets"):WaitForChild("MapSprites")) :: any
---- Sprites.shapes_one is used once it is known to have loaded (an image still in moderation would leave
---- every plate invisible).
-local ONE: any = Sprites.shapes_one
-local one_ready = false
-if ONE ~= nil then
-	(require(script.Parent:WaitForChild("AtlasReady")) :: any).watch(ONE.id, function()
-		one_ready = true
-	end)
-end
-
 local StructureLayer = {}
 StructureLayer.__index = StructureLayer
 
@@ -74,13 +60,14 @@ StructureLayer.BAR_COLORS = {
 StructureLayer.BAR_MIN_PX = 10
 local SHAPE_SCALE = StructureLayer.SHAPE_SCALE
 local ICON_FILL = StructureLayer.ICON_FILL
+local GLYPHS = { "C", "P", "F", "D", "S", "M", "A", "A", "R" }
 
 type Plate = {
 	--- the plate: the whole shape (rim and fill in one image, or the rim alone under `fill`)
 	frame: ImageLabel,
 	--- the inset shape over a two-image plate (made when one is needed)
 	fill: ImageLabel?,
-	glyph: ImageLabel,
+	glyph: TextLabel,
 	--- the level number (made when a structure has one)
 	level: TextLabel?,
 	x: number,
@@ -228,18 +215,6 @@ function StructureLayer.mark_structures_dirty(self: any)
 	self._dirty = true
 end
 
-local function image(parent: Instance, name: string, id: string, z: number): ImageLabel
-	local l = Instance.new("ImageLabel")
-	l.Name = name
-	l.BackgroundTransparency = 1
-	l.Image = id
-	l.AnchorPoint = Vector2.new(0.5, 0.5)
-	l.Position = UDim2.fromScale(0.5, 0.5)
-	l.ZIndex = z
-	l.Parent = parent
-	return l
-end
-
 function StructureLayer._acquire(self: any): Plate
 	local p = table.remove(self._pool)
 	if p then
@@ -248,10 +223,31 @@ function StructureLayer._acquire(self: any): Plate
 	end
 	local f = Instance.new("ImageLabel")
 	f.Name = "Structure"
-	f.BackgroundTransparency = 1
+	f.BackgroundTransparency = 0
+	f.BorderSizePixel = 0
+	f.Image = ""
 	f.AnchorPoint = Vector2.new(0.5, 0.5)
 	f.ZIndex = StructureLayer.Z
-	local glyph = image(f, "Glyph", Sprites.icons.id, StructureLayer.Z + 2)
+	local shape = Instance.new("UICorner")
+	shape.Name = "Shape"
+	shape.CornerRadius = UDim.new(0.22, 0)
+	shape.Parent = f
+	local rim = Instance.new("UIStroke")
+	rim.Name = "Rim"
+	rim.Thickness = 2
+	rim.Parent = f
+	local glyph = Instance.new("TextLabel")
+	glyph.Name = "Glyph"
+	glyph.BackgroundTransparency = 1
+	glyph.AnchorPoint = Vector2.new(0.5, 0.5)
+	glyph.Position = UDim2.fromScale(0.5, 0.5)
+	glyph.FontFace = Font.fromEnum(Enum.Font.GothamBlack)
+	glyph.TextScaled = true
+	glyph.TextColor3 = Color3.new(1, 1, 1)
+	glyph.TextStrokeColor3 = Color3.new(0, 0, 0)
+	glyph.TextStrokeTransparency = 0.45
+	glyph.ZIndex = StructureLayer.Z + 2
+	glyph.Parent = f
 	f.Parent = self.root
 	return {
 		frame = f,
@@ -288,7 +284,7 @@ local function level_label(p: Plate): TextLabel
 		l.AnchorPoint = Vector2.new(0.5, 1)
 		l.Position = UDim2.fromScale(0.5, 0.1)
 		l.Size = UDim2.fromScale(1, 0.6)
-		l.FontFace = Font.fromId(12187365977, Enum.FontWeight.Bold)
+		l.FontFace = Font.fromEnum(Enum.Font.GothamBold)
 		l.TextScaled = true
 		l.TextColor3 = Color3.new(1, 1, 1)
 		l.ZIndex = StructureLayer.Z + 3
@@ -319,17 +315,13 @@ end
 function StructureLayer._style(self: any, p: Plate, s: any, building: boolean)
 	local st = self._state
 	local k = s.kind
-	-- one image for the plate once it has loaded (see the header)
-	local one = one_ready
 	-- (a number, not a string: built for every plate on screen at every camera move, and a phone pays
 	-- for the strings it made; 2026-10-12)
-	local key = (((k * 1024 + s.owner) * 2 + (if building then 1 else 0)) * 4096 + math.min(s.level or 1, 4095)) * 2
-		+ (if one then 1 else 0)
+	local key = ((k * 1024 + s.owner) * 2 + (if building then 1 else 0)) * 4096 + math.min(s.level or 1, 4095)
 	if key == p.state_key then
 		return
 	end
 	p.state_key = key
-	local shapes, icons, col = Sprites.shapes, Sprites.icons, k
 	local fill_col, rim_col
 	if building then
 		fill_col, rim_col = StructureLayer.CONSTRUCT_FILL, StructureLayer.CONSTRUCT_BORDER
@@ -340,36 +332,13 @@ function StructureLayer._style(self: any, p: Plate, s: any, building: boolean)
 		rim_col = value_scale(b, StructureLayer.BORDER_V)
 	end
 	local plate = p.frame
-	local cell = shapes.cell
-	plate.ImageRectSize = Vector2.new(cell, cell)
-	plate.ImageRectOffset = Vector2.new(col * cell, 0)
-	if one then
-		plate.Image = ONE.id
-		plate.ImageColor3 = fill_col
-		if p.fill ~= nil then
-			p.fill.Visible = false
-		end
-	else
-		plate.Image = shapes.id
-		plate.ImageColor3 = rim_col
-		local fill = p.fill
-		if fill == nil then
-			local f = image(plate, "Fill", shapes.id, StructureLayer.Z + 1)
-			f.Size = UDim2.fromScale(1, 1)
-			p.fill = f
-			fill = f
-		end
-		local f = fill :: ImageLabel
-		f.Visible = true
-		f.Image = shapes.id
-		f.ImageRectOffset = Vector2.new(col * cell, cell)
-		f.ImageRectSize = Vector2.new(cell, cell)
-		f.ImageColor3 = fill_col
-	end
-	p.glyph.Image = icons.id
-	local ic = icons.cell
-	p.glyph.ImageRectOffset = Vector2.new(col * ic, 0)
-	p.glyph.ImageRectSize = Vector2.new(ic, ic)
+	plate.BackgroundColor3 = fill_col
+	plate.Image = ""
+	local rim = plate:FindFirstChild("Rim") :: UIStroke
+	rim.Color = rim_col
+	local shape = plate:FindFirstChild("Shape") :: UICorner
+	shape.CornerRadius = if k == 1 then UDim.new(0.5, 0) else UDim.new(0.22, 0)
+	p.glyph.Text = GLYPHS[k + 1] or "?"
 	-- the glyph spans ICON_FILL / SHAPE_SCALE of the plate
 	local g = ICON_FILL[k + 1] / SHAPE_SCALE[k + 1]
 	p.glyph.Size = UDim2.fromScale(g, g)
@@ -566,11 +535,6 @@ function StructureLayer.tick(self: any, _dt: number)
 	local dots = zoom <= StructureLayer.DOTS_ZOOM
 	local base = StructureLayer.ICON_SIZE * icon_scale
 	local ppt = cam.scale / k
-	-- (the one-image atlas arrived: every plate is styled again)
-	if one_ready ~= self._one_seen then
-		self._one_seen = one_ready
-		self._dirty = true
-	end
 	local anim = self._anim
 	local touched = self._touched
 	if not self._dirty and cam.version == self._cam_version then

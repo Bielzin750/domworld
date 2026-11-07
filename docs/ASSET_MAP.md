@@ -1,6 +1,16 @@
 # Mapa de substituição de assets
 
-Inventário conservador do conteúdo original. Todos os arquivos e IDs sem titularidade verificável foram classificados como **(c) origem desconhecida para DomWorld**, mesmo quando os comentários do repositório de origem os chamavam de arte própria. Os 467 arquivos foram removidos do working tree; os IDs citados no código foram zerados para `rbxassetid://0`. O histórico de origem permanece por instrução do projeto. Novos arquivos autorais ficam em `assets/domworld/` sob CC BY-SA 4.0.
+Inventário conservador do conteúdo original. Todos os arquivos e IDs sem titularidade verificável foram classificados como **(c) origem desconhecida para DomWorld**, mesmo quando os comentários do repositório de origem os chamavam de arte própria. Os 467 arquivos foram removidos do working tree; as referências numéricas e de terceiros saíram do código, e os campos vazios significam que nenhum asset está configurado ainda. O histórico de origem permanece por instrução do projeto. Novos arquivos autorais ficam em `assets/domworld/` sob CC BY-SA 4.0.
+
+## Impacto visual no DomWorld
+
+| Área removida | Efeito que ficou no checkout | Tratamento atual / pendência |
+| --- | --- | --- |
+| 467 arquivos de bandeiras, ícones, sprites de unidades e estruturas, mapas, cosméticos, thumbs, efeitos, telas, logos, texturas e áudio | Faces, bandeiras, estruturas, unidades, efeitos, previews do Arsenal, caixa de cosméticos e thumbnails de mapa perderiam o raster original; trilhas e SFX ficariam sem áudio. | UI, marca DW, HUD, menus radial e de ajuda, construção, Arsenal, bandeiras, monogramas de jogador, placas de estrutura/unidade, coroa, thumbnails, caixa 3D, efeitos do mapa e previews usam Frames, gradientes, UIStroke, Parts primitivos e texto built-in. O mapa de territórios continua sendo renderizado em runtime. Áudio pula entradas sem ID e fica em silêncio. |
+| 271 IDs numéricos em 23 módulos de código | As referências originais não pertenciam ao DomWorld. | Todos os IDs foram removidos. Campos vazios são ignorados. O jogo não solicita imagens ou sons ausentes e não depende de uploads para iniciar uma partida solo. |
+| Font asset identificado como `12187365977` | Texto poderia depender de uma fonte enviada por uma conta externa. | Substituído por famílias Gotham incluídas no Roblox (`Font.fromEnum`); nenhuma fonte enviada é baixada. |
+
+**O que ainda depende de uploads próprios:** a bandeira geométrica atual é um padrão original genérico por item, não a bandeira oficial nem a arte comprada; os ícones e previews do Arsenal são monogramas geométricos; skins mostram seus padrões por código. Para identidade visual final, Bielzin750 precisa enviar arte DomWorld de bandeiras/cosméticos, thumbnails de mapas, renderizações do Arsenal e áudio próprio. Nenhum ID do Roblox é necessário para compilar, conectar pelo Rojo ou jogar solo. Registrar IDs próprios em `docs/OWN_ASSET_IDS.txt` e atualizar esta tabela antes de ativá-los.
 
 ## Arquivos de arte encontrados
 

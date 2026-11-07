@@ -20,9 +20,9 @@ local Core = RS:WaitForChild("DomWorld"):WaitForChild("Core")
 local Defs = require(Core:WaitForChild("Defs")) :: any
 local Rules = require(Core:WaitForChild("Rules")) :: any
 local NumberFormat = require(Core:WaitForChild("NumberFormat")) :: any
-local Sprites = require(RS:WaitForChild("DomWorld"):WaitForChild("Assets"):WaitForChild("MapSprites")) :: any
 local Cosmetics = require(RS:WaitForChild("DomWorld"):WaitForChild("Data"):WaitForChild("Cosmetics")) :: any
 local Coop = require(RS:WaitForChild("DomWorld"):WaitForChild("Net"):WaitForChild("Coop")) :: any
+local FlagVisual = require(script.Parent.Parent:WaitForChild("UI"):WaitForChild("FlagVisual")) :: any
 local FrameClock = require(script.Parent:WaitForChild("FrameClock")) :: any
 
 local readi32 = buffer.readi32
@@ -31,7 +31,7 @@ local readu8 = buffer.readu8
 local NameLayer = {}
 NameLayer.__index = NameLayer
 
-NameLayer.FONT = Font.fromId(12187365977, Enum.FontWeight.Bold)
+NameLayer.FONT = Font.fromEnum(Enum.Font.GothamBold)
 NameLayer.NAME_SCALE_FACTOR = 0.4
 NameLayer.NAME_SCALE_CAP = 3.0
 NameLayer.TROOP_SIZE_MULT = 0.6
@@ -56,8 +56,8 @@ NameLayer.FILL_CHECK = 2048
 --- Text line height / TextSize for Rubik.
 NameLayer.LINE_K = 1.0
 --- The local player's name line is at most this share of the view's height (OWN_MAX_MIN_PX at least);
---- its head, flag, troops and crown follow it. Every other name is sized by its land, and a
---- player holding a big share of the map had a name, a head and a flag across their own front (far
+--- its initial mark, flag, troops and crown follow it. Every other name is sized by its land, and a
+--- player holding a big share of the map had a name, a mark and a flag across their own front (far
 --- too big for their own nametag, and annoying to play behind, 2026-10-10).
 NameLayer.OWN_MAX_VH = 0.04
 NameLayer.OWN_MAX_MIN_PX = 18.0
@@ -68,6 +68,8 @@ type Plate = {
 	scaler: UIScale,
 	name: TextLabel,
 	troops: TextLabel,
+	face: Frame,
+	face_mark: TextLabel,
 	flag: ImageLabel,
 	flag_id: string,
 	name_stroke: UIStroke,
@@ -116,18 +118,38 @@ function NameLayer.new(parent: Instance, view: any)
 	--- The crown: over the name of the alive owner with the most land
 	self.crown_owner = 0
 	self._crown_t = 0.0
-	local crown = Instance.new("ImageLabel")
+	local crown = Instance.new("Frame")
 	crown.Name = "Crown"
 	crown.BackgroundTransparency = 1
 	crown.AnchorPoint = Vector2.new(0.5, 0)
-	crown.Image = Sprites.status.id
-	local st = Sprites.status
-	crown.ImageRectOffset = Vector2.new(st.pad, st.pad) -- cell 0 = crown
-	crown.ImageRectSize = Vector2.new(st.cell - 2 * st.pad, st.cell - 2 * st.pad)
-	crown.ScaleType = Enum.ScaleType.Fit
 	crown.ZIndex = 21
 	crown.Visible = false
 	crown.Parent = root
+	local gold = Color3.fromRGB(255, 210, 92)
+	for i, x in { 0.18, 0.5, 0.82 } do
+		local peak = Instance.new("Frame")
+		peak.Name = "Peak" .. i
+		peak.AnchorPoint = Vector2.new(0.5, 0.5)
+		peak.Position = UDim2.fromScale(x, 0.34)
+		peak.Size = UDim2.fromScale(0.22, 0.38)
+		peak.Rotation = 45
+		peak.BackgroundColor3 = gold
+		peak.BorderSizePixel = 0
+		peak.ZIndex = crown.ZIndex + 1
+		peak.Parent = crown
+	end
+	local base = Instance.new("Frame")
+	base.Name = "Base"
+	base.AnchorPoint = Vector2.new(0.5, 0.5)
+	base.Position = UDim2.fromScale(0.5, 0.72)
+	base.Size = UDim2.fromScale(0.82, 0.24)
+	base.BackgroundColor3 = gold
+	base.BorderSizePixel = 0
+	base.ZIndex = crown.ZIndex + 2
+	base.Parent = crown
+	local base_corner = Instance.new("UICorner")
+	base_corner.CornerRadius = UDim.new(0.25, 0)
+	base_corner.Parent = base
 	self._crown = crown
 	self._visit = buffer.create(0)
 	self._visit_gen = 0
@@ -443,7 +465,7 @@ function NameLayer._plate(self: any, id: number): Plate
 	bs.Color = Color3.new(0, 0, 0)
 	badge.Visible = false
 	-- the name line: [flag] [head] name (the flag only when the owner has one equipped, Data/Cosmetics;
-	-- a person's Roblox head shot; the flag sits left of it, 2026-10-22)
+	-- the procedural player initial; the flag sits to its left)
 	local line = Instance.new("Frame")
 	line.Name = "Line"
 	line.BackgroundTransparency = 1
@@ -458,7 +480,7 @@ function NameLayer._plate(self: any, id: number): Plate
 	ll.SortOrder = Enum.SortOrder.LayoutOrder
 	ll.Padding = UDim.new(0, 3)
 	ll.Parent = line
-	local face = Instance.new("ImageLabel")
+	local face = Instance.new("Frame")
 	face.Name = "Face"
 	face.BackgroundColor3 = Color3.fromRGB(40, 52, 82)
 	face.BorderSizePixel = 0
@@ -473,6 +495,15 @@ function NameLayer._plate(self: any, id: number): Plate
 	fs.Transparency = 0.4
 	fs.Thickness = 1
 	fs.Parent = face
+	local face_mark = Instance.new("TextLabel")
+	face_mark.Name = "Initial"
+	face_mark.BackgroundTransparency = 1
+	face_mark.Size = UDim2.fromScale(1, 1)
+	face_mark.FontFace = Font.fromEnum(Enum.Font.GothamBold)
+	face_mark.TextColor3 = Color3.new(1, 1, 1)
+	face_mark.TextScaled = true
+	face_mark.ZIndex = 22
+	face_mark.Parent = face
 	face.Parent = line
 	local flag = Instance.new("ImageLabel")
 	flag.Name = "Flag"
@@ -492,9 +523,10 @@ function NameLayer._plate(self: any, id: number): Plate
 		scaler = scaler,
 		name = name,
 		troops = troops,
+		face = face,
+		face_mark = face_mark,
 		flag = flag,
 		flag_id = "",
-		face = face,
 		face_id = 0,
 		badge = badge,
 		badge_stroke = bs,
@@ -620,13 +652,14 @@ function NameLayer.tick(self: any, dt: number)
 			local col = st:owner_color(id)
 			p.name_stroke.Color = col
 			p.troop_stroke.Color = col
+			p.face.BackgroundColor3 = col
+			p.face_mark.Text = string.upper(string.sub(text, 1, 1))
 		end
-		-- a person's head shot and the owner's flag (Data/Cosmetics), left of the name
+		-- the player's initial and optional procedural flag, left of the name
 		local cz = st.cosmetics and st.cosmetics[id]
 		local face_id = if cz ~= nil and cz.face ~= nil then cz.face else 0
 		if face_id ~= p.face_id then
 			p.face_id = face_id
-			p.face.Image = if face_id > 0 then Cosmetics.face_image(face_id) else ""
 			p.face.Visible = face_id > 0
 			p.px = -1 -- size the head with the name
 			p.size_dirty = 3
@@ -640,7 +673,9 @@ function NameLayer.tick(self: any, dt: number)
 				p.flag.ImageRectOffset = Vector2.new(it.x, it.y)
 				p.flag.ImageRectSize = Vector2.new(it.w, it.h)
 				p.flag.Visible = true
+				FlagVisual.apply(p.flag, it.id)
 			else
+				FlagVisual.apply(p.flag, "", false)
 				p.flag.Visible = false
 			end
 			p.px = -1 -- size the flag with the name

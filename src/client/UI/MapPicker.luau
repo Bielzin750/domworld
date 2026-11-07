@@ -10,6 +10,7 @@ local UITheme = require("./UITheme")
 local W = require("./Widgets")
 local GlassPanel = require("./GlassPanel")
 local UICtx = require("./UICtx")
+local MapPreview = require("./MapPreview")
 local Signal = UITheme.core("Signal")
 
 local MapPicker = W.class(W.Control)
@@ -176,10 +177,11 @@ function MapPicker._card(self, e: any, order: number): TextButton
 	img.Size = UDim2.new(1, -math.floor(16 * s), 1, -math.floor(46 * s))
 	img.ZIndex = 42
 	img.Parent = b
+	MapPreview.apply(img, e.id)
 	local name = Instance.new("TextLabel")
 	name.Name = "MapName"
 	name.BackgroundTransparency = 1
-	name.FontFace = Font.fromId(12187365977, Enum.FontWeight.Bold)
+	name.FontFace = Font.fromEnum(Enum.Font.GothamBold)
 	name.TextSize = math.floor(14 * s)
 	name.TextColor3 = Color3.new(1, 1, 1)
 	name.TextTruncate = Enum.TextTruncate.AtEnd
@@ -192,7 +194,7 @@ function MapPicker._card(self, e: any, order: number): TextButton
 	local sub = Instance.new("TextLabel")
 	sub.Name = "Size"
 	sub.BackgroundTransparency = 1
-	sub.FontFace = Font.fromId(12187365977, Enum.FontWeight.Medium)
+	sub.FontFace = Font.fromEnum(Enum.Font.GothamMedium)
 	sub.TextSize = math.floor(11 * s)
 	sub.TextColor3 = Color3.fromRGB(170, 180, 205)
 	sub.Text = if e.width and e.height then string.format("%d × %d", e.width, e.height) else ""

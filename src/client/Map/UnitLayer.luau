@@ -1,8 +1,6 @@
 --!native
 -- Units on the 2D map:
---   * sprites from the unit atlas (13 x 13 px, drawn 13 full-size tiles wide, so they
---     scale with the map), recoloured: light pixels in the owner's territory
---     colour, dark pixels in its border colour (two tinted mask layers, Pixelated);
+--   * rounded Frame markers with an owner-coloured fill, a darker border and a built-in letter glyph;
 --   * ships / trains follow their path tile to tile (the sim's timing: start_tick +
 --     ticks_per_tile); warships interpolate prev_tile -> current over a second;
 --   * a train is drawn as the engine, TRAIN_CARRIAGES carriages and a
@@ -27,8 +25,7 @@
 --   * a train's cars are drawn only where they can be told apart (CARS_MIN_ZOOM, where the rails fade
 --     in too): 2 full-size tiles apart, seven 13-tile sprites are one blob on a map zoomed out, yet
 --     they were six of every seven sprites that moved;
---   * a sprite is one image (Sprites.units_one: both of the sprite's colours in one tint) once that atlas
---     has loaded, and until then two, the second inside the first; it was two inside a frame;
+--   * each marker is one Frame with a UICorner, UIStroke and TextLabel, reused from a small pool;
 --   * while the camera stands still and many sprites are on screen, the whole layer is redrawn 20 to
 --     30 times a second, not every frame (THROTTLE_*): at that zoom a ship moves a fraction of a
 --     pixel a frame, and a frame in which nothing here changes costs Roblox nothing (MapView's
@@ -39,20 +36,9 @@ local RS = game:GetService("ReplicatedStorage")
 local DomWorld = RS:WaitForChild("DomWorld")
 local Defs = require(DomWorld:WaitForChild("Core"):WaitForChild("Defs")) :: any
 local Rules = require(DomWorld:WaitForChild("Core"):WaitForChild("Rules")) :: any
-local Sprites = require(DomWorld:WaitForChild("Assets"):WaitForChild("MapSprites")) :: any
 local WakeRoute = require(script.Parent:WaitForChild("WakeRoute")) :: any
 local TrailBudget = require(script.Parent:WaitForChild("TrailBudget")) :: any
 local FrameClock = require(script.Parent:WaitForChild("FrameClock")) :: any
-
---- The one-image sprites (Sprites.units_one) are used once the atlas is known to have loaded: an image
---- still in moderation would leave every unit invisible.
-local ONE: any = Sprites.units_one
-local one_ready = false
-if ONE ~= nil then
-	(require(script.Parent:WaitForChild("AtlasReady")) :: any).watch(ONE.id, function()
-		one_ready = true
-	end)
-end
 
 local UnitLayer = {}
 UnitLayer.__index = UnitLayer
@@ -87,6 +73,7 @@ UnitLayer.Z = 14
 local COL_TRANSPORT, COL_TRADE, COL_WARSHIP = 0, 1, 2
 local COL_ATOM, COL_HYDROGEN, COL_MIRV, COL_SAM, COL_SHELL, COL_WARHEAD, COL_TRAIN = 3, 4, 5, 6, 7, 8, 9
 local COL_CARRIAGE = 10
+local UNIT_GLYPHS = { "T", "$", "W", "A", "H", "M", "S", ".", "X", "R", "o", "o" }
 local UNIT_COL = {
 	[Defs.U_TRANSPORT] = COL_TRANSPORT,
 	[Defs.U_TRADE] = COL_TRADE,
@@ -112,10 +99,10 @@ local NUKE_PLAIN = { [Defs.N_SHELL] = true }
 local NUKE_SCALE = { [Defs.N_MEGA] = 1.5, [Defs.N_SHELL] = 0.75, [Defs.N_SLUG] = 1.2 }
 
 type Sprite = {
-	frame: ImageLabel,
-	fill: ImageLabel,
-	--- nil: a one-image sprite
-	rim: ImageLabel?,
+	frame: Frame,
+	fill: Frame,
+	rim: UIStroke,
+	glyph: TextLabel,
 	col: number,
 	owner: number,
 	px: number,
@@ -227,37 +214,51 @@ function UnitLayer._ring(_self: any, parent: Instance, name: string, z: number):
 	return f
 end
 
-local function mask(parent: Instance, name: string, row: number, z: number): ImageLabel
-	local l = Instance.new("ImageLabel")
-	l.Name = name
-	l.BackgroundTransparency = 1
-	l.Image = Sprites.units.id
-	l.ImageRectSize = Vector2.new(Sprites.units.cell, Sprites.units.cell)
-	l.ImageRectOffset = Vector2.new(0, row * Sprites.units.cell)
-	l.ResampleMode = Enum.ResamplerMode.Pixelated
-	l.Size = UDim2.fromScale(1, 1)
-	l.ZIndex = z
-	l.Parent = parent
-	return l
-end
-
 function UnitLayer._acquire(self: any): Sprite
 	local s = table.remove(self._pool)
 	if s then
 		s.frame.Visible = true
 		return s
 	end
-	-- (one object a sprite; two, the rim inside the fill, while the one-image atlas isn't here)
-	local fill = mask(nil :: any, "Unit", 0, UnitLayer.Z)
+	local fill = Instance.new("Frame")
+	fill.Name = "Unit"
 	fill.AnchorPoint = Vector2.new(0.5, 0.5)
-	local rim: ImageLabel? = nil
-	if one_ready then
-		fill.Image = ONE.id
-	else
-		rim = mask(fill, "Rim", 1, UnitLayer.Z + 1)
-	end
+	fill.BackgroundTransparency = 0
+	fill.BorderSizePixel = 0
+	fill.ZIndex = UnitLayer.Z
+	local corner = Instance.new("UICorner")
+	corner.Name = "Shape"
+	corner.CornerRadius = UDim.new(0.35, 0)
+	corner.Parent = fill
+	local rim = Instance.new("UIStroke")
+	rim.Name = "Rim"
+	rim.Thickness = 1.5
+	rim.Parent = fill
+	local glyph = Instance.new("TextLabel")
+	glyph.Name = "Glyph"
+	glyph.BackgroundTransparency = 1
+	glyph.AnchorPoint = Vector2.new(0.5, 0.5)
+	glyph.Position = UDim2.fromScale(0.5, 0.5)
+	glyph.Size = UDim2.fromScale(0.78, 0.78)
+	glyph.FontFace = Font.fromEnum(Enum.Font.GothamBlack)
+	glyph.TextScaled = true
+	glyph.TextColor3 = Color3.new(1, 1, 1)
+	glyph.TextStrokeColor3 = Color3.new(0, 0, 0)
+	glyph.TextStrokeTransparency = 0.4
+	glyph.ZIndex = UnitLayer.Z + 1
+	glyph.Parent = fill
 	fill.Parent = self.root
-	return { frame = fill, fill = fill, rim = rim, col = -1, owner = -1, px = -1, x = -1e9, y = -1e9 }
+	return {
+		frame = fill,
+		fill = fill,
+		rim = rim,
+		glyph = glyph,
+		col = -1,
+		owner = -1,
+		px = -1,
+		x = -1e9,
+		y = -1e9,
+	}
 end
 
 function UnitLayer._release(self: any, s: Sprite)
@@ -290,23 +291,26 @@ function UnitLayer._sprite(
 	end
 	if s.col ~= col then
 		s.col = col
-		local cell = Sprites.units.cell
-		s.fill.ImageRectOffset = Vector2.new(col * cell, 0)
-		if s.rim ~= nil then
-			s.rim.ImageRectOffset = Vector2.new(col * cell, cell)
-		end
+		s.glyph.Text = UNIT_GLYPHS[col + 1] or "?"
+		local shape = s.fill:FindFirstChild("Shape") :: UICorner
+		shape.CornerRadius = if col == COL_ATOM
+				or col == COL_HYDROGEN
+				or col == COL_MIRV
+			then UDim.new(0.5, 0)
+			elseif col == COL_WARSHIP then UDim.new(0.15, 0)
+			else UDim.new(0.35, 0)
+		s.frame.Rotation = if col == COL_WARSHIP or col == COL_TRAIN then 45 else 0
 	end
 	if s.owner ~= owner then
 		s.owner = owner
 		local c = self._state:owner_color(owner)
-		s.fill.ImageColor3 = c
-		if s.rim ~= nil then
-			s.rim.ImageColor3 = border_of(c)
-		end
+		s.fill.BackgroundColor3 = c
+		s.rim.Color = border_of(c)
 	end
 	if s.px ~= px then
 		s.px = px
 		s.frame.Size = UDim2.fromOffset(px, px)
+		s.glyph.TextSize = math.max(6, px * 0.62)
 	end
 	-- (a GUI property write per sprite per frame adds up: only when it moved a pixel)
 	local rx, ry = math.round(x), math.round(y)

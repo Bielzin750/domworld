@@ -2,9 +2,8 @@
 -- Effects on the 2D map: a nuke's shockwave ring grows to 1.5 x its
 -- blast radius over 1.5 s behind a white flash, a destroyed ship / shot-down nuke pops a small
 -- ring (0.8 s), and the camera shakes a little for nukes near the view. Pooled GUI circles.
--- Conquests by the local player (a flag and a gold popup): a victory
--- flag planted at the conquered name's location, its banner the conqueror's colour (Assets/MapFx:
--- 10 frames of 24 x 24 at 90 ms, drawn 22 full-size tiles wide, 2.5 s, fade in over the first 10 % and
+-- Conquests by the local player (a geometric flag marker and a gold popup): a victory
+-- marker planted at the conquered name's location, its banner the conqueror's colour (2.5 s, fade in over the first 10 % and
 -- out after 60 %; 2026-10-25: it replaced a sword clash for the elimination), and a
 -- white "+ 12.3K" gold line below it (font 6 tiles, fading
 -- linearly).
@@ -15,15 +14,14 @@
 -- above the tile, rises 3 tiles a second and fades out over 1.5 s (font 6 tiles). It keeps a minimum
 -- size on screen and is not drawn on a map zoomed far out (and is never bigger than
 -- 40 px).
--- Explosions (Assets/MapFx; added 2026-10-04 for a destroyed defense post and for a
+-- Explosions (procedural circles and colour; added 2026-10-04 for a destroyed defense post and for a
 -- nuke shot down by a SAM): a
 -- destroyed defense post or Arsenal structure plays `building` over a small ring, a nuke shot
 -- down plays `sam` where it was. They are seen, not heard (shots and hits were made silent
 -- on 2026-09-27: together they were a constant racket).
 -- Nukes (since
 -- 2026-10-12; the trailer's hydrogen bombs fell flat when a ring and a green stain were all
--- a nuke left): a nuke that lands plays the explosion (Assets/MapFx: 12 frames of
--- 60 x 60 at 70 ms, drawn 60 full-size tiles wide) and leaves debris burning: mini fires, smoke, big
+-- a nuke left): a nuke that lands plays a procedural orange burst and leaves debris markers: mini fires, smoke, big
 -- smoke and smoke with fire (DEBRIS_PLAN, looping) scattered within half its radius, 6 s, fading in
 -- over the first 10 % and out after 80 %; its ring grows to 1.5 x that radius. The radius is the
 -- look's (NUKE_FX_RADIUS), not the blast's.
@@ -31,7 +29,6 @@
 -- phones' slow frames: a nuke's 240 debris sprites were written six properties each a frame, with the
 -- view still and between their frames), and spent effects leave their lists in one pass, in order.
 -- Modified for DomWorld, 2026 — see git history for details.
-local ContentProvider = game:GetService("ContentProvider")
 local RS = game:GetService("ReplicatedStorage")
 local DomWorld = RS:WaitForChild("DomWorld")
 local Defs = require(DomWorld:WaitForChild("Core"):WaitForChild("Defs")) :: any
@@ -67,7 +64,7 @@ FxLayer.BANNER_LIFT = 0.3
 FxLayer.GOLD_Y_OFFSET = 8 -- full-size tiles below the name
 FxLayer.GOLD_SIZE = 6 -- full-size tiles
 FxLayer.GOLD_MIN_PX = 15
-FxLayer.GOLD_FONT = Font.fromId(12187365977, Enum.FontWeight.Bold)
+FxLayer.GOLD_FONT = Font.fromEnum(Enum.Font.GothamBold)
 --- Income popups: lifetime, rise (full-size tiles a second), where it starts
 --- (tiles above the tile), the font (tiles; at least BONUS_MIN_PX on screen), the zoom (px per full-size
 --- tile) under which none are drawn, and how many may be up at once.
@@ -85,7 +82,18 @@ FxLayer.BONUS_MAX = 48
 --- it is drawn on screen (px). (`loop`: the debris, which cycle until their lifetime ends)
 local function fx_row(name: string, frame_s: number, world: number, min_px: number, loop: boolean?)
 	local r = MapFx[name]
+	local colors = {
+		building = Color3.fromRGB(255, 190, 74),
+		sam = Color3.fromRGB(255, 86, 66),
+		nuke = Color3.fromRGB(255, 128, 42),
+		fire = Color3.fromRGB(255, 112, 35),
+		smoke = Color3.fromRGB(148, 157, 175),
+		big_smoke = Color3.fromRGB(110, 119, 139),
+		smoke_fire = Color3.fromRGB(243, 116, 46),
+	}
 	return {
+		name = name,
+		color = colors[name] or Color3.fromRGB(242, 177, 77),
 		x = r.x,
 		y = r.y,
 		w = r.w,
@@ -175,16 +183,14 @@ type PopGui = {
 --- (`life`, `fade_in`, `fade_out`: debris only; a burst ends with its last frame)
 type Burst = { u: number, v: number, t0: number, row: any, life: number?, fade_in: number?, fade_out: number? }
 type BurstGui = {
-	img: ImageLabel,
+	img: Frame,
+	stroke: UIStroke,
+	kind: string,
 	vis: boolean,
 	x: number,
 	y: number,
 	w: number,
 	h: number,
-	rw: number,
-	rh: number,
-	ox: number,
-	oy: number,
 	img_t: number,
 }
 type Bonus = { u: number, v: number, t0: number, text: string }
@@ -226,12 +232,6 @@ function FxLayer.new(parent: Instance, view: any)
 	self._warheads_counted = -1.0
 	self._bonus = {} :: { Bonus }
 	self._bonus_gui = {} :: { BonusGui }
-	-- Fetch the atlas now: a cold download outlasts the 2.5 s conquest popup.
-	task.spawn(function()
-		pcall(function()
-			ContentProvider:PreloadAsync({ MapFx.id })
-		end)
-	end)
 	return self
 end
 
@@ -636,13 +636,22 @@ local function pop_gui(self: any, n: number): PopGui
 	local function layer(name: string, row: any): ImageLabel
 		local l = Instance.new("ImageLabel")
 		l.Name = name
-		l.BackgroundTransparency = 1
+		l.BackgroundColor3 = if name == "Conquest" then Color3.fromRGB(248, 210, 118) else Color3.fromRGB(44, 67, 103)
+		l.BackgroundTransparency = if name == "ConquestBanner" then 0.45 else 0
+		l.BorderSizePixel = 0
 		l.AnchorPoint = Vector2.new(0.5, 0.5)
-		l.Image = MapFx.id
-		l.ImageRectSize = Vector2.new(row.w, row.h)
+		l.Image = ""
 		l.ResampleMode = Enum.ResamplerMode.Pixelated
 		l.ZIndex = FxLayer.Z
 		l.Parent = self.root
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(if name == "Conquest" then 0.2 else 0.08, 0)
+		corner.Parent = l
+		local edge = Instance.new("UIStroke")
+		edge.Color = Color3.fromRGB(29, 34, 51)
+		edge.Thickness = 1.5
+		edge.Transparency = if name == "ConquestBanner" then 0.2 else 0.05
+		edge.Parent = l
 		return l
 	end
 	local banner = layer("ConquestBanner", FxLayer.BANNER)
@@ -743,22 +752,14 @@ local function pops_step(self: any, cam: any, now: number)
 		local img_t = 1 - a
 		if g.img_t ~= img_t then
 			g.img_t = img_t
-			flag.ImageTransparency = img_t
-			banner.ImageTransparency = img_t
+			flag.BackgroundTransparency = img_t
+			banner.BackgroundTransparency = 0.45 + img_t * 0.55
 		end
-		local fox, foy = F.x + frame * F.w, F.y
-		if g.flag_ox ~= fox or g.flag_oy ~= foy then
-			g.flag_ox, g.flag_oy = fox, foy
-			flag.ImageRectOffset = Vector2.new(fox, foy)
-		end
-		local box, boy = B.x + frame * B.w, B.y
-		if g.banner_ox ~= box or g.banner_oy ~= boy then
-			g.banner_ox, g.banner_oy = box, boy
-			banner.ImageRectOffset = Vector2.new(box, boy)
-		end
+		flag.Rotation = (frame % 3 - 1) * 2
+		banner.Rotation = -flag.Rotation
 		if g.col ~= p.col then
 			g.col = p.col
-			banner.ImageColor3 = p.col
+			banner.BackgroundColor3 = p.col
 		end
 		local fs = math.max(FxLayer.GOLD_MIN_PX, FxLayer.GOLD_SIZE / k * cam.scale)
 		-- GOLD_Y_OFFSET's 8 tiles scaled with the flag; its mound ends 0.42 of the sprite below its
@@ -848,25 +849,30 @@ local function bursts_step(self: any, cam: any, now: number, list: { Burst }, po
 		n += 1
 		local g = pool[n]
 		if g == nil then
-			local img = Instance.new("ImageLabel")
+			local img = Instance.new("Frame")
 			img.Name = "Explosion"
-			img.BackgroundTransparency = 1
+			img.BackgroundTransparency = 0
+			img.BorderSizePixel = 0
 			img.AnchorPoint = Vector2.new(0.5, 0.5)
-			img.Image = MapFx.id
-			img.ResampleMode = Enum.ResamplerMode.Pixelated
 			img.ZIndex = z
 			img.Parent = self.root
+			local corner = Instance.new("UICorner")
+			corner.Name = "Shape"
+			corner.CornerRadius = UDim.new(0.5, 0)
+			corner.Parent = img
+			local stroke = Instance.new("UIStroke")
+			stroke.Name = "Edge"
+			stroke.Thickness = 2
+			stroke.Parent = img
 			g = {
 				img = img,
+				stroke = stroke,
+				kind = "",
 				vis = true,
 				x = math.huge,
 				y = math.huge,
 				w = -1,
 				h = -1,
-				rw = -1,
-				rh = -1,
-				ox = -1,
-				oy = -1,
 				img_t = -1,
 			}
 			pool[n] = g
@@ -886,20 +892,18 @@ local function bursts_step(self: any, cam: any, now: number, list: { Burst }, po
 			g.w, g.h = w, h
 			img.Size = UDim2.fromOffset(w, h)
 		end
-		if g.rw ~= row.w or g.rh ~= row.h then
-			g.rw, g.rh = row.w, row.h
-			img.ImageRectSize = Vector2.new(row.w, row.h)
-		end
-		local ox, oy = (row.x or 0) + frame * row.w, row.y
-		if g.ox ~= ox or g.oy ~= oy then
-			g.ox, g.oy = ox, oy
-			img.ImageRectOffset = Vector2.new(ox, oy)
+		if g.kind ~= row.name then
+			g.kind = row.name
+			img.BackgroundColor3 = row.color
+			g.stroke.Color = row.color:Lerp(Color3.new(0, 0, 0), 0.42)
 		end
 		local img_t = 1 - a
 		if g.img_t ~= img_t then
 			g.img_t = img_t
-			img.ImageTransparency = img_t
+			img.BackgroundTransparency = img_t
+			g.stroke.Transparency = img_t
 		end
+		img.Rotation = frame * 11
 	end
 	truncate(list, keep)
 	for j = n + 1, #pool do
