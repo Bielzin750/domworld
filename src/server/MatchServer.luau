@@ -1,4 +1,5 @@
 --!strict
+-- Modified for DomWorld, 2026 — see git history for details.
 -- Port of the server half of scripts/net/session.gd: the shared multiplayer match.
 -- LOBBY (countdown after the first player queues) → SPAWN → PLAYING → OVER (results) → LOBBY/IDLE,
 -- one Sim, per-tick deltas to participants only, a cached compressed snapshot for late joiners,
@@ -153,6 +154,8 @@ function MatchServer.new(deps: { [string]: any })
 	self._stage_time = 0.0
 	self._mp_sim = nil :: any
 	self._mp_acc = 0.0
+	self._admin_paused = false
+	self._admin_speed = 1.0
 	self._mp_started_msec = 0
 	-- peer -> participant; `_order` keeps insertion order (GDScript Dictionary order)
 	self._participants = {} :: { [any]: Participant }
@@ -247,6 +250,137 @@ end
 
 function MatchServer.sim(self: any): any
 	return self._mp_sim
+end
+
+--- Server-only summary and mutation path for AdminService; each match mutation is resynced.
+function MatchServer.admin_state(self: any): any
+	local sim = self._mp_sim
+	local owners = {}
+	if sim ~= nil then
+		for id = 1, sim.owner_total do
+			table.insert(owners, {
+				id = id,
+				name = string.sub(tostring(sim.o_name[id] or ""), 1, 32),
+				alive = sim.o_alive[id] == 1,
+				bot = sim.o_bot ~= nil and sim.o_bot[id] == 1,
+				human = sim:is_human(id),
+				troops = math.floor(tonumber(sim.o_troops[id]) or 0),
+				gold = math.floor(tonumber(sim.o_gold[id]) or 0),
+				tiles = math.floor(tonumber(sim.o_tiles[id]) or 0),
+			})
+		end
+	end
+	return {
+		stage = self._stage,
+		active = sim ~= nil and (self._stage == STAGE_SPAWN or self._stage == STAGE_PLAYING),
+		paused = self._admin_paused,
+		speed = self._admin_speed,
+		tick = if sim ~= nil then sim.tick else 0,
+		owners = owners,
+	}
+end
+
+function MatchServer.admin_action(self: any, action: string, args: any): (boolean, string?)
+	if action == "speed" then
+		if self._mp_sim == nil or (self._stage ~= STAGE_SPAWN and self._stage ~= STAGE_PLAYING) then
+			return false, "no active multiplayer match"
+		end
+		local speed = args.speed
+		if type(speed) ~= "number" or speed ~= speed or speed < 0.5 or speed > 5 or speed == math.huge then
+			return false, "speed must be 0.5x to 5x"
+		end
+		self._admin_speed = speed
+		return true, "Match speed updated"
+	end
+	local sim = self._mp_sim
+	if sim == nil or (self._stage ~= STAGE_SPAWN and self._stage ~= STAGE_PLAYING) then
+		return false, "no active multiplayer match"
+	end
+	if action == "pause" then
+		self._admin_paused = args.paused == true
+		self._mp_acc = 0.0
+		return true, if self._admin_paused then "Match paused" else "Match resumed"
+	end
+	if action == "focus_owner" then
+		local id = args.owner_id
+		if type(id) ~= "number" or id < 1 or id > sim.owner_total or sim.o_alive[id] ~= 1 then
+			return false, "owner is not active"
+		end
+		return true, "Owner camera target confirmed"
+	end
+	if action == "set_troops" or action == "set_gold" then
+		local id, amount = args.owner_id, args.amount
+		if type(id) ~= "number" or id < 1 or id > sim.owner_total or sim.o_alive[id] ~= 1 then
+			return false, "owner is not active"
+		end
+		if type(amount) ~= "number" or amount ~= amount or amount % 1 ~= 0 or amount < 0 or amount > 1000000000 then
+			return false, "amount is outside the allowed range"
+		end
+		if action == "set_troops" then
+			sim.o_troops[id] = amount
+		else
+			sim.o_gold[id] = amount
+		end
+	elseif action == "set_tile_owner" then
+		local tile, id = args.tile, args.owner_id
+		if
+			type(tile) ~= "number"
+			or tile % 1 ~= 0
+			or tile < 0
+			or tile >= sim.N
+			or type(id) ~= "number"
+			or id % 1 ~= 0
+			or id < 0
+			or id > sim.owner_total
+		then
+			return false, "tile or owner is outside the map"
+		end
+		if id > 0 and sim.o_alive[id] ~= 1 then
+			return false, "owner is not active"
+		end
+		if sim.map == nil or not sim.map:is_contestable(tile) then
+			return false, "tile is not claimable land"
+		end
+		sim:set_owner(tile, id)
+	elseif action == "eliminate" or action == "remove_bot" then
+		local id = args.owner_id
+		if type(id) ~= "number" or id % 1 ~= 0 or id < 1 or id > sim.owner_total or sim.o_alive[id] ~= 1 then
+			return false, "owner is not active"
+		end
+		if action == "eliminate" and not sim:is_human(id) then
+			return false, "selected owner is not a player"
+		end
+		if action == "remove_bot" and (sim.o_bot == nil or sim.o_bot[id] ~= 1) then
+			return false, "selected owner is not an admin bot"
+		end
+		local killer = if type(args.killer_id) == "number"
+				and args.killer_id >= 1
+				and args.killer_id <= sim.owner_total
+				and sim.o_alive[args.killer_id] == 1
+			then args.killer_id
+			else 0
+		sim:_eliminate(id, killer)
+	elseif action == "add_bot" then
+		if self._stage ~= STAGE_SPAWN then
+			return false, "bots can only be added during the spawn phase"
+		end
+		local name = args.name
+		if type(name) ~= "string" or #name < 1 or #name > 20 or string.match(name, "^[%w _%-]+$") == nil then
+			return false, "invalid bot name"
+		end
+		local id = sim:add_bot_player(name, true)
+		if id <= 0 then
+			return false, "match owner limit reached"
+		end
+		self._snap = nil
+		self._snap_tick = -1
+		self:_resync_everyone()
+		return true, tostring(id)
+	else
+		return false, "action is not available"
+	end
+	self:_resync_everyone()
+	return true, "Match updated"
 end
 
 -- =============================================================================================
@@ -601,7 +735,11 @@ function MatchServer.process(self: any, delta: number)
 			self:_start_match()
 		end
 	elseif stage == STAGE_SPAWN or stage == STAGE_PLAYING then
-		local tick_sec = MatchServer.TICK_SEC
+		if self._admin_paused then
+			self._mp_acc = 0.0
+			return
+		end
+		local tick_sec = MatchServer.TICK_SEC / self._admin_speed
 		self._mp_acc = math.min(self._mp_acc + delta, tick_sec * MatchServer.MAX_CATCHUP_TICKS)
 		local clock = self.deps.clock or os.clock
 		local t0 = clock()
@@ -1189,6 +1327,8 @@ end
 
 function MatchServer._close_match(self: any)
 	self._mp_sim = nil
+	self._admin_paused = false
+	self._admin_speed = 1.0
 	self._tracker = nil
 	self._bot_cosmetics = {}
 	self._snap_tick = -1

@@ -1,4 +1,5 @@
 --!strict
+-- Modified for DomWorld, 2026 — see git history for details.
 -- Roblox server entry for the multiplayer match (the server half of scripts/net/session.gd plus the
 -- server duties of scripts/main.gd). Every Roblox server hosts one shared match (MatchServer); players
 -- pick Solo (runs on their client, never touches the server) or Multiplayer on the title screen.
@@ -45,7 +46,9 @@ local MatchServer = require(script.Parent.MatchServer) :: any
 local SettingsStore = require(script.Parent.SettingsStore) :: any
 local Analytics = require(script.Parent.Analytics) :: any
 local ServerPerf = require(script.Parent.ServerPerf) :: any
-local AdminCheck = require(script.Parent.AdminCheck) :: any
+local AdminAuth = require(script.Parent.AdminAuth) :: any
+local AdminConfig = require(script.Parent.AdminConfig) :: any
+local AdminService = require(script.Parent.AdminService) :: any
 local DsGate = require(script.Parent.DsGate) :: any
 local Handoff = require(script.Parent.Handoff) :: any
 local Purchases = require(script.Parent.Purchases) :: any
@@ -142,6 +145,15 @@ function ServerMain.start()
 	local to_client = Instance.new("RemoteEvent")
 	to_client.Name = "ToClient"
 	to_client.Parent = folder
+	local admin_folder = Instance.new("Folder")
+	admin_folder.Name = "Admin"
+	admin_folder.Parent = folder
+	local admin_get_state = Instance.new("RemoteFunction")
+	admin_get_state.Name = "GetState"
+	admin_get_state.Parent = admin_folder
+	local admin_action = Instance.new("RemoteFunction")
+	admin_action.Name = "Action"
+	admin_action.Parent = admin_folder
 
 	local listening: { [Player]: boolean } = {}
 	local listening_list: { Player } = {}
@@ -1204,61 +1216,19 @@ function ServerMain.start()
 			end
 		end
 	end
-	-- Game admins (the game's owner, or rank 254+ in the owning group; everyone in a Studio playtest)
-	-- are told which "players" are bot players — nobody else ever receives it (bots look like players).
-	-- Their Player has the AF_Admin attribute (set here only, so a client can't give it itself): the
-	-- game menu's "Replay as new player" shows on production too.
+	-- Admin authorization is a server-side UserId allowlist (Studio playtests are open to testers).
+	-- The allowlist is empty by default. Only verified admins receive AF_Admin and bot identities.
 	local admins: { [Player]: boolean } = {}
 	local admin_sent: { [Player]: string } = {}
-	-- (AdminCheck: the group's owner once per server, each player's answer shared by every server)
-	local admin_cache: any = nil
-	pcall(function()
-		admin_cache = game:GetService("MemoryStoreService"):GetHashMap("admins_v1")
-	end)
-	local admin_check = AdminCheck.new({
-		studio = RunService:IsStudio(),
-		group = game.CreatorType == Enum.CreatorType.Group,
-		creator_id = game.CreatorId,
-		rank = function(player: Player): number
-			return player:GetRankInGroup(game.CreatorId)
-		end,
-		owner = function(): number?
-			local info = game:GetService("GroupService"):GetGroupInfoAsync(game.CreatorId)
-			return if type(info) == "table" and type(info.Owner) == "table" then info.Owner.Id else nil
-		end,
-		cache_get = if admin_cache ~= nil
-			then function(key: string): any
-				return admin_cache:GetAsync(key)
-			end
-			else nil,
-		cache_set = if admin_cache ~= nil
-			then function(key: string, value: any, ttl_s: number)
-				admin_cache:SetAsync(key, value, ttl_s)
-			end
-			else nil,
-	})
+	local admin_auth = AdminAuth.new(AdminConfig, RunService:IsStudio())
+	local admin_service: any = nil
 	local function check_admin(player: Player)
-		task.spawn(function()
-			for attempt = 1, #AdminCheck.RETRY_S + 1 do
-				local ok, yes = pcall(admin_check.is_admin, admin_check, player)
-				if player.Parent ~= Players then
-					return
-				end
-				if ok then
-					if yes then
-						admins[player] = true
-						player:SetAttribute("AF_Admin", true)
-						print(string.format("[Admin] %s (%d): game admin", player.Name, player.UserId))
-					end
-					return
-				end
-				if attempt > #AdminCheck.RETRY_S then
-					warn(string.format("[Admin] check for %s failed: %s", player.Name, tostring(yes)))
-					return
-				end
-				task.wait(AdminCheck.RETRY_S[attempt])
-			end
-		end)
+		local yes = admin_auth:is_admin(player)
+		player:SetAttribute("AF_Admin", yes)
+		if yes then
+			admins[player] = true
+			print(string.format("[Admin] %s (%d): authorized by AdminConfig", player.Name, player.UserId))
+		end
 	end
 	--- Bot players of the running match (owner ids) to each admin, whenever the match changes.
 	local function push_admin_bots()
@@ -1419,6 +1389,31 @@ function ServerMain.start()
 		-- (Studio: the starter pack is offered before its product exists; the prompt is a test)
 		studio = RunService:IsStudio(),
 	})
+	admin_service = AdminService.new({
+		auth = admin_auth,
+		players = function(): { Player }
+			return Players:GetPlayers()
+		end,
+		player_by_user_id = function(user_id: number): Player?
+			return Players:GetPlayerByUserId(user_id)
+		end,
+		purchases = Purchases,
+		match = {
+			admin_state = function(): any
+				return server:admin_state()
+			end,
+			admin_action = function(action: string, args: any): (boolean, string?)
+				return server:admin_action(action, args)
+			end,
+		},
+		log = print,
+	})
+	admin_get_state.OnServerInvoke = function(player: Player): any
+		return admin_service:get_state(player)
+	end
+	admin_action.OnServerInvoke = function(player: Player, request: any): any
+		return admin_service:execute(player, request)
+	end
 	SettingsStore.connect_handoff(function(player: Player): any
 		return handoff:arrived(player)
 	end, function(player: Player, settings: any)
@@ -1564,6 +1559,9 @@ function ServerMain.start()
 		spectating[player] = nil
 		admins[player] = nil
 		admin_sent[player] = nil
+		if admin_service ~= nil then
+			admin_service:remove_player(player)
+		end
 		if party ~= nil then
 			party:removed(player)
 		end

@@ -58,6 +58,13 @@ Purchases.configure({
 Products.takeover.id = 777
 Purchases.load(P)
 expect(#notified == 1 and notified[1] == 0, "load: no credits, the client told")
+local admin_add_ok, admin_added = Purchases.admin_stars(P, "add", 250)
+expect(admin_add_ok and admin_added == 250 and rows.u42.stars == 250, "admin Stars add is persisted")
+local admin_remove_ok, admin_removed = Purchases.admin_stars(P, "remove", 50)
+expect(admin_remove_ok and admin_removed == 200 and rows.u42.stars == 200, "admin Stars removal is persisted")
+local admin_set_ok, admin_set = Purchases.admin_stars(P, "set", 500)
+expect(admin_set_ok and admin_set == 500 and rows.u42.stars == 500, "admin Stars set is persisted")
+expect(rows.u42.stars_earned == 0, "admin balance edits do not change earned Stars")
 expect(
 	Purchases.process_receipt({ PlayerId = 42, ProductId = 999, PurchaseId = "r0" }) == "not_processed",
 	"an unknown product is not processed"

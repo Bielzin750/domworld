@@ -1,4 +1,5 @@
 --!strict
+-- Modified for DomWorld, 2026 — see git history for details.
 -- Robux purchases (developer products, shared/Data/Products). A purchase is a saved credit: Roblox's
 -- ProcessReceipt adds it to the player's record in its own DataStore (only the server writes it —
 -- the client's SETTING op can't touch it) and only then reports the purchase granted, so Roblox
@@ -957,6 +958,51 @@ end
 
 --- Unlock Arsenal item `key` with Stars: one write takes its price and unlocks it. Yields.
 --- (ok) or (false, "unknown item" | "robux only" | "owned" | "not enough" | "store unavailable: ...").
+--- Admin-only adjustment to the current Stars balance. Preserves lifetime earned Stars and refuses
+--- writes while this account is still loading or another write is in flight.
+function Purchases.admin_stars(player: any, mode: string, amount: number): (boolean, any)
+	local user_id = tonumber(player and player.UserId)
+	if user_id == nil or user_id ~= user_id or user_id % 1 ~= 0 or user_id <= 0 or user_id == math.huge then
+		return false, "invalid player"
+	end
+	if mode ~= "add" and mode ~= "remove" and mode ~= "set" then
+		return false, "invalid mode"
+	end
+	if
+		type(amount) ~= "number"
+		or amount ~= amount
+		or amount % 1 ~= 0
+		or amount < 0
+		or amount > Purchases.MAX_STARS
+	then
+		return false, "invalid amount"
+	end
+	if records[player] == nil or loading[player] ~= nil or busy[user_id] ~= nil then
+		return false, "player profile is not ready"
+	end
+	local stored: Record? = nil
+	local ok, err = pcall(function()
+		update(user_id, function(old: any): any
+			local rec = clean(old, user_id)
+			if mode == "add" then
+				rec.stars = math.min(rec.stars + amount, Purchases.MAX_STARS)
+			elseif mode == "remove" then
+				rec.stars = math.max(rec.stars - amount, 0)
+			else
+				rec.stars = amount
+			end
+			stored = rec
+			return rec
+		end)
+	end)
+	if not ok or stored == nil then
+		return false, "store unavailable: " .. tostring(err)
+	end
+	remember(player, stored :: Record)
+	notify(player)
+	return true, (stored :: Record).stars
+end
+
 function Purchases.buy_unlock(player: any, item_key: any): (boolean, string?)
 	local it = Arsenal.item(item_key)
 	if it == nil then

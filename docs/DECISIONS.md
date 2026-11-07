@@ -38,3 +38,12 @@ classificado como atribuição genérica de segredo (`SECR...ef\"`). O fixture f
 placeholder nesse commit e não é carregado pelo serviço de produção. A allowlist exige a justificativa,
 o caminho, a linha, a regra, a forma mascarada e o hash exatos; o scan atual da árvore de trabalho segue
 sem achados.
+# Painel de administração (2026-11-07)
+
+- A autorização antiga aceitava o dono da experiência e cargos altos no grupo. O painel novo usa apenas uma allowlist explícita de UserIds em `src/server/AdminConfig.luau`, vazia por padrão; o Studio libera o tester local. Isso evita que uma mudança no dono/grupo conceda poderes automaticamente.
+- Os dois remotes `DomWorldNet.Admin.GetState` e `DomWorldNet.Admin.Action` passam primeiro por `AdminAuth` no servidor. Ações usam limite compartilhado de 20 chamadas por 10 segundos por jogador, validações tipadas e de estado, limites de valores e log em memória + Output.
+- Só Stars podem ser editadas na conta. A edição usa `UpdateAsync`, exige perfil já carregado, limita ajustes aditivos/retiradas a 1.000.000 e preserva o contador de Stars ganhas.
+- O motor suporta mutações multiplayer de tropas, ouro, posse de tile, eliminação, bots na fase de entrada, pausa e velocidade. A simulação solo roda no cliente, por isso não se expõe ao servidor administrativo.
+- Reset de conta e inventário não foram adicionados: não há fluxo de snapshot/undo seguro para cobrir todos os campos de compras e recibos. A reinicialização de partida, fim forçado e alteração do relógio também ficaram fora até existir uma operação de motor com semântica de encerramento segura.
+- Auditoria persistente em DataStore ficou fora; o log tem até 100 ações por sessão e cada tentativa é enviada ao Output do servidor. Isso evita criar retenção de dados de administrador sem necessidade operacional definida.
+- O aviso de diagnóstico da renderização territorial deixou de consultar cargo de grupo no cliente. Ele usa o atributo `AF_Admin` que o servidor só define a partir de `AdminConfig`.
