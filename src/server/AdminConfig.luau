@@ -3,6 +3,8 @@
 -- Production administrators are configured by Roblox UserId. Studio grants access to the tester.
 
 return {
-	-- Add your Roblox UserIds here before publishing an admin-enabled build.
-	UserIds = {},
+	UserIds = {
+		-- resolvido por username "falsity"; CONFIRMAR
+		33980672,
+	},
 }
