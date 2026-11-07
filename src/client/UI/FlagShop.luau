@@ -9,6 +9,7 @@
 -- cards wide and two tall, and a set with a bundle (Data/Shop.SETS `bundle`) a banner under its head:
 -- all of it for one price, what that saves, flags already owned paying back Stars.
 -- Signals: closed.
+-- Modified for DomWorld, 2026 — see git history for details.
 local UITheme = require("./UITheme")
 local W = require("./Widgets")
 local FlagVisual = require("./FlagVisual")
@@ -864,10 +865,15 @@ function FlagShop._content_height(self, cols: number): number
 end
 
 function FlagShop._center(self)
-	local area = self.ctx:clear_rect()
+	local ctx = self.ctx
+	local area = ctx:clear_rect()
 	local pn = self._panel
 	local sz = pn:get_combined_minimum_size()
-	local p = area.Min + (Vector2.new(area.Width, area.Height) - sz) * 0.5
+	-- Atlas map panels dock at the right edge on desktop; keep the touch layout centered.
+	local x = if ctx.compact
+		then area.Min.X + (area.Width - sz.X) * 0.5
+		else math.max(area.Min.X + 4.0, area.Max.X - sz.X - 16.0)
+	local p = Vector2.new(x, area.Min.Y + (area.Height - sz.Y) * 0.5)
 	local y = math.max(p.Y, area.Min.Y + 4.0)
 	pn:set_offsets(math.floor(p.X + 0.5), math.floor(y + 0.5), math.floor(p.X + 0.5), math.floor(y + 0.5))
 	pn:reset_size()

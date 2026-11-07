@@ -21,6 +21,7 @@
 -- first one they don't have. An unlock (Session.unlocked, however it was bought) flashes its item.
 -- It closes from its close button or a press outside the window, never from a press on the window.
 -- Signals: closed.
+-- Modified for DomWorld, 2026 — see git history for details.
 local UITheme = require("./UITheme")
 local W = require("./Widgets")
 local GlassPanel = require("./GlassPanel")
@@ -1405,7 +1406,11 @@ function Arsenal.apply_layout(self)
 		self:_rebuild()
 	end
 	local sz = self._panel:get_combined_minimum_size()
-	local p = area.Min + (Vector2.new(area.Width, area.Height) - sz) * 0.5
+	-- Atlas map panels dock at the right edge on desktop; keep the touch layout centered.
+	local x = if compact
+		then area.Min.X + (area.Width - sz.X) * 0.5
+		else math.max(area.Min.X + 4.0, area.Max.X - sz.X - 16.0)
+	local p = Vector2.new(x, area.Min.Y + (area.Height - sz.Y) * 0.5)
 	local y = math.max(p.Y, area.Min.Y + 4.0)
 	local rp = Vector2.new(math.floor(p.X + 0.5), math.floor(y + 0.5))
 	self._panel:set_offsets(rp.X, rp.Y, rp.X, rp.Y)

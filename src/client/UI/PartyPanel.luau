@@ -41,6 +41,7 @@ function PartyPanel.new(c: any)
 	self.state = nil
 	self.on_action = nil
 	self._open = false
+	self._collapsed = false
 	self._sent = {}
 	self:set_mouse_filter(W.MOUSE_IGNORE)
 	self:set_anchors_and_offsets_preset(W.PRESET_FULL_RECT)
@@ -62,6 +63,13 @@ function PartyPanel.new(c: any)
 	self._count = T.label("", 12, 600, T.TEXT_2)
 	self._count.size_flags_vertical = W.SHRINK_CENTER
 	head:add_child(self._count)
+	self._collapse_btn = T.button("MINIMIZAR", "GhostButton", "", 30.0)
+	self._collapse_btn:set_font_size(9)
+	self._collapse_btn.pressed:Connect(function()
+		self._collapsed = true
+		self:apply_layout()
+	end)
+	head:add_child(self._collapse_btn)
 	v:add_child(head)
 	self._members = T.hbox(12)
 	v:add_child(self._members)
@@ -94,7 +102,11 @@ function PartyPanel.new(c: any)
 	self._pill:set_font_size(12)
 	self._pill:add_theme_constant_override("icon_max_width", 16)
 	self._pill.pressed:Connect(function()
-		self._open = not self._open
+		if self.ctx.compact then
+			self._open = not self._open
+		else
+			self._collapsed = false
+		end
 		self:apply_layout()
 	end)
 	self:add_child(self._pill)
@@ -421,7 +433,8 @@ function PartyPanel.apply_layout(self)
 	local width = if self._wide then PartyPanel.WIDTH_WIDE else PartyPanel.WIDTH
 	p:set_min_size(Vector2.new(width, 0))
 	self._hint:set_min_size(Vector2.new(width - 28, 0))
-	pill:set_visible(compact)
+	pill:set_visible(compact or self._collapsed)
+	self._collapse_btn:set_visible(not compact)
 	if compact then
 		-- phones: the PARTY button under the top bar on the left; the panel under it while open
 		local y = math.max(ctx.reserved_top_left.Max.Y, 44.0) + 6.0 + ctx.insets.y
@@ -434,13 +447,16 @@ function PartyPanel.apply_layout(self)
 		p.offset_left, p.offset_right = x, x
 		p.offset_top, p.offset_bottom = y + 46, y + 46
 	else
-		-- desktop: on the left, halfway down
-		p:set_visible(true)
-		p.anchor_left, p.anchor_right, p.anchor_top, p.anchor_bottom = 0, 0, 0.5, 0.5
+		-- desktop: bottom-left map panel, with a compact affordance when collapsed
+		p:set_visible(not self._collapsed)
+		p.anchor_left, p.anchor_right, p.anchor_top, p.anchor_bottom = 0, 0, 1, 1
 		p.grow_horizontal = W.GROW_END
-		p.grow_vertical = W.GROW_BOTH
+		p.grow_vertical = W.GROW_BEGIN
 		p.offset_left, p.offset_right = x + 4.0, x + 4.0
-		p.offset_top, p.offset_bottom = 0, 0
+		local bottom = 12.0 + ctx.insets.w
+		p.offset_top, p.offset_bottom = -bottom, -bottom
+		pill:set_anchors(0, 0, 1, 1)
+		pill:set_offsets(x, -bottom - 40.0, x + 120.0, -bottom)
 	end
 	p:reset_size()
 	-- the invite list: under the top bar row (its buttons draw above our layer), growing down, its rows
