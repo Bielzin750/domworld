@@ -11,6 +11,7 @@
 -- Signals: closed.
 local UITheme = require("./UITheme")
 local W = require("./Widgets")
+local FlagVisual = require("./FlagVisual")
 local GlassPanel = require("./GlassPanel")
 local UICtx = require("./UICtx")
 local Prices = require("./Prices")
@@ -41,10 +42,9 @@ FlagShop.GRANT_WAIT_S = 30
 --- The bundle banner's height (logical px).
 FlagShop.BANNER_H = 46
 
-local FONT = Font.fromId(UITheme.FONT_ID, Enum.FontWeight.Bold)
-local FONT_H = Font.fromId(UITheme.FONT_ID, Enum.FontWeight.Heavy)
-local FONT_M = Font.fromId(UITheme.FONT_ID, Enum.FontWeight.Medium)
-local ROBUX = "rbxasset://textures/ui/common/robux@3x.png"
+local FONT = Font.fromEnum(Enum.Font.GothamBold)
+local FONT_H = Font.fromEnum(Enum.Font.GothamBlack)
+local FONT_M = Font.fromEnum(Enum.Font.GothamMedium)
 local WHITE = Color3.new(1, 1, 1)
 local GOLD = Color3.fromRGB(255, 200, 61)
 local PUMPKIN = Color3.fromRGB(255, 140, 40)
@@ -509,9 +509,12 @@ function FlagShop._bundle(self, order: number, sid: string)
 		Padding = UDim.new(0, px(4)),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 	}, inner)
-	local icon = new("ImageLabel", {
+	local icon = new("TextLabel", {
 		BackgroundTransparency = 1,
-		Image = ROBUX,
+		Text = "R",
+		FontFace = FONT_H,
+		TextColor3 = WHITE,
+		TextScaled = true,
 		Size = UDim2.fromOffset(px(15), px(15)),
 		LayoutOrder = 1,
 		Visible = not pending,
@@ -595,6 +598,7 @@ function FlagShop._card(self, parent: Instance, key: string, pos: Vector2, size:
 	img.Image = image
 	img.ImageRectOffset = Vector2.new(x, y)
 	img.ImageRectSize = Vector2.new(w, h)
+	FlagVisual.apply(img, key)
 	new("UICorner", { CornerRadius = UDim.new(0, px(6)) }, img)
 	local name_size = if hero then (if self.ctx.compact then 15 else 18) else (if self.ctx.compact then 11 else 13)
 	local name = new("TextLabel", {
@@ -662,9 +666,12 @@ function FlagShop._card(self, parent: Instance, key: string, pos: Vector2, size:
 	local text = if wearing then "WEARING" elseif owned then "WEAR" elseif pending then "..." else nil
 	local parts = { btn }
 	if text == nil then
-		local icon = new("ImageLabel", {
+		local icon = new("TextLabel", {
 			BackgroundTransparency = 1,
-			Image = ROBUX,
+			Text = "R",
+			FontFace = FONT_H,
+			TextColor3 = WHITE,
+			TextScaled = true,
 			Size = UDim2.fromOffset(px(15), px(15)),
 			LayoutOrder = 1,
 			ZIndex = 45,
@@ -693,6 +700,8 @@ function FlagShop._card(self, parent: Instance, key: string, pos: Vector2, size:
 	for _, pt in parts do
 		if pt:IsA("ImageLabel") then
 			host:_part(pt, "ImageTransparency", 1.0)
+		elseif pt:IsA("TextLabel") then
+			host:_part(pt, "TextTransparency", 1.0)
 		else
 			host:_part(pt, "BackgroundTransparency", if wearing then 0.6 else 1.0)
 		end

@@ -1,7 +1,7 @@
 --!nonstrict
--- The cosmetic crate's 3D chest in a ViewportFrame (Assets/CrateModel: BedWars' voxel block chest), shared
--- by the opening show (CrateOpening), the title screen's crate button (CrateButton) and the Locker's crate
--- card. build() makes the camera and the parts; pose() places them from a pose table:
+-- The cosmetic crate's original 3D chest, built from Roblox Parts only. It is shared by the opening
+-- show (CrateOpening), title screen (CrateButton) and Locker. No uploaded mesh or texture is needed.
+-- pose() places the hinged lid and body from a pose table:
 --   y (studs), yaw / roll / pitch (radians), sq (squash, + = flat), s (scale), lid (degrees).
 -- idle() is the small views' life: a bob, and every `every` seconds a wiggle with the lid cracking.
 local IS_ROBLOX = typeof(game) == "Instance"
@@ -41,29 +41,124 @@ function ChestView.build(vpf: ViewportFrame): any
 	local hinge = CFrame.new(v3(Model.hinge))
 	local chest = { parts = {}, hinge = hinge, hinge_inv = hinge:Inverse() }
 	for _, p in Model.parts do
-		local part = Instance.new("Part")
-		part.Name = p.name
-		part.Anchored = true
-		part.CanCollide = false
-		part.CanQuery = false
-		part.CanTouch = false
-		part.CastShadow = false
-		part.Size = v3(p.size)
-		part.Color = Color3.fromRGB(163, 162, 165)
-		pcall(function()
-			part.Material = (Enum.Material :: any)[p.material]
-		end)
-		local mesh = Instance.new("SpecialMesh")
-		mesh.MeshType = Enum.MeshType.FileMesh
-		mesh.MeshId = p.mesh
-		mesh.TextureId = p.tex
-		mesh.Scale = v3(p.scale)
-		mesh.Parent = part
-		part.Parent = vpf
-		table.insert(
-			chest.parts,
-			{ part = part, mesh = mesh, cf = CFrame.new(table.unpack(p.cf)), lid = p.lid == true, scale = v3(p.scale) }
-		)
+		local size = v3(p.size)
+		local assembly = Instance.new("Model")
+		assembly.Name = p.name
+		local pieces = {}
+		local function add_piece(name: string, piece_size: Vector3, cf: CFrame, color: Color3, material: Enum.Material?)
+			local part = Instance.new("Part")
+			part.Name = name
+			part.Anchored = true
+			part.CanCollide = false
+			part.CanQuery = false
+			part.CanTouch = false
+			part.CastShadow = false
+			part.Size = piece_size
+			part.CFrame = cf
+			part.Color = color
+			part.Material = material or Enum.Material.SmoothPlastic
+			part.Parent = assembly
+			table.insert(pieces, { part = part, size = piece_size })
+			return part
+		end
+		local body_color = if p.lid == true then Color3.fromRGB(145, 75, 35) else Color3.fromRGB(91, 43, 27)
+		local gold = Color3.fromRGB(245, 184, 69)
+		local body = add_piece("Body", size, CFrame.new(), body_color)
+		assembly.PrimaryPart = body
+		local x, y, z = size.X, size.Y, size.Z
+		local band = math.clamp(math.min(x, y, z) * 0.055, 0.12, 0.24)
+		local front = -z * 0.5 - 0.045
+		local back = z * 0.5 + 0.045
+		local left = -x * 0.5 - 0.045
+		local right = x * 0.5 + 0.045
+		for _, side in { -1, 1 } do
+			local px = side * (x * 0.5 - band * 0.5)
+			add_piece(
+				"FrontCorner",
+				Vector3.new(band, y * 0.86, band * 0.5),
+				CFrame.new(px, 0, front),
+				gold,
+				Enum.Material.Metal
+			)
+			local pz = side * (z * 0.5 - band * 0.5)
+			add_piece(
+				"SideCorner",
+				Vector3.new(band * 0.5, y * 0.86, band),
+				CFrame.new(left, 0, pz),
+				gold,
+				Enum.Material.Metal
+			)
+			add_piece(
+				"SideCorner",
+				Vector3.new(band * 0.5, y * 0.86, band),
+				CFrame.new(right, 0, pz),
+				gold,
+				Enum.Material.Metal
+			)
+		end
+		for _, yy in { -y * 0.5 + band * 0.5, y * 0.5 - band * 0.5 } do
+			add_piece(
+				"FrontBand",
+				Vector3.new(x * 0.76, band * 0.48, 0.09),
+				CFrame.new(0, yy, front),
+				gold,
+				Enum.Material.Metal
+			)
+			add_piece(
+				"BackBand",
+				Vector3.new(x * 0.76, band * 0.48, 0.09),
+				CFrame.new(0, yy, back),
+				gold,
+				Enum.Material.Metal
+			)
+			add_piece(
+				"LeftBand",
+				Vector3.new(0.09, band * 0.48, z * 0.76),
+				CFrame.new(left, yy, 0),
+				gold,
+				Enum.Material.Metal
+			)
+			add_piece(
+				"RightBand",
+				Vector3.new(0.09, band * 0.48, z * 0.76),
+				CFrame.new(right, yy, 0),
+				gold,
+				Enum.Material.Metal
+			)
+		end
+		if p.lid ~= true then
+			add_piece(
+				"Crest",
+				Vector3.new(0.78, 0.78, 0.12),
+				CFrame.new(0, 0.12, front - 0.04) * CFrame.Angles(0, 0, math.rad(45)),
+				gold,
+				Enum.Material.Metal
+			)
+			add_piece(
+				"CrestInset",
+				Vector3.new(0.28, 0.28, 0.14),
+				CFrame.new(0, 0.12, front - 0.12),
+				Color3.fromRGB(37, 51, 80)
+			)
+		else
+			for _, xx in { -x * 0.22, 0, x * 0.22 } do
+				add_piece(
+					"LidInlay",
+					Vector3.new(band * 0.6, 0.06, z * 0.58),
+					CFrame.new(xx, y * 0.5 + 0.035, 0),
+					gold,
+					Enum.Material.Metal
+				)
+			end
+		end
+		assembly.WorldPivot = CFrame.new()
+		assembly.Parent = vpf
+		table.insert(chest.parts, {
+			model = assembly,
+			pieces = pieces,
+			cf = CFrame.new(table.unpack(p.cf)),
+			lid = p.lid == true,
+		})
 	end
 	return chest
 end
@@ -80,12 +175,10 @@ function ChestView.pose(chest: any, P: any)
 	local lid = chest.hinge * CFrame.Angles(math.rad(P.lid), 0, 0) * chest.hinge_inv
 	for _, rec in chest.parts do
 		local rel: CFrame = if rec.lid then lid * rec.cf else rec.cf
-		local pos, rot = rel.Position, rel.Rotation
-		rec.part.CFrame = root * (CFrame.new(pos.X * sxz, pos.Y * sy, pos.Z * sxz) * rot)
-		local ax = math.abs(rot.RightVector.Y) * sy + (1 - math.abs(rot.RightVector.Y)) * sxz
-		local ay = math.abs(rot.UpVector.Y) * sy + (1 - math.abs(rot.UpVector.Y)) * sxz
-		local az = math.abs(rot.LookVector.Y) * sy + (1 - math.abs(rot.LookVector.Y)) * sxz
-		rec.mesh.Scale = rec.scale * Vector3.new(ax, ay, az)
+		for _, piece in rec.pieces do
+			piece.part.Size = piece.size * Vector3.new(sxz, sy, sxz)
+		end
+		rec.model:PivotTo(root * rel)
 	end
 end
 

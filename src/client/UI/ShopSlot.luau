@@ -46,7 +46,7 @@ local GOLD_LIGHT = Color3.fromRGB(255, 226, 122)
 local GOLD_DEEP = Color3.fromRGB(238, 148, 28)
 local INK = Color3.fromRGB(52, 28, 2)
 local RED = Color3.fromRGB(232, 52, 52)
-local FONT_H = Font.fromId(12187365977, Enum.FontWeight.Heavy)
+local FONT_H = Font.fromEnum(Enum.Font.GothamBlack)
 
 local function new(class: string, props: { [string]: any }, parent: Instance?): any
 	local i = Instance.new(class)
@@ -116,20 +116,41 @@ function ShopSlot._build(self)
 	}, ground)
 	-- the two pictures it crossfades between, and its shield when there is nothing left to get
 	self._pics = {}
+	self._pic_glyphs = {}
 	for i = 1, 2 do
-		self._pics[i] = new("ImageLabel", {
+		local pic = new("ImageLabel", {
 			Name = "Item" .. i,
-			BackgroundTransparency = 1,
+			BackgroundColor3 = Color3.fromRGB(237, 207, 133),
+			BackgroundTransparency = 0.12,
+			BorderSizePixel = 0,
 			Image = "",
 			ImageTransparency = 1,
 			ScaleType = Enum.ScaleType.Fit,
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			ZIndex = 3,
 		}, body)
+		new("UICorner", { CornerRadius = UDim.new(0.18, 0) }, pic)
+		new("UIStroke", { Color = INK, Thickness = 1.5, Transparency = 0.2 }, pic)
+		self._pics[i] = pic
+		self._pic_glyphs[i] = new("TextLabel", {
+			Name = "ProceduralGlyph",
+			BackgroundTransparency = 1,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromScale(0.72, 0.72),
+			FontFace = FONT_H,
+			Text = "A",
+			TextColor3 = INK,
+			TextScaled = true,
+			TextTransparency = 1,
+			ZIndex = 4,
+		}, pic)
 	end
 	self._shield = new("ImageLabel", {
 		Name = "Shield",
-		BackgroundTransparency = 1,
+		BackgroundColor3 = Color3.fromRGB(255, 218, 112),
+		BackgroundTransparency = 0,
+		BorderSizePixel = 0,
 		Image = UITheme.icon("arsenal") or "",
 		ImageColor3 = INK,
 		ScaleType = Enum.ScaleType.Fit,
@@ -137,6 +158,20 @@ function ShopSlot._build(self)
 		Visible = false,
 		ZIndex = 3,
 	}, body)
+	new("UICorner", { CornerRadius = UDim.new(0.28, 0) }, self._shield)
+	new("UIStroke", { Color = INK, Thickness = 1.5, Transparency = 0.1 }, self._shield)
+	new("TextLabel", {
+		Name = "ProceduralGlyph",
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromScale(0.72, 0.72),
+		FontFace = FONT_H,
+		Text = "A",
+		TextColor3 = INK,
+		TextScaled = true,
+		ZIndex = 4,
+	}, self._shield)
 	self._cap = new("TextLabel", {
 		Name = "Caption",
 		BackgroundTransparency = 1,
@@ -329,6 +364,14 @@ function ShopSlot._process(self, dt: number)
 		local k = math.clamp((t % ShopSlot.CYCLE_S) / ShopSlot.FADE_S, 0, 1)
 		cur.ImageTransparency = 1 - k
 		prev.ImageTransparency = if n > 1 then k else 1
+		local key_now = self._items[i % n + 1].key
+		local key_before = self._items[(i - 1) % n + 1].key
+		local cur_glyph = self._pic_glyphs[i % 2 + 1]
+		local prev_glyph = self._pic_glyphs[(i + 1) % 2 + 1]
+		cur_glyph.Text = string.upper(string.sub(key_now, 1, 1))
+		prev_glyph.Text = string.upper(string.sub(key_before, 1, 1))
+		cur_glyph.TextTransparency = 1 - k
+		prev_glyph.TextTransparency = if n > 1 then k else 1
 		local bob = math.sin(t * 2.2) * (self._art_h or 30) * 0.03
 		local pop = 0.82 + 0.18 * (1 - (1 - k) ^ 3)
 		local aw, ah = self._art_w or 50, self._art_h or 30

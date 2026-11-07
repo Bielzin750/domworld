@@ -77,9 +77,9 @@ Arsenal.WAIT_S = 30.0
 --- A note under the buttons stays this long.
 Arsenal.NOTE_S = 4.0
 
-local FONT_H = Font.fromId(12187365977, Enum.FontWeight.Heavy)
-local FONT_B = Font.fromId(12187365977, Enum.FontWeight.Bold)
-local FONT_M = Font.fromId(12187365977, Enum.FontWeight.Medium)
+local FONT_H = Font.fromEnum(Enum.Font.GothamBlack)
+local FONT_B = Font.fromEnum(Enum.Font.GothamBold)
+local FONT_M = Font.fromEnum(Enum.Font.GothamMedium)
 local GOLD = Color3.fromRGB(255, 200, 61)
 local GOLD_DARK = Color3.fromRGB(64, 40, 4)
 -- BUY NOW: its face's gradient (top, bottom; brighter under the pointer), its lip, the ink of its price
@@ -99,7 +99,6 @@ local BAR_OFF = Color3.fromRGB(44, 58, 94)
 local BAR_LIP = Color3.fromRGB(28, 38, 64)
 --- the dark a preview's ground fades into
 local NIGHT = Color3.fromRGB(8, 12, 26)
-local ROBUX = "rbxasset://textures/ui/common/robux@3x.png"
 
 local function c3(hex: number): Color3
 	return Color3.fromRGB((hex // 65536) % 256, (hex // 256) % 256, hex % 256)
@@ -395,9 +394,11 @@ function Arsenal._row(self, it: any, order: number, rh: number, u: number): any
 	}, b)
 	new("UICorner", { CornerRadius = UDim.new(0, 8 * u) }, tile)
 	local shot = if type(Art.renders) == "table" then Art.renders[it.key] else nil
-	new("ImageLabel", {
+	local render = new("ImageLabel", {
 		Name = "Render",
-		BackgroundTransparency = 1,
+		BackgroundColor3 = c3(it.color[2]):Lerp(NIGHT, 0.35),
+		BackgroundTransparency = 0.12,
+		BorderSizePixel = 0,
 		Image = if shot ~= nil then shot.id else (UITheme.icon(it.icon) or ""),
 		ScaleType = Enum.ScaleType.Fit,
 		AnchorPoint = Vector2.new(0.5, 0.5),
@@ -405,6 +406,19 @@ function Arsenal._row(self, it: any, order: number, rh: number, u: number): any
 		Size = UDim2.fromScale(0.86, 0.86),
 		ZIndex = 43,
 	}, tile)
+	new("UICorner", { CornerRadius = UDim.new(0.18, 0) }, render)
+	new("UIStroke", { Color = NIGHT, Thickness = 1.25, Transparency = 0.15 }, render)
+	new("TextLabel", {
+		Name = "ProceduralGlyph",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		FontFace = FONT_B,
+		Text = string.upper(string.sub(it.key, 1, 1)),
+		TextColor3 = WHITE,
+		TextScaled = true,
+		Visible = shot == nil or shot.id == "",
+		ZIndex = 44,
+	}, render)
 	-- (a long name shrinks to fit rather than being cut: "Reinforcements" on a phone)
 	local name_fs = math.floor((if compact then 12 else 14) * u)
 	local price_w = (if compact then 52 else 60) * u
@@ -438,8 +452,12 @@ function Arsenal._row(self, it: any, order: number, rh: number, u: number): any
 		Padding = UDim.new(0, 3 * u),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 	}, right)
-	local pic = new("ImageLabel", {
+	local pic = new("TextLabel", {
 		BackgroundTransparency = 1,
+		Text = "S",
+		FontFace = FONT_H,
+		TextColor3 = GOLD,
+		TextScaled = true,
 		Size = UDim2.fromOffset(13 * u, 13 * u),
 		LayoutOrder = 1,
 		ZIndex = 43,
@@ -481,15 +499,15 @@ function Arsenal._refresh_list(self)
 			r.text.TextColor3 = OWNED_GREEN
 		elseif it.stars ~= nil and stars >= it.stars then
 			r.icon.Visible = true
-			r.icon.Image = UITheme.icon("star") or ""
-			r.icon.ImageColor3 = GOLD
+			r.icon.Text = "S"
+			r.icon.TextColor3 = GOLD
 			r.text.Text = Arsenal.short(it.stars)
 			r.text.TextColor3 = GOLD
 		else
 			local price = self:_robux(it)
 			r.icon.Visible = price ~= nil
-			r.icon.Image = ROBUX
-			r.icon.ImageColor3 = WHITE
+			r.icon.Text = "R"
+			r.icon.TextColor3 = WHITE
 			r.text.Text = if price ~= nil then Arsenal.commas(price) else "SOON"
 			r.text.TextColor3 = WHITE
 		end
@@ -575,6 +593,16 @@ function Arsenal._build_detail(self)
 		Size = UDim2.fromOffset(sw, sh),
 		ZIndex = 45,
 	}, root)
+	new("TextLabel", {
+		Name = "ProceduralMark",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		FontFace = FONT_H,
+		Text = string.upper(string.sub(it.key, 1, 1)),
+		TextColor3 = WHITE,
+		TextScaled = true,
+		ZIndex = 46,
+	}, sticker)
 	local flash = new("Frame", {
 		Name = "Flash",
 		BackgroundColor3 = top,
@@ -840,10 +868,13 @@ local function buy_button(
 			Padding = UDim.new(0, 5 * u),
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}, pill)
-		new("ImageLabel", {
+		new("TextLabel", {
 			Name = "Robux",
 			BackgroundTransparency = 1,
-			Image = ROBUX,
+			Text = "R",
+			FontFace = FONT_H,
+			TextColor3 = WHITE,
+			TextScaled = true,
 			Size = UDim2.fromOffset(math.floor((fs + 1) * u), math.floor((fs + 1) * u)),
 			LayoutOrder = 1,
 			ZIndex = 47,
@@ -899,15 +930,31 @@ local function words(row: Instance, text: string, size: number, color: Color3, u
 	}, row)
 end
 
-local function pic(row: Instance, image: string, size: number, color: Color3, u: number, order: number)
-	return new("ImageLabel", {
-		BackgroundTransparency = 1,
+local function pic(row: Instance, image: string, size: number, color: Color3, u: number, order: number, glyph: string)
+	local icon = new("ImageLabel", {
+		BackgroundColor3 = color:Lerp(NIGHT, 0.7),
+		BackgroundTransparency = if image == "" then 0.08 else 1,
+		BorderSizePixel = 0,
 		Image = image,
 		ImageColor3 = color,
 		Size = UDim2.fromOffset(size * u, size * u),
 		LayoutOrder = order,
 		ZIndex = 45,
 	}, row)
+	new("UICorner", { CornerRadius = UDim.new(0.5, 0) }, icon)
+	new("UIStroke", { Color = color, Thickness = 1, Transparency = 0.15 }, icon)
+	new("TextLabel", {
+		Name = "ProceduralGlyph",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		FontFace = FONT_B,
+		Text = glyph,
+		TextColor3 = color,
+		TextScaled = true,
+		Visible = image == "",
+		ZIndex = 46,
+	}, icon)
+	return icon
 end
 
 --- How to get the item shown: OWNED, or BUY NOW with Robux and under it the Stars way.
@@ -931,7 +978,7 @@ function Arsenal._build_cta(self)
 	local y = 0
 	if inv.unlocks[it.key] then
 		local own = button(d.cta, "Owned", y, bh, u, OWNED_GREEN, OWNED_GREEN)
-		pic(own.row, UITheme.icon("check") or "", 18, OWNED_GREEN, u, 1)
+		pic(own.row, UITheme.icon("check") or "", 18, OWNED_GREEN, u, 1, "✓")
 		words(own.row, "OWNED", if compact then 15 else 17, OWNED_GREEN, u, 2, bh)
 		own.button.Active = false
 		y += bh + 8
@@ -963,11 +1010,11 @@ function Arsenal._build_cta(self)
 			words(alt.row, "...", if compact then 12 else 14, col, u, 1, sh)
 		elseif confirm then
 			words(alt.row, "PRESS AGAIN TO SPEND", if compact then 12 else 14, col, u, 1, sh)
-			pic(alt.row, UITheme.icon("star") or "", 15, col, u, 2)
+			pic(alt.row, UITheme.icon("star") or "", 15, col, u, 2, "S")
 			words(alt.row, Arsenal.commas(it.stars), if compact then 12 else 14, col, u, 3, sh)
 		else
 			words(alt.row, "OR UNLOCK WITH", if compact then 12 else 14, col, u, 1, sh)
-			pic(alt.row, UITheme.icon("star") or "", 15, col, u, 2)
+			pic(alt.row, UITheme.icon("star") or "", 15, col, u, 2, "S")
 			words(alt.row, Arsenal.commas(it.stars), if compact then 12 else 14, col, u, 3, sh)
 		end
 		alt.button.Activated:Connect(function()
@@ -1001,7 +1048,7 @@ function Arsenal._build_cta(self)
 			LayoutOrder = 1,
 			ZIndex = 44,
 		}, row)
-		pic(row, UITheme.icon("star") or "", 12, GOLD, u, 2)
+		pic(row, UITheme.icon("star") or "", 12, GOLD, u, 2, "S")
 		new("TextLabel", {
 			BackgroundTransparency = 1,
 			Text = string.format("%s of %s", Arsenal.commas(stars), Arsenal.commas(it.stars)),

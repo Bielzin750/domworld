@@ -1,7 +1,7 @@
 --!nonstrict
 -- The title screen's starter pack button, under the Arsenal and crate buttons, while the starter pack's
--- offer runs (Data/Starter; 2026-10-15: available for a limited time only): a red card with the
--- Mega Nuke's render, STARTER PACK, the regular price struck through
+-- offer runs (Data/Starter; 2026-10-15: available for a limited time only): a red card with an
+-- original geometric rocket, STARTER PACK, the regular price struck through
 -- beside the offer's, ENDS IN and the clock, a red "-76%" sticker on its corner and a light that
 -- crosses it every few seconds. pressed() -> UIRoot opens the offer (StarterOffer). Hidden when there
 -- is no running offer.
@@ -11,16 +11,6 @@ local Signal = UITheme.core("Signal")
 local StarterOffer = require("./StarterOffer")
 
 local IS_ROBLOX = typeof(game) == "Instance"
-local function shared(folder: string, name: string): any
-	if IS_ROBLOX then
-		return require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld")[folder][name]) :: any
-	end
-	return (require :: any)("../../shared/" .. folder .. "/" .. name)
-end
-local Art: any = (function()
-	local ok, m = pcall(shared, "Assets", "ArsenalArt")
-	return if ok and type(m) == "table" then m else {}
-end)()
 local TweenService = if IS_ROBLOX then game:GetService("TweenService") else nil
 
 local StarterButton = W.class(W.Control)
@@ -35,8 +25,7 @@ local GOLD = Color3.fromRGB(255, 200, 61)
 local WHITE = Color3.new(1, 1, 1)
 local PINK = Color3.fromRGB(255, 186, 186)
 local RED = Color3.fromRGB(232, 46, 56)
-local ROBUX = "rbxasset://textures/ui/common/robux@3x.png"
-local FONT_H = Font.fromId(UITheme.FONT_ID, Enum.FontWeight.Heavy)
+local FONT_H = Font.fromEnum(Enum.Font.GothamBlack)
 
 local function new(class: string, props: { [string]: any }, parent: Instance?): any
 	local i = Instance.new(class)
@@ -109,33 +98,79 @@ function StarterButton._build(self)
 		Rotation = 90,
 	}, card)
 	new("UIStroke", { Color = GOLD, Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, card)
-	local crate = UITheme.crate_art()
-	new("ImageLabel", {
+	local glow = new("Frame", {
 		Name = "Glow",
-		BackgroundTransparency = 1,
-		Image = crate.glow or "",
-		ImageColor3 = Color3.fromRGB(255, 190, 120),
-		ImageTransparency = 0.35,
+		BackgroundTransparency = 0.78,
+		BackgroundColor3 = Color3.fromRGB(255, 190, 120),
+		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromOffset(40, 42),
 		Size = UDim2.fromOffset(96, 90),
 		ZIndex = 3,
 	}, card)
-	local r = (Art.renders or {}).mega
-	local iw, ih = 56, 70
-	if type(r) == "table" and r.w and r.h then
-		local k = math.min(64 / r.w, 70 / r.h)
-		iw, ih = r.w * k, r.h * k
-	end
-	self._art = new("ImageLabel", {
+	new("UICorner", { CornerRadius = UDim.new(0.5, 0) }, glow)
+	new("UIStroke", { Color = GOLD, Thickness = 2, Transparency = 0.5 }, glow)
+	self._art = new("Frame", {
 		Name = "Art",
 		BackgroundTransparency = 1,
-		Image = if type(r) == "table" then r.id else "",
+		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromOffset(40, 42),
-		Size = UDim2.fromOffset(iw, ih),
+		Size = UDim2.fromOffset(60, 72),
 		ZIndex = 4,
 	}, card)
+	-- A small original rocket, made from UI shapes, marks the limited starter pack.
+	local body = new("Frame", {
+		Name = "RocketBody",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.54),
+		Size = UDim2.fromScale(0.34, 0.62),
+		BackgroundColor3 = Color3.fromRGB(226, 236, 255),
+		BorderSizePixel = 0,
+		ZIndex = 4,
+	}, self._art)
+	new("UICorner", { CornerRadius = UDim.new(0.5, 0) }, body)
+	new("UIStroke", { Color = Color3.fromRGB(34, 48, 92), Thickness = 1.5 }, body)
+	new("Frame", {
+		Name = "RocketNose",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.2),
+		Size = UDim2.fromScale(0.29, 0.19),
+		Rotation = 45,
+		BackgroundColor3 = GOLD,
+		BorderSizePixel = 0,
+		ZIndex = 5,
+	}, self._art)
+	new("Frame", {
+		Name = "FinLeft",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.29, 0.72),
+		Size = UDim2.fromScale(0.24, 0.16),
+		Rotation = -22,
+		BackgroundColor3 = Color3.fromRGB(255, 142, 78),
+		BorderSizePixel = 0,
+		ZIndex = 5,
+	}, self._art)
+	new("Frame", {
+		Name = "FinRight",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.71, 0.72),
+		Size = UDim2.fromScale(0.24, 0.16),
+		Rotation = 22,
+		BackgroundColor3 = Color3.fromRGB(255, 142, 78),
+		BorderSizePixel = 0,
+		ZIndex = 5,
+	}, self._art)
+	local flame = new("Frame", {
+		Name = "Flame",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.fromScale(0.5, 0.79),
+		Size = UDim2.fromScale(0.14, 0.2),
+		BackgroundColor3 = GOLD,
+		BorderSizePixel = 0,
+		ZIndex = 3,
+	}, self._art)
+	new("UICorner", { CornerRadius = UDim.new(0.5, 0) }, flame)
 	text(card, {
 		Text = "STARTER PACK",
 		TextSize = 17,
@@ -173,10 +208,12 @@ function StarterButton._build(self)
 		Size = UDim2.new(1, 4, 0, 2),
 		ZIndex = 6,
 	}, self._was)
-	new("ImageLabel", {
+	new("TextLabel", {
 		BackgroundTransparency = 1,
-		Image = ROBUX,
-		ImageColor3 = GOLD,
+		Text = "R",
+		FontFace = FONT_H,
+		TextColor3 = GOLD,
+		TextScaled = true,
 		Size = UDim2.fromOffset(18, 18),
 		LayoutOrder = 2,
 		ZIndex = 5,

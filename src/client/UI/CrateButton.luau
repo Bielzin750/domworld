@@ -34,7 +34,7 @@ CrateButton.WAITING_WIGGLE_S = 1.2
 
 local GOLD = Color3.fromRGB(255, 190, 72)
 local GOLD_LIGHT = Color3.fromRGB(255, 226, 150)
-local FONT_B = Font.fromId(12187365977, Enum.FontWeight.Heavy)
+local FONT_B = Font.fromEnum(Enum.Font.GothamBlack)
 
 local function new(class: string, props: { [string]: any }, parent: Instance?): any
 	local i = Instance.new(class)
@@ -83,14 +83,27 @@ function CrateButton._build(self)
 		ZIndex = 1,
 	}, root)
 	self._body_scale = new("UIScale", {}, body)
-	local function img(name: string, image: string?, z: number, props: any?): ImageLabel
+	local function img(name: string, _image: string?, z: number, props: any?): Frame
 		local p = props or {}
-		p.Name = name
-		p.BackgroundTransparency = 1
-		p.Image = image or ""
-		p.AnchorPoint = p.AnchorPoint or Vector2.new(0.5, 0.5)
-		p.ZIndex = z
-		return new("ImageLabel", p, body)
+		local f = new("Frame", {
+			Name = name,
+			BackgroundColor3 = p.ImageColor3 or GOLD,
+			BackgroundTransparency = p.ImageTransparency or 0,
+			BorderSizePixel = 0,
+			AnchorPoint = p.AnchorPoint or Vector2.new(0.5, 0.5),
+			ZIndex = z,
+		}, body)
+		new("UICorner", { CornerRadius = UDim.new(0.5, 0) }, f)
+		new("UIGradient", {
+			Rotation = if name == "Rays" then 0 else 35,
+			Color = ColorSequence.new(Color3.fromRGB(255, 226, 145), Color3.fromRGB(255, 156, 57)),
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0.3),
+				NumberSequenceKeypoint.new(0.5, 0.82),
+				NumberSequenceKeypoint.new(1, 0.3),
+			}),
+		}, f)
+		return f
 	end
 	-- (the chest square is the top of the button; the pill overlaps its bottom)
 	self._rays = img("Rays", art.rays, 1, { ImageColor3 = GOLD, ImageTransparency = 0.82 })
@@ -168,9 +181,12 @@ function CrateButton._build(self)
 		Padding = UDim.new(0, 2),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 	}, brow)
-	self._badge_icon = new("ImageLabel", {
+	self._badge_icon = new("TextLabel", {
 		BackgroundTransparency = 1,
-		Image = "rbxasset://textures/ui/common/robux@3x.png",
+		Text = "R",
+		Font = Enum.Font.GothamBlack,
+		TextColor3 = Color3.new(1, 1, 1),
+		TextScaled = true,
 		LayoutOrder = 1,
 		ZIndex = 9,
 	}, brow)
@@ -344,15 +360,15 @@ function CrateButton._process(self, dt: number)
 	local seam = ChestView.project(P, ChestView.v3(ChestView.Model.seam), s)
 	self._leak.Position = UDim2.fromOffset(s * 0.5 + seam.X, self._cy + seam.Y)
 	self._leak.Size = UDim2.fromOffset(s * 0.7, s * 0.2)
-	self._leak.ImageTransparency = 1 - crack * 0.75
+	self._leak.BackgroundTransparency = 1 - crack * 0.75
 	local pulse = 0.5 + 0.5 * math.sin(t * 3.2)
-	self._glow.ImageTransparency = (if calm then 0.72 else 0.55) - 0.12 * pulse
+	self._glow.BackgroundTransparency = (if calm then 0.72 else 0.55) - 0.12 * pulse
 	self._rays.Rotation = (self._rays.Rotation + dt * 14) % 360
 	-- a twinkle or two around the chest
 	for _, sp in self._sparks do
 		sp.t += dt
 		if calm then
-			sp.img.ImageTransparency = 1
+			sp.img.BackgroundTransparency = 1
 		elseif sp.t >= 0 then
 			if not sp.placed then
 				sp.placed = true
@@ -363,10 +379,10 @@ function CrateButton._process(self, dt: number)
 			if k >= 1 then
 				sp.t = -(0.4 + math.random() * 1.4)
 				sp.placed = false
-				sp.img.ImageTransparency = 1
+				sp.img.BackgroundTransparency = 1
 			else
 				local v = math.sin(k * math.pi)
-				sp.img.ImageTransparency = 1 - v * 0.9
+				sp.img.BackgroundTransparency = 1 - v * 0.9
 				sp.img.Rotation = k * 90
 				sp.img.Size = UDim2.fromOffset(s * 0.1 * (0.5 + v * 0.5), s * 0.1 * (0.5 + v * 0.5))
 			end

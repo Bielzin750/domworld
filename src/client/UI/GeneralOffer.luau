@@ -10,7 +10,7 @@ local UITheme = require("./UITheme")
 local W = require("./Widgets")
 local GlassPanel = require("./GlassPanel")
 local UICtx = require("./UICtx")
-local Locker = require("./Locker")
+local SkinVisual = require("./SkinVisual")
 local Signal = UITheme.core("Signal")
 
 local IS_ROBLOX = typeof(game) == "Instance"
@@ -108,12 +108,18 @@ function GeneralOffer._build(self)
 	sw:set_min_size(Vector2.new(24, 24))
 	sw:set_mouse_filter(W.MOUSE_IGNORE)
 	if IS_ROBLOX then
-		local img = Instance.new("ImageLabel")
-		img.BackgroundTransparency = 1
+		local img = Instance.new("Frame")
+		img.Name = "MonthlySkinPreview"
+		img.BackgroundColor3 = Color3.fromRGB(37, 51, 80)
+		img.BorderSizePixel = 0
 		img.Size = UDim2.fromScale(1, 1)
 		local corner = Instance.new("UICorner")
 		corner.CornerRadius = UDim.new(0, 6)
 		corner.Parent = img
+		local edge = Instance.new("UIStroke")
+		edge.Color = UITheme.GOLD
+		edge.Thickness = 1
+		edge.Parent = img
 		img.Parent = sw.gui
 		self._skin_img = img
 	end
@@ -146,41 +152,62 @@ function GeneralOffer._build_insignia(self): any
 	if not IS_ROBLOX then
 		return c
 	end
-	local art = UITheme.crate_art()
-	local function img(props: { [string]: any }): ImageLabel
-		local i = Instance.new("ImageLabel")
-		i.BackgroundTransparency = 1
+	local function shape(name: string, props: { [string]: any }, parent: Instance?): Frame
+		local i = Instance.new("Frame")
+		i.Name = name
+		i.BackgroundTransparency = props.BackgroundTransparency or 0
+		i.BackgroundColor3 = props.BackgroundColor3 or UITheme.GOLD
+		i.BorderSizePixel = 0
 		i.AnchorPoint = Vector2.new(0.5, 0.5)
-		i.ScaleType = Enum.ScaleType.Fit
 		for k, val in props do
-			(i :: any)[k] = val
+			if k ~= "BackgroundColor3" and k ~= "BackgroundTransparency" then
+				(i :: any)[k] = val
+			end
 		end
-		i.Parent = c.gui
+		i.Parent = parent or c.gui
 		return i
 	end
-	self._rays = img({
-		Image = art.rays or "",
-		ImageColor3 = UITheme.GOLD,
-		ImageTransparency = 0.75,
+	self._rays = shape("Sunburst", {
+		BackgroundTransparency = 1,
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromScale(1.0, 1.6),
 	})
-	img({
-		Image = art.glow or "",
-		ImageColor3 = Color3.fromRGB(255, 196, 90),
-		ImageTransparency = 0.5,
+	for i = 1, 12 do
+		shape("Ray" .. i, {
+			BackgroundTransparency = 0.62,
+			BackgroundColor3 = UITheme.GOLD,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromScale(0.035, 0.92),
+			Rotation = (i - 1) * 15,
+		}, self._rays)
+	end
+	local glow = shape("Glow", {
+		BackgroundTransparency = 0.72,
+		BackgroundColor3 = Color3.fromRGB(255, 196, 90),
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromScale(0.7, 1.1),
 	})
-	local star = UITheme.icon("star") or ""
+	local glow_corner = Instance.new("UICorner")
+	glow_corner.CornerRadius = UDim.new(0.5, 0)
+	glow_corner.Parent = glow
+	local glow_edge = Instance.new("UIStroke")
+	glow_edge.Color = UITheme.GOLD
+	glow_edge.Transparency = 0.4
+	glow_edge.Thickness = 2
+	glow_edge.Parent = glow
 	for _, st in { { 0.27, 0.6, 0.32, -12 }, { 0.73, 0.6, 0.32, 12 }, { 0.5, 0.45, 0.62, 0 } } do
-		img({
-			Image = star,
-			ImageColor3 = UITheme.GOLD,
+		local star = shape("GeneralStar", {
+			BackgroundColor3 = UITheme.GOLD,
 			Position = UDim2.fromScale(st[1], st[2]),
-			Size = UDim2.fromScale(st[3] * 0.62, st[3]),
+			Size = UDim2.fromScale(st[3] * 0.48, st[3] * 0.48),
 			Rotation = st[4],
 		})
+		star.AnchorPoint = Vector2.new(0.5, 0.5)
+		star.Rotation += 45
+		local star_corner = Instance.new("UICorner")
+		star_corner.CornerRadius = UDim.new(0.1, 0)
+		star_corner.Parent = star
 	end
 	return c
 end
@@ -287,7 +314,7 @@ function GeneralOffer.refresh(self)
 		(if skin ~= nil then skin.name .. ". " else "") .. "A new one every month, yours to keep."
 	)
 	if self._skin_img ~= nil and skin ~= nil then
-		Locker.show_item(self._skin_img, skin)
+		SkinVisual.apply(self._skin_img, skin)
 	end
 	local on = self:subscribed()
 	local p = self._cost

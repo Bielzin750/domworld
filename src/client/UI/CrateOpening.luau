@@ -1,9 +1,5 @@
 --!nonstrict
--- Opening a cosmetic crate: a Clash Royale-style show around a 3D chest (2026-09-29: the first version
--- of opening a crate was not satisfying at all, and it should be super fun; the show was then made
--- 3D, around a ready-made voxel chest).
--- The chest is BedWars' voxel block chest (Assets/CrateModel) in a
--- ViewportFrame; the choreography follows Tribes' drop reveal (the same studio's game).
+-- Opening a cosmetic crate: an original 3D chest and geometric UI effects, built from Roblox primitives.
 --   land    the screen dims; the chest falls in stretched past air streaks, lands with a squash, dust,
 --           a floor ring and a shake; the title slams in;
 --   idle    it bobs; every WIGGLE_EVERY_S it wiggles with a rattle, the lid cracks and light leaks out;
@@ -26,6 +22,8 @@
 local UITheme = require("./UITheme")
 local W = require("./Widgets")
 local ChestView = require("./ChestView")
+local FlagVisual = require("./FlagVisual")
+local SkinVisual = require("./SkinVisual")
 local Signal = UITheme.core("Signal")
 
 local IS_ROBLOX = typeof(game) == "Instance"
@@ -59,8 +57,8 @@ local GOLD = Color3.fromRGB(255, 190, 72)
 local GOLD_LIGHT = Color3.fromRGB(255, 226, 150)
 local AMBIENT = ChestView.AMBIENT
 
-local FONT_B = Font.fromId(12187365977, Enum.FontWeight.Heavy)
-local FONT_M = Font.fromId(12187365977, Enum.FontWeight.Bold)
+local FONT_B = Font.fromEnum(Enum.Font.GothamBlack)
+local FONT_M = Font.fromEnum(Enum.Font.GothamBold)
 
 local function c3(hex: number): Color3
 	return Color3.fromRGB((hex // 65536) % 256, (hex // 256) % 256, hex % 256)
@@ -130,6 +128,7 @@ function CrateOpening.new(c: any)
 	self._phase = "off"
 	self._item = nil
 	self._particles = {}
+	self._art_fallbacks = {}
 	self._anims = {}
 	-- the chest pose: y (studs), yaw / roll / pitch (radians), sq (squash, + = flat), s (scale), lid
 	-- (degrees); hy (the viewport's centre below the stage centre, in S), hs (its scale)
@@ -168,7 +167,50 @@ function CrateOpening._build(self)
 		p.ImageTransparency = if p.ImageTransparency ~= nil then p.ImageTransparency else 1
 		p.AnchorPoint = p.AnchorPoint or Vector2.new(0.5, 0.5)
 		p.ZIndex = z
-		return new("ImageLabel", p, parent or stage)
+		local image_label = new("ImageLabel", p, parent or stage)
+		local fallback = new("Frame", {
+			Name = "Procedural" .. name,
+			BackgroundTransparency = 1,
+			BackgroundColor3 = p.ImageColor3 or GOLD,
+			BorderSizePixel = 0,
+			Size = UDim2.fromScale(1, 1),
+			ZIndex = z + 1,
+		}, image_label)
+		local tag = string.lower(name)
+		if string.find(tag, "ray", 1, true) then
+			for n = 1, 12 do
+				new("Frame", {
+					Name = "Ray" .. n,
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.fromScale(0.5, 0.5),
+					Size = UDim2.fromScale(0.035, 0.94),
+					Rotation = (n - 1) * 15,
+					BackgroundColor3 = p.ImageColor3 or GOLD,
+					BackgroundTransparency = 0.4,
+					BorderSizePixel = 0,
+					ZIndex = z + 2,
+				}, fallback)
+			end
+		elseif string.find(tag, "ring", 1, true) then
+			fallback.BackgroundTransparency = 1
+			local edge = new("UIStroke", { Color = p.ImageColor3 or GOLD, Thickness = 3 }, fallback)
+			new("UICorner", { CornerRadius = UDim.new(0.5, 0) }, fallback)
+			table.insert(self._art_fallbacks, { image = image_label, frame = fallback, stroke = edge })
+			return image_label
+		elseif string.find(tag, "beam", 1, true) then
+			new("UIGradient", {
+				Rotation = 90,
+				Transparency = NumberSequence.new({
+					NumberSequenceKeypoint.new(0, 0.9),
+					NumberSequenceKeypoint.new(0.5, 0.25),
+					NumberSequenceKeypoint.new(1, 0.9),
+				}),
+			}, fallback)
+		else
+			new("UICorner", { CornerRadius = UDim.new(0.5, 0) }, fallback)
+		end
+		table.insert(self._art_fallbacks, { image = image_label, frame = fallback })
+		return image_label
 	end
 	-- the backdrop: a deep blue, nearly opaque (the chest is the only thing on screen)
 	self._dim = new("Frame", {
@@ -254,16 +296,19 @@ function CrateOpening._build(self)
 		Color = ColorSequence.new(Color3.fromRGB(62, 80, 176), Color3.fromRGB(20, 26, 70)),
 		Rotation = 90,
 	}, back)
-	new("ImageLabel", {
+	local logo = new("TextLabel", {
+		Name = "DWMark",
 		BackgroundTransparency = 1,
-		Image = art.icon or "",
-		ImageColor3 = Color3.fromRGB(255, 214, 110),
-		ScaleType = Enum.ScaleType.Fit,
+		Text = "DW",
+		FontFace = Font.fromEnum(Enum.Font.GothamBlack),
+		TextColor3 = Color3.fromRGB(255, 214, 110),
+		TextScaled = true,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromScale(0.55, 0.55),
 		ZIndex = 11,
 	}, back)
+	new("UIStroke", { Color = Color3.fromRGB(31, 44, 68), Thickness = 1.5, Transparency = 0.15 }, logo)
 	self._back = back
 	local front = new("Frame", {
 		Name = "Front",
@@ -1130,9 +1175,9 @@ function CrateOpening._show_item(self, it: any)
 		self.show_item(img, it)
 		return
 	end
+	FlagVisual.apply(img, "", false)
 	img.ImageRectOffset = Vector2.zero
 	img.ImageRectSize = Vector2.zero
-	img.ImageContent = Content.none
 	img.Image = ""
 	if it == nil then
 		return
@@ -1142,12 +1187,9 @@ function CrateOpening._show_item(self, it: any)
 		img.Image = Cosmetics.flag_image(it)
 		img.ImageRectOffset = Vector2.new(it.x, it.y)
 		img.ImageRectSize = Vector2.new(it.w, it.h)
-	elseif self.preview_of ~= nil then
-		img.ResampleMode = Enum.ResamplerMode.Pixelated
-		local ed = self.preview_of(it)
-		if ed ~= nil then
-			img.ImageContent = Content.fromObject(ed)
-		end
+		FlagVisual.apply(img, it.id)
+	else
+		SkinVisual.apply(img, it)
 	end
 end
 
@@ -1417,6 +1459,27 @@ function CrateOpening._step(self, dt: number)
 		self._shake = 0
 		self._stage.Position = UDim2.new()
 	end
+	for _, entry in self._art_fallbacks do
+		local image: ImageLabel = entry.image
+		local frame: Frame = entry.frame
+		if image.Parent ~= nil then
+			frame.Visible = image.Visible
+			frame.BackgroundColor3 = image.ImageColor3
+			if entry.stroke ~= nil then
+				entry.stroke.Color = image.ImageColor3
+				entry.stroke.Transparency = image.ImageTransparency
+				frame.BackgroundTransparency = 1
+			else
+				frame.BackgroundTransparency = image.ImageTransparency
+			end
+			for _, ray in frame:GetChildren() do
+				if ray:IsA("Frame") then
+					ray.BackgroundColor3 = image.ImageColor3
+					ray.BackgroundTransparency = 0.45 + image.ImageTransparency * 0.55
+				end
+			end
+		end
+	end
 end
 
 -- ---------------------------------------------------------------------------------------------
@@ -1460,6 +1523,18 @@ function CrateOpening._emit(self, n: number, o: any)
 			Position = UDim2.fromOffset(x, y),
 			ZIndex = parent.ZIndex,
 		}, parent)
+		local particle_shape = new("Frame", {
+			Name = "ProceduralParticle",
+			BackgroundColor3 = col,
+			BackgroundTransparency = base,
+			BorderSizePixel = 0,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromScale(1, 1),
+			Rotation = if kind == "sparkle" then 45 else 0,
+			ZIndex = parent.ZIndex + 1,
+		}, img)
+		new("UICorner", { CornerRadius = UDim.new(if kind == "dust" then 0.5 else 0.12, 0) }, particle_shape)
 		table.insert(self._particles, {
 			img = img,
 			x = x,
@@ -1506,6 +1581,11 @@ function CrateOpening._step_particles(self, dt: number)
 				img.Size = UDim2.fromOffset(p.w * g, p.h * g)
 			end
 			img.ImageTransparency = p.base + (1 - p.base) * k * k
+			local visual = img:FindFirstChild("ProceduralParticle") :: Frame?
+			if visual ~= nil then
+				visual.BackgroundTransparency = img.ImageTransparency
+				visual.BackgroundColor3 = img.ImageColor3
+			end
 		end
 	end
 end

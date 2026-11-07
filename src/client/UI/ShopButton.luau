@@ -7,6 +7,7 @@
 -- on sale here (FlagShop.on_sale).
 local UITheme = require("./UITheme")
 local W = require("./Widgets")
+local FlagVisual = require("./FlagVisual")
 local Signal = UITheme.core("Signal")
 local FlagShop = require("./FlagShop")
 
@@ -32,7 +33,7 @@ ShopButton.TURN_S = 2.6
 local WHITE = Color3.new(1, 1, 1)
 local PUMPKIN = Color3.fromRGB(255, 160, 60)
 local LILAC = Color3.fromRGB(214, 196, 255)
-local FONT_H = Font.fromId(UITheme.FONT_ID, Enum.FontWeight.Heavy)
+local FONT_H = Font.fromEnum(Enum.Font.GothamBlack)
 
 local function new(class: string, props: { [string]: any }, parent: Instance?): any
 	local i = Instance.new(class)
@@ -237,12 +238,14 @@ function ShopButton._show_flag(self)
 	local it = if key ~= nil then Cosmetics.item(Shop.item_id(key)) else nil
 	if it == nil then
 		self._flag.Image = ""
+		FlagVisual.apply(self._flag, "", false)
 		return
 	end
 	local image, x, y, w, h = Cosmetics.flag_big(it)
 	self._flag.Image = image
 	self._flag.ImageRectOffset = Vector2.new(x, y)
 	self._flag.ImageRectSize = Vector2.new(w, h)
+	FlagVisual.apply(self._flag, it.id)
 end
 
 function ShopButton._process(self, dt: number)

@@ -1,7 +1,7 @@
 --!nonstrict
 -- The starter pack's offer (Data/Starter; 2026-10-15: the starter pack at 39 Robux, on sale for a
 -- limited time only). A window over the title: LIMITED-TIME OFFER,
--- STARTER PACK, the three items it unlocks (their shop renders on a glow of their colour, name and one
+-- STARTER PACK, the three items it unlocks (their geometric marks on a glow of their colour, name and one
 -- line), the regular price struck through beside the offer's with a red "-76%" sticker (both Roblox's
 -- live prices: the discount is always the real one), ENDS IN 47:59:12 counting down, "Then it's gone for
 -- good." (the pack goes, not just its price), BUY NOW and NOT NOW.
@@ -51,10 +51,9 @@ local INK = Color3.fromRGB(52, 28, 2)
 local WHITE = Color3.new(1, 1, 1)
 local MUTED = Color3.fromRGB(168, 182, 214)
 local NIGHT = Color3.fromRGB(8, 12, 26)
-local ROBUX = "rbxasset://textures/ui/common/robux@3x.png"
-local FONT_H = Font.fromId(UITheme.FONT_ID, Enum.FontWeight.Heavy)
-local FONT_B = Font.fromId(UITheme.FONT_ID, Enum.FontWeight.Bold)
-local FONT_M = Font.fromId(UITheme.FONT_ID, Enum.FontWeight.Medium)
+local FONT_H = Font.fromEnum(Enum.Font.GothamBlack)
+local FONT_B = Font.fromEnum(Enum.Font.GothamBold)
+local FONT_M = Font.fromEnum(Enum.Font.GothamMedium)
 
 local function new(class: string, props: { [string]: any }, parent: Instance?): any
 	local i = Instance.new(class)
@@ -181,20 +180,29 @@ function StarterOffer._build(self)
 	}, win)
 	self._scale = new("UIScale", {}, win)
 	self._win = win
-	local crate = UITheme.crate_art()
 	-- behind the items: a warm sunburst
-	self._rays = new("ImageLabel", {
+	self._rays = new("Frame", {
 		Name = "Rays",
 		BackgroundTransparency = 1,
-		Image = crate.rays or "",
-		ImageColor3 = Color3.fromRGB(255, 120, 60),
-		ImageTransparency = 0.86,
+		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromOffset(212, 214),
 		Size = UDim2.fromOffset(520, 520),
 		ZIndex = 61,
 	}, win)
-	new("UICorner", { CornerRadius = UDim.new(0, 18) }, self._rays)
+	for i = 1, 18 do
+		new("Frame", {
+			Name = "Ray" .. i,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromOffset(5, 360),
+			Rotation = (i - 1) * 10,
+			BackgroundColor3 = Color3.fromRGB(255, 120, 60),
+			BackgroundTransparency = 0.9,
+			BorderSizePixel = 0,
+			ZIndex = 61,
+		}, self._rays)
+	end
 	-- head
 	local tag = new("Frame", {
 		Name = "Tag",
@@ -286,10 +294,12 @@ function StarterOffer._build(self)
 		Padding = UDim.new(0, 4),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 	}, was)
-	new("ImageLabel", {
+	new("TextLabel", {
 		BackgroundTransparency = 1,
-		Image = ROBUX,
-		ImageColor3 = MUTED,
+		Text = "R",
+		FontFace = FONT_H,
+		TextColor3 = MUTED,
+		TextScaled = true,
 		Size = UDim2.fromOffset(18, 18),
 		LayoutOrder = 1,
 		ZIndex = 63,
@@ -330,10 +340,12 @@ function StarterOffer._build(self)
 		Padding = UDim.new(0, 6),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 	}, now)
-	new("ImageLabel", {
+	new("TextLabel", {
 		BackgroundTransparency = 1,
-		Image = ROBUX,
-		ImageColor3 = GOLD,
+		Text = "R",
+		FontFace = FONT_H,
+		TextColor3 = GOLD,
+		TextScaled = true,
 		Size = UDim2.fromOffset(38, 38),
 		LayoutOrder = 1,
 		ZIndex = 63,
@@ -494,18 +506,18 @@ function StarterOffer._tile(_self, win: Instance, it: any, x: number, y: number)
 		tile
 	)
 	new("UIStroke", { Color = top:Lerp(WHITE, 0.4), Thickness = 1.5, Transparency = 0.45 }, tile)
-	local crate = UITheme.crate_art()
-	new("ImageLabel", {
+	local glow = new("Frame", {
 		Name = "Glow",
-		BackgroundTransparency = 1,
-		Image = crate.glow or "",
-		ImageColor3 = top:Lerp(WHITE, 0.25),
-		ImageTransparency = 0.25,
+		BackgroundTransparency = 0.83,
+		BackgroundColor3 = top:Lerp(WHITE, 0.25),
+		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromOffset(W_ / 2, 66),
 		Size = UDim2.fromOffset(140, 130),
 		ZIndex = 62,
 	}, tile)
+	new("UICorner", { CornerRadius = UDim.new(0.5, 0) }, glow)
+	new("UIStroke", { Color = top, Thickness = 2, Transparency = 0.6 }, glow)
 	local r = (Art.renders or {})[it.key]
 	local bw, bh = 104, 112
 	local iw, ih = bw, bh
@@ -513,16 +525,39 @@ function StarterOffer._tile(_self, win: Instance, it: any, x: number, y: number)
 		local k = math.min(bw / r.w, bh / r.h)
 		iw, ih = r.w * k, r.h * k
 	end
-	local art = new("ImageLabel", {
+	local art = new("Frame", {
 		Name = "Art",
 		BackgroundTransparency = 1,
-		Image = if type(r) == "table" then r.id else "",
-		ScaleType = Enum.ScaleType.Fit,
+		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromOffset(W_ / 2, 66),
 		Size = UDim2.fromOffset(iw, ih),
 		ZIndex = 63,
 	}, tile)
+	local ring = new("Frame", {
+		Name = "TargetRing",
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromScale(0.74, 0.74),
+		ZIndex = 63,
+	}, art)
+	new("UICorner", { CornerRadius = UDim.new(0.5, 0) }, ring)
+	local ring_stroke = new("UIStroke", { Color = top:Lerp(WHITE, 0.35), Thickness = 2, Transparency = 0.24 }, ring)
+	local glyph = if it.key == "stars2x" or it.key == "reload2x" then "2X" else string.upper(string.sub(it.key, 1, 1))
+	local mark = text(art, {
+		Text = glyph,
+		FontFace = FONT_H,
+		TextSize = if #glyph > 1 then 40 else 58,
+		TextColor3 = WHITE,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextYAlignment = Enum.TextYAlignment.Center,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromScale(0.9, 0.9),
+		ZIndex = 64,
+	})
+	new("UIStroke", { Color = top:Lerp(NIGHT, 0.7), Thickness = 2, Transparency = 0.12 }, mark)
 	text(tile, {
 		Text = it.title,
 		FontFace = FONT_H,
@@ -561,7 +596,16 @@ function StarterOffer._tile(_self, win: Instance, it: any, x: number, y: number)
 		Size = UDim2.fromScale(1, 1),
 		ZIndex = 65,
 	})
-	return { tile = tile, art = art, line = line, owned = owned, it = it, y = 66 }
+	return {
+		tile = tile,
+		art = art,
+		mark = mark,
+		ring_stroke = ring_stroke,
+		line = line,
+		owned = owned,
+		it = it,
+		y = 66,
+	}
 end
 
 function StarterOffer.bind(self, s: any)
@@ -638,7 +682,8 @@ function StarterOffer.refresh(self)
 	for key, t in self._tiles do
 		local have = inv ~= nil and inv.unlocks ~= nil and inv.unlocks[key] == true
 		t.owned.Visible = have
-		t.art.ImageTransparency = if have then 0.35 else 0
+		t.mark.TextTransparency = if have then 0.35 else 0
+		t.ring_stroke.Transparency = if have then 0.55 else 0.24
 		if have then
 			t.line.Text = "Owned already: you get its price in Stars"
 		else

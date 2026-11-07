@@ -3,17 +3,12 @@
 -- match, over and over (2026-10-12: the shop shows gameplay, as too few players were using it).
 -- The scene is drawn like the
 -- map: the player's land on the left, a nation's on the right with a city, its name and its troops,
--- the structures' plates (Assets/MapSprites, Assets/ArsenalArt). The ground is a piece of a real map
--- drawn the way a match draws it (Assets/ArsenalMaps: terrain, rivers and coasts, the territories
--- blended over them with their borders, a pixel a tile; 2026-10-24: a real map in place of
--- the solid background colours, which looked bad). Flat colours stand in without it.
+-- the structures' plates drawn with rounded Frames and text. The ground comes from a generated map
+-- cell when available; without a DomWorld map upload, procedural territory shapes and flat colours
+-- stand in.
 --
--- What flies and what blows up is drawn art (the same day: real graphics in place of the pixel
--- circles, so that nukes and the other items look better): the shop
--- cards' own renders for the missiles and the bomber (Assets/ArsenalArt.renders), and effects drawn by
--- tools/assets/make_arsenal_fx.py (Assets/ArsenalFx): a fireball flipbook, a mushroom cloud, smoke
--- trails, shockwaves, scorch marks, a beam, tracers, bombs, warheads, a reticle, parachutes. Big hits
--- shake the scene.
+-- What flies and blows up uses geometric markers, coloured rings and text glyphs. Big hits shake the
+-- scene. Original renders and sounds can be added from the DomWorld account later.
 --   mega       the missile arcs from the silo onto the city under a reticle: a white flash, a
 --              shockwave, a mushroom cloud, the city gone, fallout
 --   scatter    the missile splits over the city into five warheads, five fireballs
@@ -35,7 +30,6 @@ local function shared(folder: string, name: string): any
 	end
 	return (require :: any)("../../shared/" .. folder .. "/" .. name)
 end
-local Sprites = shared("Assets", "MapSprites")
 local AA = shared("Assets", "ArsenalArt")
 local FX: any = (function()
 	local ok, m = pcall(shared, "Assets", "ArsenalFx")
@@ -58,8 +52,8 @@ ArsenalDemo.ENEMY = "NORTHMARK"
 ArsenalDemo.ENEMY_TROOPS = 48000
 ArsenalDemo.MY_TROOPS = 18000
 
-local FONT_H = Font.fromId(12187365977, Enum.FontWeight.Heavy)
-local FONT_B = Font.fromId(12187365977, Enum.FontWeight.Bold)
+local FONT_H = Font.fromEnum(Enum.Font.GothamBlack)
+local FONT_B = Font.fromEnum(Enum.Font.GothamBold)
 local WHITE = Color3.new(1, 1, 1)
 local INK = Color3.fromRGB(14, 20, 38)
 --- the player's land and the nation's (the map's pastel territories, each with a darker border)
@@ -131,10 +125,12 @@ function ArsenalDemo.preload()
 	preloaded = true
 	local labels = {}
 	local function add(id: string)
-		table.insert(labels, new("ImageLabel", { Image = id }))
+		if id ~= "" then
+			table.insert(labels, new("ImageLabel", { Image = id }))
+		end
 	end
 	for _, v in FX do
-		if type(v) == "table" and type(v.id) == "string" then
+		if type(v) == "table" and type(v.id) == "string" and v.id ~= "" then
 			add(v.id)
 		end
 	end
@@ -146,6 +142,9 @@ function ArsenalDemo.preload()
 		if r ~= nil then
 			add(r.id)
 		end
+	end
+	if #labels == 0 then
+		return
 	end
 	task.spawn(function()
 		pcall(function()
@@ -253,36 +252,171 @@ end
 
 --- An image, hidden until a script shows it.
 function ArsenalDemo._img(self, name: string, image: string?, z: number, color: Color3?): ImageLabel
-	return new("ImageLabel", {
+	local g = new("ImageLabel", {
 		Name = name,
-		BackgroundTransparency = 1,
+		BackgroundColor3 = color or Color3.fromRGB(55, 91, 132),
+		BackgroundTransparency = 0.18,
+		BorderSizePixel = 0,
 		Image = image or "",
 		ImageColor3 = color or WHITE,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Visible = false,
 		ZIndex = z,
 	}, self.root)
+	new("UICorner", { CornerRadius = UDim.new(0.18, 0) }, g)
+	new("UIStroke", { Color = Color3.fromRGB(17, 24, 42), Thickness = 1.5, Transparency = 0.15 }, g)
+	new("TextLabel", {
+		Name = "FallbackGlyph",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		FontFace = Font.fromEnum(Enum.Font.GothamBlack),
+		Text = string.upper(string.sub(name, 1, 1)),
+		TextColor3 = WHITE,
+		TextScaled = true,
+		Visible = image == nil or image == "",
+		ZIndex = z + 1,
+	}, g)
+	return g
 end
 
 --- One of the effects (Assets/ArsenalFx), hidden.
 function ArsenalDemo._fx(self, name: string, key: string, z: number, color: Color3?): ImageLabel
 	local f = FX[key]
-	return self:_img(name, if f ~= nil then f.id else "", z, color)
+	local g = self:_img(name, if f ~= nil then f.id else "", z, color)
+	if f == nil then
+		local mark = g:FindFirstChild("FallbackGlyph")
+		if mark ~= nil then
+			mark.Visible = false
+		end
+		local tint = color or Color3.fromRGB(180, 196, 220)
+		local geometry = new("Frame", {
+			Name = "FallbackGeometry",
+			BackgroundTransparency = 1,
+			Size = UDim2.fromScale(1, 1),
+			ZIndex = z + 1,
+		}, g)
+		local function circle(size: number, stroke: boolean)
+			local d = new("Frame", {
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0.5, 0.5),
+				Size = UDim2.fromScale(size, size),
+				BackgroundColor3 = tint,
+				BackgroundTransparency = if stroke then 1 else 0.32,
+				BorderSizePixel = 0,
+				ZIndex = z + 2,
+			}, geometry)
+			new("UICorner", { CornerRadius = UDim.new(0.5, 0) }, d)
+			if stroke then
+				new("UIStroke", { Color = tint, Thickness = 2, Transparency = 0.18 }, d)
+			end
+		end
+		if key == "ring" or key == "reticle" then
+			circle(0.82, true)
+			if key == "reticle" then
+				for axis = 1, 2 do
+					new("Frame", {
+						AnchorPoint = Vector2.new(0.5, 0.5),
+						Position = UDim2.fromScale(0.5, 0.5),
+						Size = if axis == 1 then UDim2.fromScale(0.05, 0.96) else UDim2.fromScale(0.96, 0.05),
+						BackgroundColor3 = tint,
+						BackgroundTransparency = 0.15,
+						BorderSizePixel = 0,
+						ZIndex = z + 2,
+					}, geometry)
+				end
+			end
+		elseif key == "smoke" then
+			for i, offset in { Vector2.new(0.31, 0.57), Vector2.new(0.5, 0.4), Vector2.new(0.68, 0.58) } do
+				local puff = new("Frame", {
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.fromScale(offset.X, offset.Y),
+					Size = UDim2.fromScale(if i == 2 then 0.42 else 0.35, if i == 2 then 0.42 else 0.35),
+					BackgroundColor3 = tint,
+					BackgroundTransparency = 0.32,
+					BorderSizePixel = 0,
+					ZIndex = z + 2,
+				}, geometry)
+				new("UICorner", { CornerRadius = UDim.new(0.5, 0) }, puff)
+			end
+		else
+			circle(0.72, false)
+		end
+		new("UICorner", { CornerRadius = UDim.new(0.5, 0) }, geometry)
+	end
+	return g
 end
 
 --- Shows `g` at (fx, fy), `w` x `h` px, `a` transparent; nil `w` keeps its size.
 function ArsenalDemo._show(self, g: ImageLabel, fx: number, fy: number, w: number?, h: number?, a: number?)
 	g.Visible = true
 	self:_at(g, fx, fy, w, h)
-	g.ImageTransparency = a or 0
+	local alpha = a or 0
+	g.ImageTransparency = alpha
+	g.BackgroundTransparency = alpha
+	local mark = g:FindFirstChild("FallbackGlyph")
+	if mark ~= nil then
+		(mark :: TextLabel).TextTransparency = alpha
+	end
+	for _, child in g:GetDescendants() do
+		if child:IsA("Frame") and child.Name ~= "FallbackGeometry" then
+			local base = child:GetAttribute("FallbackBaseTransparency")
+			if base == nil then
+				base = child.BackgroundTransparency
+				child:SetAttribute("FallbackBaseTransparency", base)
+			end
+			child.BackgroundTransparency = base + (1 - base) * alpha
+		elseif child:IsA("UIStroke") then
+			local base = child:GetAttribute("FallbackBaseStrokeTransparency")
+			if base == nil then
+				base = child.Transparency
+				child:SetAttribute("FallbackBaseStrokeTransparency", base)
+			end
+			child.Transparency = base + (1 - base) * alpha
+		end
+	end
 end
 
 --- A flipbook (ArsenalFx explosion / mushroom), hidden.
 function ArsenalDemo._flip(self, name: string, key: string, z: number): ImageLabel
 	local f = FX[key]
 	local g = self:_img(name, if f ~= nil then f.id else "", z)
-	if f ~= nil then
+	if f ~= nil and f.id ~= "" then
 		g.ImageRectSize = Vector2.new(f.cell, f.cell)
+	else
+		local glyph = g:FindFirstChild("FallbackGlyph")
+		if glyph ~= nil then
+			glyph.Visible = false
+		end
+		local geometry = new("Frame", {
+			Name = "FallbackGeometry",
+			BackgroundTransparency = 1,
+			Size = UDim2.fromScale(1, 1),
+			ZIndex = z + 1,
+		}, g)
+		if key == "mushroom" then
+			new("Frame", {
+				Name = "CloudStem",
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0.5, 0.62),
+				Size = UDim2.fromScale(0.28, 0.55),
+				BackgroundColor3 = Color3.fromRGB(255, 190, 110),
+				BorderSizePixel = 0,
+				ZIndex = z + 2,
+			}, geometry)
+			local cap = new("Frame", {
+				Name = "CloudCap",
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0.5, 0.3),
+				Size = UDim2.fromScale(0.84, 0.44),
+				BackgroundColor3 = Color3.fromRGB(255, 133, 70),
+				BorderSizePixel = 0,
+				ZIndex = z + 3,
+			}, geometry)
+			new("UICorner", { CornerRadius = UDim.new(0.5, 0) }, cap)
+		else
+			new("UICorner", { CornerRadius = UDim.new(0.5, 0) }, geometry)
+			new("UIStroke", { Color = Color3.fromRGB(255, 175, 85), Thickness = 3 }, geometry)
+		end
 	end
 	return g
 end
@@ -299,8 +433,16 @@ function ArsenalDemo._flip_at(
 	a: number?
 )
 	local f = FX[key]
-	if f == nil or k < 0 or k >= 1 then
+	if k < 0 or k >= 1 then
 		g.Visible = false
+		return
+	end
+	if f == nil or f.id == "" then
+		self:_show(g, fx, fy, d, d, a)
+		local geometry = g:FindFirstChild("FallbackGeometry")
+		if geometry ~= nil then
+			geometry.BackgroundTransparency = a or 0
+		end
 		return
 	end
 	local i = math.min(f.frames - 1, math.floor(k * f.frames))
@@ -423,8 +565,8 @@ end
 ---     drew it; the game's other pixelated atlases (the Locker's skins, the map's units) are in no group.
 ---   * Without, it is in the scene and reaches M px past its edges (for the shake).
 function ArsenalDemo._map(self, split: number?): boolean
-	local sc = MAPS and MAPS.scenes[self.key]
-	if sc == nil then
+	local sc = if MAPS ~= nil and type(MAPS.scenes) == "table" then MAPS.scenes[self.key] else nil
+	if sc == nil or MAPS.id == "" then
 		return false
 	end
 	local p = self.parts
@@ -499,40 +641,27 @@ end
 --- A structure's plate (as Map/StructureLayer draws it: the whole shape in the rim's colour, the inset
 --- shape over it in `fill`, the glyph in white), `d` px wide. `col`: the structure kind, counted from
 --- the Arsenal's first (Defs.S_ARTILLERY) when `arsenal`.
-function ArsenalDemo._plate(self, name: string, col: number, arsenal: boolean, fill: Color3, d: number): ImageLabel
-	local shapes, icons = Sprites.shapes, Sprites.icons
+function ArsenalDemo._plate(self, name: string, col: number, arsenal: boolean, fill: Color3, d: number): Frame
 	if arsenal then
 		col += 6
 	end
-	local cell = shapes.cell
-	local plate = new("ImageLabel", {
+	local plate = new("Frame", {
 		Name = name,
-		BackgroundTransparency = 1,
-		Image = shapes.id,
-		ImageRectOffset = Vector2.new(col * cell, 0),
-		ImageRectSize = Vector2.new(cell, cell),
-		ImageColor3 = dark(fill, 0.55),
+		BackgroundColor3 = fill,
+		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Size = UDim2.fromOffset(d, d),
 		ZIndex = 9,
 	}, self.root)
-	new("ImageLabel", {
-		Name = "Fill",
-		BackgroundTransparency = 1,
-		Image = shapes.id,
-		ImageRectOffset = Vector2.new(col * cell, cell),
-		ImageRectSize = Vector2.new(cell, cell),
-		ImageColor3 = fill,
-		Size = UDim2.fromScale(1, 1),
-		ZIndex = 9,
-	}, plate)
-	new("ImageLabel", {
+	new("UICorner", { CornerRadius = UDim.new(if col == 7 then 0.5 else 0.22, 0) }, plate)
+	new("UIStroke", { Color = dark(fill, 0.55), Thickness = 2 }, plate)
+	new("TextLabel", {
 		Name = "Glyph",
 		BackgroundTransparency = 1,
-		Image = icons.id,
-		ImageRectOffset = Vector2.new(col * icons.cell, 0),
-		ImageRectSize = Vector2.new(icons.cell, icons.cell),
-		ImageColor3 = WHITE,
+		Text = ({ "C", "P", "F", "D", "S", "M", "A", "A", "R" })[col + 1] or "A",
+		FontFace = Font.fromEnum(Enum.Font.GothamBlack),
+		TextColor3 = WHITE,
+		TextScaled = true,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromScale(0.62, 0.62),

@@ -16,6 +16,8 @@
 -- Signals: closed.
 local UITheme = require("./UITheme")
 local W = require("./Widgets")
+local FlagVisual = require("./FlagVisual")
+local SkinVisual = require("./SkinVisual")
 local GlassPanel = require("./GlassPanel")
 local ChestView = require("./ChestView")
 local UICtx = require("./UICtx")
@@ -31,15 +33,6 @@ end
 local Cosmetics = shared("Cosmetics")
 local Products = shared("Products")
 local Prices = require("./Prices")
-local SkinPreviews: any = (function()
-	local ok, m = pcall(function()
-		if IS_ROBLOX then
-			return require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Assets.SkinPreviews)
-		end
-		return (require :: any)("../../shared/Assets/SkinPreviews")
-	end)
-	return if ok and type(m) == "table" then m else {}
-end)()
 
 local Locker = W.class(W.Control)
 
@@ -48,85 +41,20 @@ Locker.SKIN_CARD = Vector2.new(116, 128)
 Locker.FLAG_CARD = Vector2.new(104, 96)
 Locker.GRID_SIZE = Vector2.new(560, 430)
 Locker.CRATE_W = 250
---- the colour skins are previewed in (the player's own varies by match)
-Locker.PREVIEW_COLOR = Color3.fromRGB(64, 132, 230)
-Locker.PREVIEW_TILES = 24
 Locker.CREDIT_WAIT_S = 30
 
-local FONT = Font.fromId(12187365977, Enum.FontWeight.Bold)
-local FONT_M = Font.fromId(12187365977, Enum.FontWeight.Medium)
+local FONT = Font.fromEnum(Enum.Font.GothamBold)
+local FONT_M = Font.fromEnum(Enum.Font.GothamMedium)
 
 local function c3(hex: number): Color3
 	return Color3.fromRGB((hex // 65536) % 256, (hex // 256) % 256, hex % 256)
 end
 
--- A skin's preview: its pattern in PREVIEW_COLOR over sand, the way the map draws it
--- (MapSurface: fill alpha 150, secondary Cosmetics.SECONDARY_ALPHA, a darker edge). Cached per skin.
-local previews: { [string]: any } = {}
-local function skin_preview(skin: any): any
-	local cached = previews[skin.id]
-	if cached ~= nil then
-		return cached or nil
-	end
-	if not IS_ROBLOX then
-		return nil
-	end
-	-- (a skin with several colours shows twice the tiles: its pattern is larger, as in the atlas)
-	local n = if skin.colors ~= nil then Locker.PREVIEW_TILES * 2 else Locker.PREVIEW_TILES
-	local ok, img = pcall(function()
-		return game:GetService("AssetService"):CreateEditableImage({ Size = Vector2.new(n, n) })
-	end)
-	if not ok or img == nil then
-		previews[skin.id] = false
-		return nil
-	end
-	local mask, mw, mh = Cosmetics.mask(skin)
-	local c = Locker.PREVIEW_COLOR
-	local r, g, b = c.R, c.G, c.B
-	local sr, sg, sb = Cosmetics.secondary(skin, r, g, b)
-	local tr, tg, tb = 221 / 255, 205 / 255, 160 / 255
-	local a1, a2 = 150 / 255, Cosmetics.SECONDARY_ALPHA / 255
-	local buf = buffer.create(n * n * 4)
-	for y = 0, n - 1 do
-		for x = 0, n - 1 do
-			local cr, cg, cb, a
-			if x == 0 or y == 0 or x == n - 1 or y == n - 1 then
-				cr, cg, cb, a = r * 0.875, g * 0.875, b * 0.875, 1
-			else
-				local mx = bit32.rshift(x, skin.scale or 0) % mw
-				local my = bit32.rshift(y, skin.scale or 0) % mh
-				local k = buffer.readu8(mask, my * mw + mx)
-				local kr, kg, kb
-				if skin.colors ~= nil and k ~= 0 then
-					kr, kg, kb = Cosmetics.color(skin, k)
-				end
-				if kr ~= nil then
-					cr, cg, cb, a = kr, kg :: number, kb :: number, Cosmetics.skin_alpha(skin) / 255
-				elseif k ~= 0 and skin.colors == nil then
-					cr, cg, cb, a = sr, sg, sb, a2
-				else
-					cr, cg, cb, a = r, g, b, a1
-				end
-			end
-			local k = (y * n + x) * 4
-			buffer.writeu8(buf, k, math.floor((tr * (1 - a) + cr * a) * 255 + 0.5))
-			buffer.writeu8(buf, k + 1, math.floor((tg * (1 - a) + cg * a) * 255 + 0.5))
-			buffer.writeu8(buf, k + 2, math.floor((tb * (1 - a) + cb * a) * 255 + 0.5))
-			buffer.writeu8(buf, k + 3, 255)
-		end
-	end
-	local wrote = pcall(function()
-		img:WritePixelsBuffer(Vector2.zero, Vector2.new(n, n), buf)
-	end)
-	previews[skin.id] = if wrote then img else false
-	return if wrote then img else nil
-end
-
---- Show item `it` in ImageLabel `img` (a skin's preview or a flag from its atlas).
+--- Show item `it` in ImageLabel `img` with procedural flags or skin geometry.
 local function show_item(img: ImageLabel, it: any)
+	FlagVisual.apply(img, "", false)
 	img.ImageRectOffset = Vector2.zero
 	img.ImageRectSize = Vector2.zero
-	img.ImageContent = Content.none
 	img.Image = ""
 	if it == nil then
 		return
@@ -136,21 +64,9 @@ local function show_item(img: ImageLabel, it: any)
 		img.Image = Cosmetics.flag_image(it)
 		img.ImageRectOffset = Vector2.new(it.x, it.y)
 		img.ImageRectSize = Vector2.new(it.w, it.h)
+		FlagVisual.apply(img, it.id)
 	else
-		img.ResampleMode = Enum.ResamplerMode.Pixelated
-		-- the uploaded atlas (Assets/SkinPreviews); a runtime EditableImage only without it (phones can
-		-- run out of EditableImage budget: an Epic reveal card came out empty live, 2026-09-29)
-		local cell = SkinPreviews.cells and SkinPreviews.cells[it.id]
-		if cell ~= nil and SkinPreviews.image then
-			img.Image = SkinPreviews.image
-			img.ImageRectOffset = Vector2.new(cell[1], cell[2])
-			img.ImageRectSize = Vector2.new(cell[3], cell[4])
-			return
-		end
-		local ed = skin_preview(it)
-		if ed ~= nil then
-			img.ImageContent = Content.fromObject(ed)
-		end
+		SkinVisual.apply(img, it)
 	end
 end
 Locker.show_item = show_item
@@ -569,7 +485,6 @@ end
 --- The opening show (UIRoot makes it, above the Locker).
 function Locker.set_opening(self, o: any)
 	self.opening = o
-	o.preview_of = skin_preview
 	o.show_item = show_item
 	o.info_of = function()
 		return self:_offer()

@@ -18,7 +18,7 @@ ArsenalButton.PHONE_K = 0.6
 
 local GOLD = Color3.fromRGB(255, 200, 61)
 local GOLD_LIGHT = Color3.fromRGB(255, 232, 160)
-local FONT_B = Font.fromId(12187365977, Enum.FontWeight.Heavy)
+local FONT_B = Font.fromEnum(Enum.Font.GothamBlack)
 
 local function new(class: string, props: { [string]: any }, parent: Instance?): any
 	local i = Instance.new(class)
@@ -71,27 +71,53 @@ function ArsenalButton._build(self)
 		ZIndex = 1,
 	}, root)
 	self._body_scale = new("UIScale", {}, body)
-	local function img(name: string, image: string?, z: number, props: any?): ImageLabel
+	local function img(name: string, _image: string?, z: number, props: any?): Frame
 		local p = props or {}
-		p.Name = name
-		p.BackgroundTransparency = 1
-		p.Image = image or ""
-		p.AnchorPoint = p.AnchorPoint or Vector2.new(0.5, 0.5)
-		p.ZIndex = z
-		return new("ImageLabel", p, body)
+		local f = new("Frame", {
+			Name = name,
+			BackgroundColor3 = p.ImageColor3 or GOLD,
+			BackgroundTransparency = p.ImageTransparency or 0,
+			BorderSizePixel = 0,
+			AnchorPoint = p.AnchorPoint or Vector2.new(0.5, 0.5),
+			ZIndex = z,
+		}, body)
+		new("UICorner", { CornerRadius = UDim.new(0.5, 0) }, f)
+		new("UIGradient", {
+			Rotation = 35,
+			Color = ColorSequence.new(Color3.fromRGB(255, 220, 135), Color3.fromRGB(228, 132, 32)),
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0.25),
+				NumberSequenceKeypoint.new(1, 0.82),
+			}),
+		}, f)
+		return f
 	end
 	self._rays = img("Rays", art.rays, 1, { ImageColor3 = GOLD, ImageTransparency = 0.84 })
 	self._glow = img("Glow", art.glow, 2, { ImageColor3 = GOLD, ImageTransparency = 0.5 })
-	-- the shield: a dark copy under it for depth
-	self._shade =
-		img("Shade", UITheme.icon("arsenal"), 3, { ImageColor3 = Color3.fromRGB(60, 34, 0), ImageTransparency = 0.25 })
-	self._shield = img("Shield", UITheme.icon("arsenal"), 4, { ImageColor3 = GOLD })
-	new(
-		"UIGradient",
-		{ Color = ColorSequence.new(GOLD_LIGHT, Color3.fromRGB(240, 150, 30)), Rotation = 90 },
-		self._shield
-	)
-	self._shield.ImageColor3 = Color3.new(1, 1, 1)
+	self._shade = img("Shade", nil, 3, { ImageColor3 = Color3.fromRGB(60, 34, 0), ImageTransparency = 0.25 })
+	self._shield = new("Frame", {
+		Name = "DWMark",
+		BackgroundColor3 = Color3.fromRGB(255, 210, 116),
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		ZIndex = 4,
+	}, body)
+	new("UICorner", { CornerRadius = UDim.new(0.28, 0) }, self._shield)
+	new("UIStroke", { Color = Color3.fromRGB(255, 244, 212), Thickness = 2 }, self._shield)
+	new("UIGradient", {
+		Color = ColorSequence.new(GOLD_LIGHT, Color3.fromRGB(240, 150, 30)),
+		Rotation = 90,
+	}, self._shield)
+	new("TextLabel", {
+		Name = "Monogram",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		Text = "DW",
+		Font = Enum.Font.GothamBlack,
+		TextScaled = true,
+		TextColor3 = Color3.fromRGB(65, 40, 8),
+		ZIndex = 5,
+	}, self._shield)
 	self._spark = img("Spark", art.sparkle, 5, { ImageColor3 = GOLD_LIGHT, ImageTransparency = 1 })
 	local pill = new(
 		"Frame",
@@ -146,10 +172,12 @@ function ArsenalButton._build(self)
 		Padding = UDim.new(0, 3),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 	}, brow)
-	self._badge_icon = new("ImageLabel", {
+	self._badge_icon = new("TextLabel", {
 		BackgroundTransparency = 1,
-		Image = UITheme.icon("star") or "",
-		ImageColor3 = GOLD,
+		Text = "✦",
+		Font = Enum.Font.GothamBold,
+		TextColor3 = GOLD,
+		TextScaled = true,
 		LayoutOrder = 1,
 		ZIndex = 9,
 	}, brow)
@@ -283,17 +311,17 @@ function ArsenalButton._process(self, dt: number)
 	self._shade.Position = UDim2.fromOffset(s * 0.5, self._cy + bob + s * 0.03)
 	self._shield.Rotation = math.sin(t * 1.3) * 3
 	self._shade.Rotation = self._shield.Rotation
-	self._glow.ImageTransparency = 0.56 - 0.12 * (0.5 + 0.5 * math.sin(t * 3.2))
+	self._glow.BackgroundTransparency = 0.56 - 0.12 * (0.5 + 0.5 * math.sin(t * 3.2))
 	self._rays.Rotation = (self._rays.Rotation - dt * 12) % 360
 	-- a twinkle on the shield now and then
 	local k = (t % 2.6) / 0.9
 	if k < 1 then
 		local v = math.sin(k * math.pi)
-		self._spark.ImageTransparency = 1 - v * 0.9
+		self._spark.BackgroundTransparency = 1 - v * 0.9
 		self._spark.Rotation = k * 90
 		self._spark.Position = UDim2.fromOffset(s * 0.66, self._cy - s * 0.2 + bob)
 	else
-		self._spark.ImageTransparency = 1
+		self._spark.BackgroundTransparency = 1
 	end
 end
 

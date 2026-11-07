@@ -31,8 +31,8 @@ local GOLD_LIGHT = Color3.fromRGB(255, 238, 178)
 local GOLD_DARK = Color3.fromRGB(176, 120, 22)
 local INK = Color3.fromRGB(46, 28, 2)
 local WHITE = Color3.new(1, 1, 1)
-local FONT_H = Font.fromId(UITheme.FONT_ID, Enum.FontWeight.Heavy)
-local FONT_B = Font.fromId(UITheme.FONT_ID, Enum.FontWeight.Bold)
+local FONT_H = Font.fromEnum(Enum.Font.GothamBlack)
+local FONT_B = Font.fromEnum(Enum.Font.GothamBold)
 
 local function new(class: string, props: { [string]: any }, parent: Instance?): any
 	local i = Instance.new(class)
@@ -102,17 +102,18 @@ function GeneralButton._build(self)
 	}, root)
 	self._scale = new("UIScale", {}, body)
 	-- a gold glow behind the card, breathing (_process)
-	self._halo = new("ImageLabel", {
+	self._halo = new("Frame", {
 		Name = "Halo",
-		BackgroundTransparency = 1,
-		Image = UITheme.crate_art().glow or "",
-		ImageColor3 = GOLD,
-		ImageTransparency = 0.7,
+		BackgroundTransparency = 0.82,
+		BackgroundColor3 = GOLD,
+		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromScale(1.45, 2.1),
 		ZIndex = 1,
 	}, body)
+	new("UICorner", { CornerRadius = UDim.new(0.5, 0) }, self._halo)
+	new("UIStroke", { Color = GOLD_LIGHT, Thickness = 2, Transparency = 0.55 }, self._halo)
 	local card = new("Frame", {
 		Name = "Card",
 		BackgroundColor3 = WHITE,
@@ -137,58 +138,77 @@ function GeneralButton._build(self)
 			ColorSequenceKeypoint.new(1, GOLD_DARK),
 		}),
 	}, stroke)
-	-- the insignia: a sunburst, a glow, three stars
-	local art = UITheme.crate_art()
-	self._rays = new("ImageLabel", {
+	-- the insignia: procedural gold rays, a soft disc, three Stars marks
+	self._rays = new("Frame", {
 		Name = "Rays",
 		BackgroundTransparency = 1,
-		Image = art.rays or "",
-		ImageColor3 = GOLD,
-		ImageTransparency = 0.72,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromOffset(42, 41),
 		Size = UDim2.fromOffset(120, 120),
 		ZIndex = 3,
 	}, card)
-	new("ImageLabel", {
+	for i = 1, 8 do
+		new("Frame", {
+			Name = "Ray" .. i,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromScale(0.035, 0.92),
+			Rotation = (i - 1) * 22.5,
+			BackgroundColor3 = GOLD,
+			BackgroundTransparency = 0.72,
+			BorderSizePixel = 0,
+			ZIndex = 3,
+		}, self._rays)
+	end
+	local glow = new("Frame", {
 		Name = "Glow",
-		BackgroundTransparency = 1,
-		Image = art.glow or "",
-		ImageColor3 = Color3.fromRGB(255, 196, 90),
-		ImageTransparency = 0.45,
+		BackgroundColor3 = Color3.fromRGB(255, 196, 90),
+		BackgroundTransparency = 0.78,
+		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromOffset(42, 41),
 		Size = UDim2.fromOffset(92, 84),
 		ZIndex = 3,
 	}, card)
-	local star = UITheme.icon("star") or ""
-	local function star_at(x: number, y: number, px: number, rot: number): ImageLabel
-		return new("ImageLabel", {
+	new("UICorner", { CornerRadius = UDim.new(0.5, 0) }, glow)
+	new("UIStroke", { Color = GOLD_LIGHT, Thickness = 2, Transparency = 0.55 }, glow)
+	local function star_at(x: number, y: number, px: number, rot: number): Frame
+		local mark = new("Frame", {
+			Name = "StarsMark",
 			BackgroundTransparency = 1,
-			Image = star,
-			ImageColor3 = GOLD,
-			ScaleType = Enum.ScaleType.Fit,
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.fromOffset(x, y),
 			Size = UDim2.fromOffset(px, px),
 			Rotation = rot,
 			ZIndex = 4,
 		}, card)
+		new("TextLabel", {
+			BackgroundTransparency = 1,
+			Size = UDim2.fromScale(1, 1),
+			FontFace = FONT_B,
+			Text = "S",
+			TextColor3 = GOLD_LIGHT,
+			TextScaled = true,
+			TextStrokeColor3 = GOLD_DARK,
+			TextStrokeTransparency = 0.2,
+			ZIndex = 5,
+		}, mark)
+		return mark
 	end
 	star_at(19, 47, 22, -12)
 	star_at(65, 47, 22, 12)
 	self._star = star_at(42, 39, 38, 0)
-	self._glint = new("ImageLabel", {
+	self._glint = new("Frame", {
 		Name = "Glint",
+		BackgroundColor3 = WHITE,
 		BackgroundTransparency = 1,
-		Image = art.sparkle or "",
-		ImageColor3 = WHITE,
-		ImageTransparency = 1,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromOffset(52, 26),
 		Size = UDim2.fromOffset(26, 26),
+		Rotation = 45,
 		ZIndex = 5,
 	}, card)
+	new("UICorner", { CornerRadius = UDim.new(0.2, 0) }, self._glint)
 	-- the words
 	text(card, {
 		Text = "DomWorld",
@@ -325,11 +345,11 @@ function GeneralButton._process(self, dt: number)
 	self._rays.Rotation = (t * 12) % 360
 	self._star.Size = UDim2.fromOffset(38 + math.sin(t * 2.2) * 2.5, 38 + math.sin(t * 2.2) * 2.5)
 	self._edge.Rotation = (t * 70) % 360
-	self._halo.ImageTransparency = 0.68 + math.sin(t * 1.8) * 0.12
+	self._halo.BackgroundTransparency = 0.78 + math.sin(t * 1.8) * 0.1
 	self._tab.Rotation = 6 + math.sin(t * 2.4) * 3
 	-- a glint on the big star, briefly, every couple of seconds
 	local g = (t % 2.3) / 2.3
-	self._glint.ImageTransparency = if g < 0.18 then 1 - math.sin(g / 0.18 * math.pi) * 0.9 else 1
+	self._glint.BackgroundTransparency = if g < 0.18 then 1 - math.sin(g / 0.18 * math.pi) * 0.9 else 1
 	self._glint.Rotation = g * 180
 	-- the line under GENERAL: what a General gets, in turn (cross-fading)
 	if not self._on then
