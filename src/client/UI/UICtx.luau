@@ -810,8 +810,7 @@ function UICtx.match_seconds(self: any): number
 	return math.max(0.0, (self:render_tick() - self.play_start_tick) / Defs.TICK_RATE)
 end
 
---- A game admin (server/ServerMain sets AF_Admin on their Player: the owner, or rank 254+ in the
---- owning group): "Replay as new player" shows on production too (2026-10-27).
+--- A game admin (the server sets AF_Admin from AdminConfig; Studio playtests allow every tester).
 function UICtx.admin(_self: any): boolean
 	if not IS_ROBLOX then
 		return false

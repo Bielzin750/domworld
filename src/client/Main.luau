@@ -1,4 +1,5 @@
 --!strict
+-- Modified for DomWorld, 2026 — see git history for details.
 -- Port of scripts/main.gd: the client root. Creates the AudioDirector, the globe (WorldView) and the
 -- interface (UIRoot), wires them to the Session, and owns the top-bar buttons that the original put in
 -- Airship's HUD bar: Music toggle (also key M), Help, Leaderboard, Home → focus your nation (also key
@@ -12,6 +13,7 @@
 local ContextActionService = game:GetService("ContextActionService")
 local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterGui = game:GetService("StarterGui")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -525,6 +527,37 @@ local function watch_activity()
 	UserInputService.InputChanged:Connect(note)
 end
 
+--- Load the admin client module only after the server returns an authorized state.
+local function start_admin_panel(client: Instance)
+	task.spawn(function()
+		local net = ReplicatedStorage:WaitForChild("DomWorldNet", 30)
+		local admin = if net ~= nil then net:WaitForChild("Admin", 10) else nil
+		local get_state = if admin ~= nil then admin:WaitForChild("GetState", 10) else nil
+		local action_remote = if admin ~= nil then admin:WaitForChild("Action", 10) else nil
+		if
+			get_state == nil
+			or not get_state:IsA("RemoteFunction")
+			or action_remote == nil
+			or not action_remote:IsA("RemoteFunction")
+		then
+			return
+		end
+		local ok, state = pcall(function()
+			return (get_state :: RemoteFunction):InvokeServer()
+		end)
+		if not ok or type(state) ~= "table" or state.ok ~= true then
+			return
+		end
+		local panel = optional(client, { "UI", "AdminPanel" })
+		if panel ~= nil and type(panel.new) == "function" then
+			local built, err = pcall(panel.new, state, get_state, action_remote, Main.world)
+			if not built then
+				warn("[DomWorld] AdminPanel.new failed: " .. tostring(err))
+			end
+		end
+	end)
+end
+
 function Main.start()
 	Main.boot.start = os.clock()
 	local player = Players.LocalPlayer
@@ -609,6 +642,7 @@ function Main.start()
 	on_screen_changed(current_screen())
 	Main.boot.ui = os.clock()
 	Main.launch_hooks(player)
+	start_admin_panel(client)
 	-- Dev diagnostics (workspace attribute AF_DIAG; never set in the shipped place).
 	if workspace:GetAttribute("AF_DIAG") == true then
 		local diag = optional(client, { "Dev", "SessionDiag" })
@@ -618,11 +652,10 @@ function Main.start()
 	end
 end
 
--- Owner-only real-client test hook: joining with launchData "autosolo[:lat,lon]" (e.g.
+-- Admin-only real-client test hook: joining with launchData "autosolo[:lat,lon]" (e.g.
 -- roblox://experiences/start?placeId=YOUR_PLACE_ID&launchData=autosolo:48,10) starts a Standard solo
 -- match and picks the unclaimed land nearest to lat/lon, so the published game can be verified on a
 -- real Roblox client without clicking through the title. Ignored for everyone else.
-Main.OWNER_USER_ID = 22641473
 function Main.launch_hooks(player: Player)
 	task.spawn(function()
 		local ld = player:GetAttribute("AF_LaunchData")
@@ -634,7 +667,7 @@ function Main.launch_hooks(player: Player)
 		if type(ld) ~= "string" or string.sub(ld, 1, 8) ~= "autosolo" then
 			return
 		end
-		if player.UserId ~= Main.OWNER_USER_ID and not game:GetService("RunService"):IsStudio() then
+		if player:GetAttribute("AF_Admin") ~= true and not game:GetService("RunService"):IsStudio() then
 			return
 		end
 		local lat, lon = 30.0, 100.0

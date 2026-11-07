@@ -1,11 +1,12 @@
 --!nonstrict
+-- Modified for DomWorld, 2026 — see git history for details.
 -- Territory-map notice (review_code.md R2-3). The globe draws territory colours with Editable
 -- images / meshes; when the device's editable budget is exhausted, or the experience's Mesh / Image
 -- APIs permission is off in a published place, it falls back to the static globe (WorldView
 -- territory_status().state == "unavailable"). Instead of a silent console warning the player gets
 -- this small card: non-blocking (the game keeps running underneath), styled like the Coach tip
--- card, dismissible, hidden again by itself when territories come back. The place owner (Studio, or
--- the account / group that owns the experience) also sees how to enable the APIs.
+-- card, dismissible, hidden again by itself when territories come back. Studio testers and configured
+-- administrators also see how to enable the APIs.
 --
 -- API: GlobeNotice.new(ctx), set_status(status), apply_layout(blockers: { Rect }), card (GlassPanel).
 
@@ -29,8 +30,8 @@ GlobeNotice.TEXT_SHORT = {
 	data = "Map data didn't load, so territory colours can't be drawn. Everything else works.",
 }
 GlobeNotice.OWNER_HINT = {
-	disabled = "Owner: enable \u{201C}Mesh / Image APIs\u{201D} for this experience (Game Settings \u{203A} Security).",
-	memory = "Owner: other Studio windows share this device's editable memory; close some to test.",
+	disabled = "Admin: enable \u{201C}Mesh / Image APIs\u{201D} for this experience (Game Settings \u{203A} Security).",
+	memory = "Admin: other Studio windows share this device's editable memory; close some to test.",
 }
 
 local function in_studio(): boolean
@@ -43,7 +44,7 @@ local function in_studio(): boolean
 	return ok and studio == true
 end
 
--- Studio, or the local player owns the experience (user) / holds the owner rank of its group.
+-- Studio, or an explicitly configured admin, can see the experience configuration hint.
 local function owner_check(done: (boolean) -> ())
 	if not UICtx.IS_ROBLOX then
 		done(false)
@@ -54,16 +55,8 @@ local function owner_check(done: (boolean) -> ())
 		return
 	end
 	task.spawn(function()
-		local owner = false
-		pcall(function()
-			local lp = game:GetService("Players").LocalPlayer
-			if game.CreatorType == Enum.CreatorType.User then
-				owner = lp ~= nil and lp.UserId == game.CreatorId
-			elseif game.CreatorType == Enum.CreatorType.Group then
-				owner = lp ~= nil and lp:GetRankInGroup(game.CreatorId) >= 255
-			end
-		end)
-		done(owner)
+		local lp = game:GetService("Players").LocalPlayer
+		done(lp ~= nil and lp:GetAttribute("AF_Admin") == true)
 	end)
 end
 
