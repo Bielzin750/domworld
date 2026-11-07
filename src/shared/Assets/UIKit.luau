@@ -4,23 +4,23 @@
 -- Modified for DomWorld, 2026 — see git history for details.
 return {
 	shadows = {
-		{ id = "rbxassetid://0", feather = 40, radius = 8, size = 142, slice = 69 }, -- ratio 0.2
-		{ id = "rbxassetid://0", feather = 40, radius = 14, size = 142, slice = 69 }, -- ratio 0.35
-		{ id = "rbxassetid://0", feather = 40, radius = 20, size = 142, slice = 69 }, -- ratio 0.5
-		{ id = "rbxassetid://0", feather = 40, radius = 24, size = 142, slice = 69 }, -- ratio 0.6
-		{ id = "rbxassetid://0", feather = 40, radius = 28, size = 142, slice = 69 }, -- ratio 0.7
-		{ id = "rbxassetid://0", feather = 40, radius = 32, size = 150, slice = 73 }, -- ratio 0.8
-		{ id = "rbxassetid://0", feather = 40, radius = 36, size = 158, slice = 77 }, -- ratio 0.9
-		{ id = "rbxassetid://0", feather = 40, radius = 40, size = 166, slice = 81 }, -- ratio 1.0
-		{ id = "rbxassetid://0", feather = 40, radius = 46, size = 178, slice = 87 }, -- ratio 1.15
-		{ id = "rbxassetid://0", feather = 40, radius = 52, size = 190, slice = 93 }, -- ratio 1.3
-		{ id = "rbxassetid://0", feather = 40, radius = 60, size = 206, slice = 101 }, -- ratio 1.5
-		{ id = "rbxassetid://0", feather = 40, radius = 70, size = 226, slice = 111 }, -- ratio 1.75
-		{ id = "rbxassetid://0", feather = 40, radius = 80, size = 246, slice = 121 }, -- ratio 2.0
-		{ id = "rbxassetid://0", feather = 40, radius = 100, size = 286, slice = 141 }, -- ratio 2.5
-		{ id = "rbxassetid://0", feather = 40, radius = 120, size = 326, slice = 161 }, -- ratio 3.0
+		{ id = "", feather = 40, radius = 8, size = 142, slice = 69 }, -- ratio 0.2
+		{ id = "", feather = 40, radius = 14, size = 142, slice = 69 }, -- ratio 0.35
+		{ id = "", feather = 40, radius = 20, size = 142, slice = 69 }, -- ratio 0.5
+		{ id = "", feather = 40, radius = 24, size = 142, slice = 69 }, -- ratio 0.6
+		{ id = "", feather = 40, radius = 28, size = 142, slice = 69 }, -- ratio 0.7
+		{ id = "", feather = 40, radius = 32, size = 150, slice = 73 }, -- ratio 0.8
+		{ id = "", feather = 40, radius = 36, size = 158, slice = 77 }, -- ratio 0.9
+		{ id = "", feather = 40, radius = 40, size = 166, slice = 81 }, -- ratio 1.0
+		{ id = "", feather = 40, radius = 46, size = 178, slice = 87 }, -- ratio 1.15
+		{ id = "", feather = 40, radius = 52, size = 190, slice = 93 }, -- ratio 1.3
+		{ id = "", feather = 40, radius = 60, size = 206, slice = 101 }, -- ratio 1.5
+		{ id = "", feather = 40, radius = 70, size = 226, slice = 111 }, -- ratio 1.75
+		{ id = "", feather = 40, radius = 80, size = 246, slice = 121 }, -- ratio 2.0
+		{ id = "", feather = 40, radius = 100, size = 286, slice = 141 }, -- ratio 2.5
+		{ id = "", feather = 40, radius = 120, size = 326, slice = 161 }, -- ratio 3.0
 	},
 	-- BusyChip spinner: 1.9 rad arc from angle 0 (right, clockwise) and the full ring; 18 px control.
-	spinner_arc = "rbxassetid://0",
-	spinner_ring = "rbxassetid://0",
+	spinner_arc = "",
+	spinner_ring = "",
 }

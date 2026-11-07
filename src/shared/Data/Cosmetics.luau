@@ -6,8 +6,8 @@
 --           secondary tiles; mask pixels are 2^scale tiles wide). '#' = the secondary colour: your
 --           own colour lightened (tone > 0) or darkened (tone < 0), or a fixed `accent` colour
 --           (legendary skins). Original designs.
---   flags   country flags (Assets/Flags, public domain from Wikimedia Commons), shown by your
---           name on the map and the leaderboard. Every flag is Common.
+--   flags   country flag entries shown as original procedural colour tokens until DomWorld art is
+--           uploaded. Every flag is Common.
 --   exclusive skins (exclusive_skins) are made for particular players: several colours, never in a
 --           crate (Cosmetics.all() is the crate catalog; Cosmetics.exclusives() these).
 --   shop flags (Data/Shop: "shop_<key>") are bought one by one in the flag shop: Rare, Epic or
@@ -492,12 +492,6 @@ function Cosmetics.flag_big(it: any): (string, number, number, number, number)
 		return img, r[2], r[3], r[4], r[5]
 	end
 	return Cosmetics.flag_image(it), it and it.x or 0, it and it.y or 0, it and it.w or 0, it and it.h or 0
-end
-
---- A player's Roblox head shot: the `face` of a match's cosmetics map is their user id (since
---- 2026-10-04 a little Roblox head picture shows next to each username).
-function Cosmetics.face_image(user_id: number): string
-	return string.format("rbxthumb://type=AvatarHeadShot&id=%d&w=48&h=48", user_id)
 end
 
 --- The player's own odds per rarity: RARITIES' odds over the rarities that still have an item they

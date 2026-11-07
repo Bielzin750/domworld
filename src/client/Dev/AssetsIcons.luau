@@ -15,7 +15,7 @@ local Branding = require(Assets:WaitForChild("Branding"))
 
 local ORIGIN_X, ORIGIN_Y = 16, 16
 local CELL_W, CELL_H, COLS = 104, 92, 9
-local RUBIK = Font.fromId(12187365977, Enum.FontWeight.SemiBold)
+local RUBIK = Font.fromEnum(Enum.Font.GothamBold)
 local AMBER = Color3.new(1.0, 0.71, 0.278)
 local CYAN = Color3.new(0.31, 0.82, 1.0)
 

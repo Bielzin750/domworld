@@ -39,6 +39,10 @@ local Playlist = require(script.Parent:WaitForChild("Playlist")) :: any
 local AudioDirector = {}
 AudioDirector.__index = AudioDirector
 
+local function valid_asset_id(id: any): boolean
+	return type(id) == "string" and id ~= "" and id ~= "0" and id ~= "rbxassetid://0"
+end
+
 AudioDirector.SFX_NAMES = {
 	"ui_click",
 	"ui_hover",
@@ -610,6 +614,9 @@ end
 
 --- Crossfade the music players to asset `id` from its start.
 function AudioDirector._crossfade_to(self: any, id: string, fade_s: number, looped: boolean)
+	if not valid_asset_id(id) then
+		return
+	end
 	local current: Sound? = self._current
 	self._fade_len = math.max(0.01, fade_s)
 	local incoming: Sound = if current == self._player_a then self._player_b else self._player_a
@@ -1162,15 +1169,32 @@ function AudioDirector._load_streams(self: any)
 		return if m then (require :: any)(m) else nil
 	end)
 	if ok_st and type(st) == "table" and type(st.tracks) == "table" and next(st.tracks) ~= nil then
-		self._playlist = Playlist.new(st)
-		local opener = (st.moods and st.moods.title or {})[1]
-		local t = opener and st.tracks[opener]
-		if t ~= nil then
-			table.insert(preload, t.id)
+		local playable_tracks = {}
+		for key, track in st.tracks do
+			if type(track) == "table" and valid_asset_id(track.id) then
+				playable_tracks[key] = track
+			end
+		end
+		if next(playable_tracks) ~= nil then
+			local moods = {}
+			for mood, keys in st.moods or {} do
+				moods[mood] = {}
+				for _, key in keys do
+					if playable_tracks[key] ~= nil then
+						table.insert(moods[mood], key)
+					end
+				end
+			end
+			self._playlist = Playlist.new({ tracks = playable_tracks, moods = moods })
+			local opener = (moods.title or {})[1]
+			local track = opener and playable_tracks[opener]
+			if track ~= nil then
+				table.insert(preload, track.id)
+			end
 		end
 	end
 	for theme_name, e in manifest.music or {} do
-		if type(e) == "table" and type(e.id) == "string" then
+		if type(e) == "table" and valid_asset_id(e.id) then
 			self._music_streams[theme_name] = { id = e.id, length = e.length }
 			if self._playlist == nil then
 				table.insert(preload, e.id)
@@ -1193,9 +1217,9 @@ function AudioDirector._load_streams(self: any)
 		if type(e) ~= "table" then
 			return nil
 		end
-		if type(e.id) == "string" then
+		if valid_asset_id(e.id) then
 			return { id = e.id, length = e.length }
-		elseif type(e.sprite) == "string" and type(e.start) == "number" and type(e.stop) == "number" then
+		elseif valid_asset_id(e.sprite) and type(e.start) == "number" and type(e.stop) == "number" then
 			return { id = e.sprite, region = NumberRange.new(e.start, e.stop), length = e.length }
 		end
 		return nil
@@ -1242,9 +1266,11 @@ function AudioDirector._load_streams(self: any)
 				s.SoundId = id
 				table.insert(list, s)
 			end
-			pcall(function()
-				ContentProvider:PreloadAsync(list, report_fetch)
-			end)
+			if #list > 0 then
+				pcall(function()
+					ContentProvider:PreloadAsync(list, report_fetch)
+				end)
+			end
 			for _, s in list do
 				s:Destroy()
 			end
@@ -1262,7 +1288,7 @@ local _foreign_reported = false
 --- that still isn't loaded (once per asset a session), or, when all of ours are loaded, that the
 --- failing one isn't the game's (once a session). Several failures in a moment make one check.
 function AudioDirector._on_load_failure(self: any, msg: string)
-	-- ("Failed to load sound rbxassetid://0: User is not authorized to access Asset.": the dashboard
+	-- ("Failed to load sound : User is not authorized to access Asset.": the dashboard
 	-- shows it without the id)
 	self._fail_reason = string.sub(string.match(msg, "Failed to load sound.-: (.*)$") or msg, 1, 80)
 	self._fail_ids = self._fail_ids or {}

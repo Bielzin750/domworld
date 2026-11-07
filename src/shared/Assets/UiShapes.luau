@@ -12,11 +12,11 @@ return {
 		touch_hov = { ri = 50, ro = 134 },
 	},
 	pages = {
-		[0] = "rbxassetid://0",
-		[1] = "rbxassetid://0",
-		[2] = "rbxassetid://0",
-		[3] = "rbxassetid://0",
-		[4] = "rbxassetid://0",
+		[0] = "",
+		[1] = "",
+		[2] = "",
+		[3] = "",
+		[4] = "",
 	},
 	segments = {
 		desk_2_fill = { page = 0, x = 0, y = 0, w = 472, h = 239, cx = 236, cy = 236 },
@@ -77,9 +77,9 @@ return {
 		touch_hov_8_line = { page = 4, x = 710, y = 196, w = 204, h = 183, cx = 102, cy = 272 },
 	},
 	-- disc_glow: a round panel's soft shadow; the disc (radius 26) spans 26/36 of the image radius
-	title_vignette = "rbxassetid://0",
-	title_glow = "rbxassetid://0",
-	over_dim = "rbxassetid://0",
-	arrow_head = "rbxassetid://0",
-	disc_glow = "rbxassetid://0",
+	title_vignette = "",
+	title_glow = "",
+	over_dim = "",
+	arrow_head = "",
+	disc_glow = "",
 }

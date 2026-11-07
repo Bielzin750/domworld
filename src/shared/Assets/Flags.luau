@@ -4,11 +4,11 @@
 -- Modified for DomWorld, 2026 — see git history for details.
 return {
 	atlases = {
-		"rbxassetid://0",
-		"rbxassetid://0",
-		"rbxassetid://0",
-		"rbxassetid://0",
-		"rbxassetid://0",
+		"",
+		"",
+		"",
+		"",
+		"",
 	},
 	flags = {
 		{ code = "ac", name = "Ascension Island", atlas = 1, x = 2, y = 11, w = 116, h = 58 },

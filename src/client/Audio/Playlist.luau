@@ -38,7 +38,13 @@ function Playlist.pool(self: any, mood: string): { string }
 		local out = {}
 		for _, k in self.moods[m] or {} do
 			local t = self.tracks[k]
-			if type(t) == "table" and type(t.id) == "string" then
+			if
+				type(t) == "table"
+				and type(t.id) == "string"
+				and t.id ~= ""
+				and t.id ~= "0"
+				and t.id ~= "rbxassetid://0"
+			then
 				table.insert(out, k)
 			end
 		end

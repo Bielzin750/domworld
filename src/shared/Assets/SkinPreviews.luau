@@ -3,7 +3,7 @@
 -- (ImageRectOffset = x, y; ImageRectSize = w, h). Draw with ResampleMode Pixelated.
 -- Modified for DomWorld, 2026 — see git history for details.
 return {
-	image = "rbxassetid://0",
+	image = "",
 	cells = {
 		stripes = { 0, 0, 96, 96 },
 		bands = { 100, 0, 96, 96 },

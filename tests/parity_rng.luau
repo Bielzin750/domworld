@@ -5,6 +5,9 @@ local fs = require("@lune/fs")
 local G = require("../tools/parity/GodotRng")
 
 local lines = string.split(fs.readFile("tools/parity/rng_ref.txt"), "\n")
+for i, line in lines do
+	lines[i] = string.gsub(line, "\r$", "")
+end
 local failures = 0
 local checks = 0
 local function expect(cond: boolean, what: string)

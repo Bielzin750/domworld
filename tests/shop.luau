@@ -120,9 +120,9 @@ expect(
 	it ~= nil and it.kind == "flag" and it.shop and it.rarity == "legendary",
 	"the shop flag is a Legendary flag item"
 )
-expect(Cosmetics.flag_image(it) ~= "" and it.w > 0, "... with its sheet and rect")
+expect(Cosmetics.flag_image(it) == "" and it.w > 0, "no uploaded sheet; flag dimensions stay available")
 local img = Cosmetics.flag_big(it)
-expect(type(img) == "string" and img ~= "", "... and a big one for the shop's cards")
+expect(type(img) == "string" and img == "", "shop cards use procedural flags until DomWorld uploads art")
 local in_crate = false
 for _, c in Cosmetics.all() do
 	if c.shop then

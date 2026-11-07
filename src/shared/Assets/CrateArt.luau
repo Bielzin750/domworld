@@ -2,12 +2,12 @@
 -- The cosmetic crate's 2D art (the chest itself is 3D: Assets/CrateModel): white masks, tint them.
 -- Modified for DomWorld, 2026 — see git history for details.
 return {
-	beam = "rbxassetid://0",
-	flare = "rbxassetid://0",
-	glow = "rbxassetid://0",
-	icon = "rbxassetid://0",
-	rays = "rbxassetid://0",
-	ring = "rbxassetid://0",
-	sparkle = "rbxassetid://0",
-	streak = "rbxassetid://0",
+	beam = "",
+	flare = "",
+	glow = "",
+	icon = "",
+	rays = "",
+	ring = "",
+	sparkle = "",
+	streak = "",
 }

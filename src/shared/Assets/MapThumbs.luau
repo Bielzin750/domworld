@@ -3,10 +3,10 @@
 -- terrain palette), fit within 512 px. Keys = the registry's map ids.
 -- Modified for DomWorld, 2026 — see git history for details.
 return {
-	africa = "rbxassetid://0",
-	asia = "rbxassetid://0",
-	europe = "rbxassetid://0",
-	northamerica = "rbxassetid://0",
-	southamerica = "rbxassetid://0",
-	world = "rbxassetid://0",
+	africa = "",
+	asia = "",
+	europe = "",
+	northamerica = "",
+	southamerica = "",
+	world = "",
 }

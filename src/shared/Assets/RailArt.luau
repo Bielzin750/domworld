@@ -2,10 +2,10 @@
 -- Railroad tiles for the map's close-up track (Map/RoadLayer): the detailed rail, white.
 -- Modified for DomWorld, 2026 — see git history for details.
 return {
-	h = "rbxassetid://0",
-	v = "rbxassetid://0",
-	tl = "rbxassetid://0",
-	tr = "rbxassetid://0",
-	bl = "rbxassetid://0",
-	br = "rbxassetid://0",
+	h = "",
+	v = "",
+	tl = "",
+	tr = "",
+	bl = "",
+	br = "",
 }

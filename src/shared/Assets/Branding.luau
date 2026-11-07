@@ -5,6 +5,6 @@
 -- used in game and is set in the experience settings instead.
 -- Modified for DomWorld, 2026 — see git history for details.
 return {
-	app_icon = "rbxassetid://0",
-	logo_mark = "rbxassetid://0",
+	app_icon = "",
+	logo_mark = "",
 }

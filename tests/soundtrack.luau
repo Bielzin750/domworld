@@ -60,7 +60,10 @@ do
 		titles[pl:next("title")] = true
 	end
 	expect(titles.opener and titles.t2 and titles.t3, "then the title tracks are shuffled")
-	expect(pl:next("victory") == "v" and pl:after("victory") == "title" and pl:after("defeat") == "calm", "victory / defeat play once, then title / calm")
+	expect(
+		pl:next("victory") == "v" and pl:after("victory") == "title" and pl:after("defeat") == "calm",
+		"victory / defeat play once, then title / calm"
+	)
 	local w = pl:next("wait")
 	expect(w ~= nil and string.sub(w, 1, 1) == "c", "an empty mood borrows its fallback (wait -> calm)")
 	local empty = Playlist.new(nil)
@@ -109,6 +112,7 @@ do
 	local ok, st = pcall(require, "../src/shared/Assets/Soundtrack")
 	if ok and type(st) == "table" then
 		local good = true
+		local silent = true
 		for _, m in { "title", "wait", "calm", "war", "victory", "defeat" } do
 			local list = st.moods[m]
 			if list == nil or #list == 0 then
@@ -117,12 +121,17 @@ do
 			end
 			for _, k in list or {} do
 				local t = st.tracks[k]
-				if t == nil or type(t.id) ~= "string" or not string.match(t.id, "^rbxassetid://%d+$") or not (t.length > 30) then
+				if t == nil or type(t.id) ~= "string" or not (t.length > 30) then
 					good = false
+				elseif t.id ~= "" then
+					if not string.match(t.id, "^rbxassetid://%d+$") then
+						good = false
+					end
+					silent = false
 				end
 			end
 		end
-		expect(good, "the soundtrack manifest fills every mood with uploaded tracks")
+		expect(good and silent, "every soundtrack mood remains valid and silent until DomWorld uploads audio")
 		expect(st.credit == "Music by Rodrigo Flores", "and carries the credit")
 	else
 		print("  skip the soundtrack manifest (not generated yet)")

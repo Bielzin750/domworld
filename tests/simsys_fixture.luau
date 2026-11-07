@@ -106,6 +106,9 @@ function F.new_sim(seed: number?): any
 	self:_init_warships()
 	self:_init_nukes()
 	self:_init_arsenal()
+	self.team_names = {}
+	self.team_mode = false
+	self.winner_team = 0
 	self.hooks = {}
 	self.phase = Defs.PHASE_PLAYING
 	self.playing_since = 0

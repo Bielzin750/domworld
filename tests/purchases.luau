@@ -112,6 +112,10 @@ expect(Purchases.kind_of(777) == nil, "a product not created yet (id 0) matches 
 -- the player doesn't own, equipped when its slot is empty; nothing is spent without an item to give
 do
 	local Cosmetics = require("../src/shared/Data/Cosmetics")
+	-- Product IDs are intentionally zero until this experience creates its own products.
+	-- Use local-only IDs so this receipt-credit flow still exercises the same server logic.
+	Products.crate_first.id = 900000001
+	Products.crate.id = 900000002
 	local B = { UserId = 99, Name = "Crater" }
 	local inv_seen = nil
 	Purchases.configure({
@@ -303,9 +307,12 @@ end
 do
 	local Starter = require("../src/shared/Data/Starter")
 	local t = 1000000
-	Purchases.configure({ now = function()
-		return t
-	end, wait = false })
+	Purchases.configure({
+		now = function()
+			return t
+		end,
+		wait = false,
+	})
 	Products.starter_pack.id = 888
 	Products.crate.id = 701
 	local S = { UserId = 77, Name = "Starter" }
@@ -439,11 +446,17 @@ do
 	local gap = Starter.AUTO_GAP_S
 	expect(gap == 6 * 3600, "starter auto: every 6 hours")
 	expect(Starter.auto_due("ready", now - 10, now), "starter auto: never shown (its clock not started) always opens")
-	expect(Starter.auto_due("active", nil, now) and Starter.auto_due("active", 0, now), "starter auto: running, never opened by itself: opens")
+	expect(
+		Starter.auto_due("active", nil, now) and Starter.auto_due("active", 0, now),
+		"starter auto: running, never opened by itself: opens"
+	)
 	expect(not Starter.auto_due("active", now - 60, now), "starter auto: a minute after the last: not again")
 	expect(not Starter.auto_due("active", now - gap + 1, now), "starter auto: just under 6 hours: not yet")
 	expect(Starter.auto_due("active", now - gap, now), "starter auto: 6 hours on: again")
-	expect(Starter.auto_due("active", now + 3600, now), "starter auto: a last time in the future (clock went back) counts as never")
+	expect(
+		Starter.auto_due("active", now + 3600, now),
+		"starter auto: a last time in the future (clock went back) counts as never"
+	)
 	expect(not Starter.auto_due(nil, 0, now) and not Starter.auto_due("used", 0, now), "starter auto: no offer: never")
 end
 
@@ -515,6 +528,7 @@ do
 		end,
 	})
 	Products.crate3.id = 703
+	Products.crate10.id = 704
 	local kind, n = Purchases.kind_of(703)
 	expect(kind == "crate" and n == 3, "the pack grants 3 crates")
 	Purchases.load(K)
@@ -541,13 +555,14 @@ do
 	expect(distinct == 3 and rows.u64.credits.crate == 0, "three crates open to three different items")
 	Products.crate3.id = 0
 	-- and the 10-crate pack (2026-10-27): ten credits for one receipt
-	local kind10, n10 = Purchases.kind_of(Products.crate10.id)
+	local kind10, n10 = Purchases.kind_of(704)
 	expect(kind10 == "crate" and n10 == 10, "the 10-pack grants 10 crates")
 	expect(
-		Purchases.process_receipt({ PlayerId = 64, ProductId = Products.crate10.id, PurchaseId = "p10" }) == "granted",
+		Purchases.process_receipt({ PlayerId = 64, ProductId = 704, PurchaseId = "p10" }) == "granted",
 		"a 10-pack receipt is granted"
 	)
 	expect(rows.u64.credits.crate == 10 and rows.u64.crates_bought == 13, "10 crate credits, 13 bought in all")
+	Products.crate10.id = 0
 end
 
 if fails > 0 then

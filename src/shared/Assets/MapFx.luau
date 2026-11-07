@@ -4,7 +4,7 @@
 -- fire, smoke, big_smoke, smoke_fire: the debris a nuke leaves, looping (the last frame runs into the first).
 -- Modified for DomWorld, 2026 — see git history for details.
 return {
-	id = "rbxassetid://0",
+	id = "",
 	nuke = { x = 0, y = 0, w = 60, h = 60, frames = 12 },
 	flag = { x = 0, y = 60, w = 24, h = 24, frames = 10 },
 	banner = { x = 0, y = 84, w = 24, h = 24, frames = 10 },

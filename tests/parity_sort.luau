@@ -6,6 +6,7 @@ local Defs = require("../src/shared/Core/Defs")
 
 local failures, checks = 0, 0
 for _, line in string.split(fs.readFile("tools/parity/sort_ref.txt"), "\n") do
+	line = string.gsub(line, "\r$", "")
 	if line == "" then
 		continue
 	end

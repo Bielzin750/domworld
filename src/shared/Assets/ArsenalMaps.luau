@@ -4,7 +4,7 @@
 -- and its border's split of the scene (nil: the player's land only).
 -- Modified for DomWorld, 2026 — see git history for details.
 return {
-	id = "rbxassetid://0",
+	id = "",
 	size = Vector2.new(980, 368),
 	cell = Vector2.new(192, 88),
 	scenes = {

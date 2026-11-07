@@ -1577,7 +1577,7 @@ function Diag.start(Main: any)
 				-- a sound of ours that can't load: the load-failure hook names it 4 s later
 				local s = Instance.new("Sound")
 				s.Name = "Sfx_failtest"
-				s.SoundId = "rbxassetid://0"
+				s.SoundId = ""
 				s.Parent = root
 				s:Play()
 				return "log hook " .. tostring(audio._log_conn ~= nil) .. ", a broken sound added"

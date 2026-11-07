@@ -5,13 +5,13 @@
 return {
 	--- 9 white glyphs of 64 x 64, a column per structure kind (Defs.S_*): City, Port, Factory, Defense
 	--- Post, SAM Launcher, Missile Silo, Artillery, Airfield, Railgun
-	icons = { id = "rbxassetid://0", cell = 64, cols = 9 },
+	icons = { id = "", cell = 64, cols = 9 },
 	--- structure plates: the same 9 columns x 2 rows (0 whole shape -> rim colour, 1 inset
 	--- shape -> fill colour), 112 px cells
-	shapes = { id = "rbxassetid://0", cell = 112, cols = 9 },
+	shapes = { id = "", cell = 112, cols = 9 },
 	--- `shapes` with its two rows in ONE image (the fill white to grey, the rim a darker grey: one
 	--- tint gives both), for a plate of one ImageLabel
-	shapes_one = { id = "rbxassetid://0", cell = 112, cols = 9 },
+	shapes_one = { id = "", cell = 112, cols = 9 },
 	--- per structure kind (index kind + 1): the plate's size (x StructureLayer.ICON_SIZE) and the share
 	--- of it the glyph spans (icon_fill / shape_scale of the plate)
 	shape_scale = { 1, 1, 1.12, 1.1, 1.15, 1.3, 1.2, 1.35, 1.25 },
@@ -19,29 +19,29 @@ return {
 	--- unit sprites 13 x 13, 12 columns (transport, trade, warship, atom, hydrogen, mirv, sam, shell,
 	--- warhead, train, carriage, carriage_loaded) x 2 rows:
 	--- 0 territory colour, 1 border colour
-	units = { id = "rbxassetid://0", cell = 13, cols = 12 },
+	units = { id = "", cell = 13, cols = 12 },
 	--- `units` with both rows in ONE image (territory pixels white, border pixels grey)
-	units_one = { id = "rbxassetid://0", cell = 13, cols = 12 },
+	units_one = { id = "", cell = 13, cols = 12 },
 	--- status icons, full colour, 256 px cells (pad 16), 3 columns: crown, traitor, disconnected,
 	--- alliance, allianceRequest, target, embargo, nukeRed, nukeWhite, allianceFaded, doomsdayClock,
 	--- verified
-	status = { id = "rbxassetid://0", cell = 256, cols = 3, pad = 16 },
+	status = { id = "", cell = 256, cols = 3, pad = 16 },
 	--- white 128 px masks of the same glyphs for the interface (UITheme.icon names; they take the
 	--- place of Assets/UiIcons' and ArsenalArt.ui's for these keys)
 	ui = {
-		city = "rbxassetid://0",
-		port = "rbxassetid://0",
-		factory = "rbxassetid://0",
-		defense = "rbxassetid://0",
-		sam = "rbxassetid://0",
-		silo = "rbxassetid://0",
-		artillery = "rbxassetid://0",
-		airfield = "rbxassetid://0",
-		railgun = "rbxassetid://0",
-		warship = "rbxassetid://0",
-		atom = "rbxassetid://0",
-		hydrogen = "rbxassetid://0",
-		mirv = "rbxassetid://0",
-		boat = "rbxassetid://0",
+		city = "",
+		port = "",
+		factory = "",
+		defense = "",
+		sam = "",
+		silo = "",
+		artillery = "",
+		airfield = "",
+		railgun = "",
+		warship = "",
+		atom = "",
+		hydrogen = "",
+		mirv = "",
+		boat = "",
 	},
 }

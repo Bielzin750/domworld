@@ -4,8 +4,8 @@
 -- product in production (`product`) and DomWorld Staging (`staging`), 0 = not made yet.
 -- Modified for DomWorld, 2026 — see git history for details.
 return {
-	atlases = { "rbxassetid://0" },
-	big = { "rbxassetid://0", "rbxassetid://0" },
+	atlases = { "" },
+	big = { "", "" },
 	flags = {
 		{
 			key = "pumpkin_king",
