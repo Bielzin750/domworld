@@ -113,7 +113,7 @@ expect(info.spectating == true and info.watchers == 2, "lobby info: spectating, 
 local listed = table.concat(info.players, ",")
 expect(listed == "A,B", "the player list leaves watchers out: " .. listed)
 expect(server:lobby_info(a).spectating == false, "players are not spectating")
-local intent = Protocol.encode_intent({ type = "attack", tile = 5, ratio = 0.2 })
+local intent = Protocol.encode_intent({ type = "attack", tile = 5, percent = 20 })
 expect(server:intent(late, intent) == false, "a watcher's intents never reach the Sim")
 server:leave(late)
 expect(#removed == 0, "a watcher leaving removes no nation")
@@ -177,7 +177,10 @@ local lv = view[#view]
 expect(#view == open_n + 1 and lv.live and lv.watchable and lv.elapsed == 300, "a running match is listed live")
 expect(lv.code == nil and not lv.joinable, "the live entry hides the code and can't be joined")
 local ok = dir:spectate({ Name = "viewer" }, "LIVE1")
-expect(ok and #sent == 1 and sent[1].code == "livecode" and sent[1].data.spectate == true, "Watch teleports as a spectator")
+expect(
+	ok and #sent == 1 and sent[1].code == "livecode" and sent[1].data.spectate == true,
+	"Watch teleports as a spectator"
+)
 store.update("LIVE1", function(v)
 	v.beat = now - LobbyRules.LIVE_STALE_S - 1
 	return v

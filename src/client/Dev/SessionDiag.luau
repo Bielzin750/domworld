@@ -90,7 +90,7 @@ function Diag.start(Main: any)
 			end
 			local t = neutral_neighbor(st)
 			-- through the UI's send (as a click would), so its hooks see it too
-			local intent = { type = "attack", tile = t, ratio = tonumber(words[2]) or 0.4 }
+			local intent = { type = "attack", tile = t, percent = math.floor((tonumber(words[2]) or 0.4) * 100 + 0.5) }
 			local ui = Main.ui
 			if ui ~= nil and ui.ctx ~= nil then
 				ui.ctx:send(intent)
@@ -219,14 +219,13 @@ function Diag.start(Main: any)
 				ui.tutorial:_advance()
 				return "advanced to " .. tostring(ui.tutorial._i)
 			elseif words[2] == "ratio" then
-				-- `tutorial ratio <x>`: set the Attack slider (what the cap and the floor make of it)
+				-- `tutorial ratio <x>`: set the Attack slider (what the tutorial's cap allows)
 				local c = ui.ctx
 				c:set_ratio(tonumber(words[3]) or 1)
 				local o = c:my()
-				return ("ratio=%.2f max=%.2f floor=%s order=%.3f troops=%s/%s phase=%s"):format(
+				return ("ratio=%.2f max=%.2f order=%.3f troops=%s/%s phase=%s"):format(
 					c.ratio,
 					c.ratio_max,
-					tostring(c.troop_floor),
 					c:order_ratio(),
 					tostring(o and math.floor(o.troops)),
 					tostring(o and math.floor(o.max_troops)),
@@ -1377,7 +1376,7 @@ function Diag.start(Main: any)
 				return "no coast"
 			end
 			local ui = Main.ui
-			ui.ctx:send({ type = "boat", tile = best, ratio = tonumber(words[2]) or 0.3 })
+			ui.ctx:send({ type = "boat", tile = best, percent = math.floor((tonumber(words[2]) or 0.3) * 100 + 0.5) })
 			ui.ctx:world_call("focus_tile", { best })
 			return ("boat to %d (%.0f tiles)"):format(best, math.sqrt(best_d))
 		elseif op == "focusunit" then

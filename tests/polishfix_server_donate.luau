@@ -88,9 +88,12 @@ do
 		got ~= nil and got[2].type == "donate" and got[2].troops == 1000,
 		"and reaches the Sim capped to 1K (got " .. tostring(got and got[2].troops) .. ")"
 	)
-	local other = Protocol.encode_intent({ type = "attack", target = 4, ratio = 0.5 })
+	local other = Protocol.encode_intent({ type = "attack", tile = 5, percent = 50 })
 	server:intent(peer, other)
-	check(submitted[2] ~= nil and submitted[2][2].type == "attack", "other intents pass untouched")
+	check(
+		submitted[2] ~= nil and submitted[2][2].type == "attack" and submitted[2][2].troops == 450000000,
+		"attacks are converted to an authoritative troop amount"
+	)
 end
 
 -- 3. why: troop growth far above the cap subtracts more than the nation has (the formula is the

@@ -12,8 +12,7 @@
 -- is taken for the player after AUTO_SPAWN_S. The City step tops the player's gold up to a City's
 -- price. A step nobody finishes in STEP_MAX_S is passed over. While it runs the coach's tips are
 -- off (UIRoot); they take over afterwards. While it runs the Attack bar starts at its default and
--- stops at Data.RATIO_CAP, and an order leaves Data.TROOP_FLOOR of the army's cap at home (UICtx
--- .ratio_max / .troop_floor): a new player can't empty their nation.
+-- stops at Data.RATIO_CAP so the tutorial teaches measured troop orders.
 --
 --   Tutorial.new(ctx, ui)
 --   :begin()                 the tutorial match was asked for
@@ -154,13 +153,11 @@ function Tutorial.begin(self)
 	self._sent = #self.ctx.sent_log
 	self._card:set_visible(false)
 	self._started = false
-	-- the Attack bar: from its default, never past the cap; the floor under the army comes from the
-	-- FLOOR_FROM step, once it arms (Data.floor_armed; _process)
+	-- the Attack bar: from its default, never past the tutorial's cap
 	local ctx = self.ctx
 	ctx.ratio_max = 1.0
 	ctx:set_ratio(UICtx.DEFAULT_RATIO)
 	ctx:set_ratio_max(Data.RATIO_CAP)
-	ctx.troop_floor = nil
 end
 
 function Tutorial.stop(self, how: string)
@@ -170,7 +167,6 @@ function Tutorial.stop(self, how: string)
 	self.active = false
 	self._mark.Visible = false
 	self.ctx:set_ratio_max(1.0)
-	self.ctx.troop_floor = nil
 	if how == "done" then
 		-- the last card: the reward, and where it goes
 		self._ending = Tutorial.END_S
@@ -375,14 +371,6 @@ function Tutorial._process(self, delta: number)
 	local o = ctx:my()
 	local any, on_owner, on_land = self:_orders()
 	self._step_t += delta
-	if
-		ctx.troop_floor == nil
-		and i >= (Data.step_index(Data.FLOOR_FROM) or 1)
-		and o ~= nil
-		and Data.floor_armed(o.troops or 0, o.max_troops or 0, ctx:alive_seconds())
-	then
-		ctx.troop_floor = Data.TROOP_FLOOR
-	end
 	if not self._started and self._step_t > 1.0 then
 		-- the match is up (and reported: the server logs a step for a match it knows of)
 		self._started = true

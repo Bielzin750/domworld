@@ -10,16 +10,9 @@ local GlassPanel = require("./GlassPanel")
 local UICtx = require("./UICtx")
 
 local Coach = W.class(W.Control)
-local Tut = UICtx.data("Tutorial")
-local FLOOR_TIP = string.format(
-	"Keep %d%% of your army at home, or neighbours walk right in. In your first %d matches, attacks hold that much back.",
-	math.floor(Tut.ROOKIE_FLOOR * 100 + 0.5),
-	Tut.ROOKIE_MATCHES
-)
 
 --- `again`: shown each time it is offered, not once per player (UIAdvisor paces it).
 Coach.TIPS = {
-	floor = { icon = "troops", again = true, desktop = FLOOR_TIP, touch = FLOOR_TIP },
 	expand = {
 		icon = "attack",
 		desktop = "Click neutral land next to you to expand. Space does the same under the cursor.",
@@ -61,7 +54,7 @@ Coach.TIPS = {
 		touch = "You are under attack! Track every front in the Attacks panel. Defense Posts make borders much harder to take.",
 	},
 }
-Coach.PRIORITY = { "attacked", "floor", "select", "expand", "contact", "tray", "ratio", "city", "boat" }
+Coach.PRIORITY = { "attacked", "select", "expand", "contact", "tray", "ratio", "city", "boat" }
 Coach.LIFETIME = 16.0
 --- Keep-out rects (the YOU label) cost this many times their overlap area, with this margin (px).
 Coach.KEEPOUT_WEIGHT = 12.0

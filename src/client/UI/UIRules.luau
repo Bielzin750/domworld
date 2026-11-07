@@ -1080,13 +1080,10 @@ function UIRules._primary(self: any, tile: number): { [string]: any }
 	end
 	-- Fallout stays until the land is conquered again; taking it is slow and costly.
 	local fallout = own == 0 and s:has_fallout(tile)
-	local share = ctx:order_ratio()
-	local troops = (o.troops or 0) * share
+	local troops = ctx:troops_for_ratio()
 	out.troops = troops
 	if troops < 1.0 then
-		-- (the floor under a new player's army: UICtx.troop_floor)
-		out.floor = share < ctx.ratio
-		out.reason = if out.floor then UICtx.data("Tutorial").FLOOR_REASON else "No troops available"
+		out.reason = "No troops available"
 		return out
 	end
 	local land = false
@@ -1130,9 +1127,9 @@ function UIRules.primary_intent(self: any, tile: number, action: { [string]: any
 	if ty == "spawn" then
 		return { type = "spawn", tile = tile }
 	elseif ty == "expand" or ty == "attack" then
-		return { type = "attack", tile = tile, ratio = self.ctx:order_ratio() }
+		return { type = "attack", tile = tile, percent = self.ctx:attack_percent() }
 	elseif ty == "boat" then
-		return { type = "boat", tile = tonumber(action.boat_tile) or tile, ratio = self.ctx:order_ratio() }
+		return { type = "boat", tile = tonumber(action.boat_tile) or tile, percent = self.ctx:attack_percent() }
 	end
 	return {}
 end

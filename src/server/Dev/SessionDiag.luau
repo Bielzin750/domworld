@@ -289,7 +289,7 @@ function Diag.start(ServerMain: any)
 					f,
 					{ uid = "fake_" .. f.name, name = f.name },
 					Protocol.OP.INTENT,
-					Protocol.encode_intent({ type = "attack", tile = target, ratio = 0.5 })
+					Protocol.encode_intent({ type = "attack", tile = target, percent = 50 })
 				)
 			end
 			return ("%s %s → tile %d"):format(op, f.name, target)

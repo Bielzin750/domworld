@@ -79,10 +79,16 @@ function SimNaval.install(C)
 	-- Transports
 	-- =========================================================================================
 
-	-- Boat intent: carry `ratio` of home troops to coastal tile `t` and attack from the beachhead.
-	function C:launch_boat(id: number, t: number, ratio: number): boolean
+	-- A human's percentage order is resolved to a whole amount before this transport is launched.
+	-- AI callers retain the ratio path, since their reserve calculations are a separate mechanic.
+	local function launch_boat(self: any, id: number, t: number, ratio: number?, exact_troops: number?): boolean
 		-- Cheap rejections first; the coast scan and path search are budgeted per owner.
-		if not Defs.is_finite(ratio) or t < 0 or t >= self.N then
+		if
+			t < 0
+			or t >= self.N
+			or (exact_troops == nil and (ratio == nil or not Defs.is_finite(ratio)))
+			or (exact_troops ~= nil and (not Defs.is_finite(exact_troops) or exact_troops < 0))
+		then
 			return false
 		end
 		local map = self.map
@@ -110,8 +116,10 @@ function SimNaval.install(C)
 			self:msg(id, Defs.MSG_INFO, "Too many transports at sea")
 			return false
 		end
-		local r = math.clamp(ratio, 0.01, 1.0)
-		if self.o_troops[id] * r < 1.0 then
+		local amount = if exact_troops ~= nil
+			then exact_troops
+			else self.o_troops[id] * math.clamp(ratio :: number, 0.01, 1.0)
+		if amount < 1.0 then
 			return false
 		end
 		if self.boat_tokens[id] <= 0 then
@@ -133,8 +141,8 @@ function SimNaval.install(C)
 			self:msg(id, Defs.MSG_INFO, "No sea route to that coast")
 			return false
 		end
-		-- Launching the boat takes its troops from home (floored).
-		local troops = math.floor(self.o_troops[id] * r)
+		-- Launching the boat takes whole troops from home.
+		local troops = math.floor(math.min(amount, self.o_troops[id]))
 		if troops < 1.0 then
 			return false
 		end
@@ -158,6 +166,14 @@ function SimNaval.install(C)
 			self:_on_transport_launched(u, tg)
 		end
 		return true
+	end
+
+	function C:launch_boat(id: number, t: number, ratio: number): boolean
+		return launch_boat(self, id, t, ratio, nil)
+	end
+
+	function C:launch_boat_troops(id: number, t: number, amount: number): boolean
+		return launch_boat(self, id, t, nil, amount)
 	end
 
 	-- Hook for the AI (a nation may answer an incoming transport).

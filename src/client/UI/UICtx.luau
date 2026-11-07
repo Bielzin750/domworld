@@ -32,6 +32,7 @@ end
 
 local Signal = core("Signal")
 local Defs = core("Defs")
+local TroopMath = core("TroopMath")
 
 local UICtx = {}
 UICtx.__index = UICtx
@@ -354,8 +355,6 @@ function UICtx.new()
 	self.state_bound = Signal.new()
 	self.layout_changed = Signal.new()
 	self.ratio_changed = Signal.new()
-	--- an order was held back by troop_floor: trimmed to what may go, or not sent (UIAdvisor says why)
-	self.floor_held = Signal.new()
 	self.local_changed = Signal.new()
 
 	self.session = nil :: any
@@ -397,10 +396,8 @@ function UICtx.new()
 	self.airship_bar = Rect.new(0, 0, 350, 58)
 
 	self.ratio = UICtx.DEFAULT_RATIO
-	--- The Attack bar stops here (1 = no cap) and an order leaves this share of the army's cap at home
-	--- (nil = no floor): UI/Tutorial sets both while it runs.
+	--- The Attack bar stops here (1 = no cap); UI/Tutorial changes this while it runs.
 	self.ratio_max = 1.0
-	self.troop_floor = nil :: number?
 	--- Tick at which the local player's nation was first seen in play this match (alive_seconds)
 	self.alive_from_tick = nil :: number?
 	--- Tick at which the PLAYING phase began (match clock and durations come from game ticks).
@@ -773,18 +770,6 @@ function UICtx.lobby(self: any): { [string]: any }
 end
 
 function UICtx.send(self: any, intent: { [string]: any })
-	-- under a troop floor every attack is held to what may go, whoever built the order; one with
-	-- nothing to send is not sent at all
-	if self.troop_floor ~= nil and (intent.type == "attack" or intent.type == "boat") then
-		local share = math.min(tonumber(intent.ratio) or self.ratio, self:floor_share())
-		if share < self.ratio - 1e-6 then
-			self.floor_held:Fire()
-		end
-		if share <= 0.001 then
-			return
-		end
-		intent.ratio = share
-	end
 	table.insert(self.sent_log, { msec = UICtx.msec(), intent = intent })
 	if #self.sent_log > 64 then
 		table.remove(self.sent_log, 1)
@@ -836,8 +821,7 @@ function UICtx.admin(_self: any): boolean
 end
 
 --- Seconds the local player's nation has been in play this match (0 before): from the first call
---- that saw it alive while the match plays, so one who joined a match under way starts at 0 too
---- (UIAdvisor.check_floor calls it every second; UIRoot clears the mark for every new match).
+--- that saw it alive while the match plays, so one who joined a match under way starts at 0 too.
 function UICtx.alive_seconds(self: any): number
 	if self.state == nil or self.play_start_tick < 0.0 or not self:alive_player() then
 		return 0.0
@@ -1158,24 +1142,17 @@ function UICtx.play_theme(self: any, theme_name: string)
 end
 
 -- =============================================================================================
--- Attack ratio & settings
+-- Attack percentage & settings
 -- =============================================================================================
 
---- The most of the army any order may send now: what stands above `troop_floor` (a share of the
---- army's cap that stays at home; nil = no floor, 1). Under 2% counts as nothing (0).
-function UICtx.floor_share(self: any): number
-	local f = self.troop_floor
-	local o = self:my()
-	if f == nil or o == nil or (o.max_troops or 0) <= 0 or (o.troops or 0) <= 0 then
-		return 1.0
-	end
-	local allowed = (o.troops - f * o.max_troops) / o.troops
-	return if allowed < 0.02 then 0.0 else math.min(allowed, 1.0)
+--- The slider's selected whole percentage. Stops are whole percentages by construction.
+function UICtx.attack_percent(self: any): number
+	return math.clamp(math.floor(self.ratio * 100 + 0.5), 1, 100)
 end
 
---- The share of the army an order sends now: the slider's, trimmed to floor_share(). 0: nothing may go.
+--- Retained for internal callers that need the slider as a share rather than a wire intent.
 function UICtx.order_ratio(self: any): number
-	return math.min(self.ratio, self:floor_share())
+	return self.ratio
 end
 
 --- The stop nearest `r` among those not above `max` (the lowest stop when none is), and its index
@@ -1225,10 +1202,10 @@ function UICtx.reset_ratio(self: any)
 	self:set_ratio(UICtx.DEFAULT_RATIO)
 end
 
---- Troops sent by an attack at the current ratio.
+--- Whole troops sent at the current percentage; shared math keeps the preview equal to the server.
 function UICtx.troops_for_ratio(self: any): number
 	local o = self:my()
-	return if o ~= nil then (o.troops or 0) * self:order_ratio() else 0.0
+	return if o ~= nil then TroopMath.compute_send(o.troops or 0, UICtx.attack_percent(self)) or 0 else 0
 end
 
 function UICtx.setting(self: any, key: string, default: any): any

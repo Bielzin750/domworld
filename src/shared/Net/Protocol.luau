@@ -139,7 +139,8 @@ local INTENT_INDEX: { [string]: number } = {}
 for i, name in Protocol.INTENT_TYPES do
 	INTENT_INDEX[name] = i
 end
--- Integer intent fields in wire order (mask bits 1, 2, 4, 8, 16), then ratio (32), kind (64), accept (128).
+-- Integer intent fields in wire order (mask bits 1, 2, 4, 8, 16), then percent/ratio (32), kind
+-- (64), accept (128). Land attacks and boats use an integer percent; other legacy ratio fields keep f64.
 -- An optional trailing byte is `amount` (build / nuke several at once: bulk upgrades and
 -- stacked atom bombs, 1..MAX_INTENT_AMOUNT).
 local INTENT_INT_FIELDS = { "tile", "target", "attack_id", "troops", "uid" }
@@ -1129,8 +1130,26 @@ function Protocol.encode_intent(intent: { [string]: any }): buffer?
 			ints[bit] = iv
 		end
 	end
+	local percent_order = intent.type == "attack" or intent.type == "boat"
+	local percent = intent.percent
 	local ratio = intent.ratio
-	if ratio ~= nil then
+	if percent_order then
+		if
+			type(percent) ~= "number"
+			or percent ~= percent
+			or math.abs(percent) == math.huge
+			or percent < 1
+			or percent > 100
+			or percent ~= floor(percent)
+			or ratio ~= nil
+			or intent.troops ~= nil
+		then
+			return nil
+		end
+		mask += 32
+	elseif percent ~= nil then
+		return nil
+	elseif ratio ~= nil then
 		if type(ratio) ~= "number" or ratio ~= ratio or math.abs(ratio) == math.huge then
 			return nil
 		end
@@ -1156,7 +1175,9 @@ function Protocol.encode_intent(intent: { [string]: any }): buffer?
 			w_zz(w, ints[bit])
 		end
 	end
-	if ratio ~= nil then
+	if percent_order then
+		w_u8(w, percent)
+	elseif ratio ~= nil then
 		w_f64(w, ratio)
 	end
 	if kind ~= nil then
@@ -1208,11 +1229,21 @@ function Protocol.decode_intent(msg: any): { [string]: any }?
 			end
 		end
 		if mask // 32 % 2 == 1 then
-			local ratio = r_f64(r)
-			if ratio ~= ratio or math.abs(ratio) == math.huge then
-				return nil
+			if name == "attack" or name == "boat" then
+				local percent = r_u8(r)
+				if percent < 1 or percent > 100 then
+					return nil
+				end
+				it.percent = percent
+			else
+				local ratio = r_f64(r)
+				if ratio ~= ratio or math.abs(ratio) == math.huge then
+					return nil
+				end
+				it.ratio = math.clamp(ratio, 0.01, 1.0)
 			end
-			it.ratio = math.clamp(ratio, 0.01, 1.0)
+		elseif name == "attack" or name == "boat" then
+			return nil
 		end
 		if mask // 64 % 2 == 1 then
 			local s = r_str(r)

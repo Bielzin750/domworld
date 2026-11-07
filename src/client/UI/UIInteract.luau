@@ -330,9 +330,6 @@ function UIInteract.on_click(self: any, tile: number)
 			ctx:sfx("deny", -4.0)
 			self:_float(reason, "info", T().TEXT_2, pos)
 		end
-		if act.floor == true then
-			ctx.floor_held:Fire()
-		end
 		return
 	end
 	local intent = ctx.rules:primary_intent(tile, act)
@@ -405,9 +402,6 @@ function UIInteract._fire_selected(self: any, pos: Vector2)
 		ctx:sfx("deny", -4.0)
 		local r = tostring(act.reason)
 		self:_float(if r ~= "" then r else "Target out of reach", "info", T().TEXT_2, pos)
-		if act.floor == true then
-			ctx.floor_held:Fire()
-		end
 		return
 	end
 	if tostring(act.type) ~= k and not (k == "attack" and tostring(act.type) == "expand") then
@@ -475,7 +469,7 @@ function UIInteract.betray_from_card(self: any, attack: boolean)
 		ctx:send({
 			type = if land then "attack" else "boat",
 			tile = if landing >= 0 then landing else t,
-			ratio = ctx:order_ratio(),
+			percent = ctx:attack_percent(),
 		})
 		self:_float(
 			string.format(
@@ -1065,11 +1059,11 @@ function UIInteract.on_radial(self: any, id: string, tile: number)
 	end
 	if id == "attack" then
 		local act = ctx.rules:primary(tile)
-		ctx:send({ type = "attack", tile = tile, ratio = ctx:order_ratio() })
+		ctx:send({ type = "attack", tile = tile, percent = ctx:attack_percent() })
 		self:_float(ctx.rules:confirm_text(act), "attack", if own ~= 0 then T().AMBER else T().GREEN, pos)
 	elseif id == "boat" then
 		local landing = ctx.rules:boat_landing(tile)
-		ctx:send({ type = "boat", tile = if landing >= 0 then landing else tile, ratio = ctx:order_ratio() })
+		ctx:send({ type = "boat", tile = if landing >= 0 then landing else tile, percent = ctx:attack_percent() })
 		local act2 = ctx.rules:primary(tile)
 		act2.type = "boat"
 		self:_float(ctx.rules:confirm_text(act2), "boat", T().CYAN, pos)

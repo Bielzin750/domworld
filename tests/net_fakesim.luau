@@ -32,6 +32,7 @@ function FakeSim.new(config)
 	self.alive = {}
 	self.left = {}
 	self.spawned = {}
+	self.o_troops = {}
 	self.keys = {}
 	self.humans = {}
 	self.intents = {}
@@ -45,6 +46,7 @@ function FakeSim.new(config)
 		self.kinds[id] = 0
 		self.alive[id] = true
 		self.spawned[id] = true
+		self.o_troops[id] = 5000
 		for k = 0, 99 do
 			local t = (100 + id * 20) * W + 100 + k
 			buffer.writei32(self.owner, t * 4, id)
@@ -77,6 +79,7 @@ function FakeSim:add_human(key, name)
 	self.kinds[id] = 2
 	self.alive[id] = true
 	self.spawned[id] = false
+	self.o_troops[id] = 5000
 	self.keys[key] = id
 	table.insert(self.humans, id)
 	table.insert(self.ev, { EV.OWNER_ADD, id, name, 0x11223344, 2, 0 })

@@ -1,15 +1,40 @@
-# Decisões do projeto
+# Decisões técnicas
 
-## 2026-11-06
+## 2026-11-07 — Porcentagem de tropas
 
-- Repositório: `https://github.com/Bielzin750/domworld` (proprietário GitHub `Bielzin750`), ano de modificação `2026`, autor nos avisos `Bielzin750`.
-- O destino GitHub foi criado como repositório público vazio, não como fork. O histórico original foi buscado e preservado localmente em `main`; não foi possível converter o destino em fork com as ações disponíveis no conector. Esta diferença fica registrada para transparência.
-- O `LICENSE` original será preservado byte a byte. As artes novas serão CC BY-SA 4.0, com atribuição DomWorld.
-- Toda arte e áudio do checkout de origem será removida do working tree por não haver autorização comprovada para esta cópia, inclusive itens descritos como próprios pelo autor. IDs Roblox antigos serão zerados até serem enviados pela conta DomWorld.
-- IDs de produtos, assinatura, place e universe do autor serão zerados/substituídos. As ofertas ficam desativadas até o proprietário configurar IDs próprios.
-- Os nomes originais de DataStores serão substituídos por namespaces DomWorld para evitar acesso acidental aos dados da experiência do autor.
-- Os nomes internos de pastas e remotes também foram padronizados para DomWorld; as referências do cliente e do servidor foram alteradas juntas, antes de qualquer publicação da experiência.
-- Endereços e scripts de deploy do serviço de produção original não serão usados. O serviço TypeScript existente será adaptado para implantação controlada pelo proprietário do DomWorld.
-- `.mcp.json` continha apenas um caminho local de Roblox Studio para macOS; foi removido. `.DS_Store` foi removido e passou a ser ignorado.
-- O scanner de histórico encontra uma atribuição genérica em `services/lobbies/test/server.test.ts:10`, no commit `9cf30dc3d496700f1e1c403da0e13009fb790cfc`. Era uma chave hexadecimal determinística usada exclusivamente nos testes locais de assinatura HTTP, não uma credencial de produção; a linha foi substituída por um placeholder explícito no commit `15c4f0ae78ffb776439efc8a5ba6027d6ea79d1a`. Como o histórico deve ser preservado, a ocorrência fica autorizada somente pela combinação exata de commit, arquivo, linha, regra e valor mascarado em `.secret-scan-allow`. A allowlist não se aplica ao working tree nem ao conteúdo staged.
-- Campos de asset sem titularidade passaram de `rbxassetid://0` para vazio para que o jogo não tente carregar IDs inválidos. A interface essencial usa Frames, gradientes, UIStroke e textos/figuras de Gotham incluída no Roblox; botões de construção e a marca “DW” são desenhados em Luau. A trilha e os efeitos ficam silenciosos enquanto IDs próprios não forem enviados.
+A fórmula antiga limitava a porcentagem escolhida pela reserva de tropas dos primeiros jogos:
+
+```text
+porcentagemEfetiva = min(porcentagemSelecionada, (tropasAtuais - reserva * capacidade) / tropasAtuais)
+tropasEnviadas = floor(tropasAtuais * porcentagemEfetiva)
+```
+
+Essa reserva usava uma parte da **capacidade máxima** do exército e podia reduzir o resultado sem
+mudar o `75%` que aparecia no seletor. Com 268.000 tropas, 75% deveria mostrar e enviar 201.000; a
+reserva antiga reduzia a parcela disponível e podia resultar em 124.000.
+
+Ataques terrestres e invasões por transporte agora usam `TroopMath.compute_send` tanto na prévia
+quanto na autoridade do servidor:
+
+```text
+tropasEnviadas = clamp(floor(tropasAtuais * porcentagem / 100), 1, floor(tropasAtuais))
+```
+
+Com 0 tropas, o resultado é 0. O servidor aceita apenas porcentagens inteiras de 1 a 100 e calcula
+as tropas com o estado atual da partida; o cliente não fornece a quantidade final. O antigo piso
+automático dos cinco primeiros jogos foi removido porque contradizia a porcentagem exibida. O
+limite de até 50% da barra durante o tutorial continua ensinando o ritmo dos ataques.
+
+Reforços continuam usando a regra própria de até 20% da capacidade e não passam pelo seletor de
+porcentagem. Navios de guerra também não enviam tropas; suas ordens de movimento e combate seguem
+inalteradas. Transportes humanos usavam a mesma reserva antiga e agora recebem a porcentagem inteira
+selecionada; transporte e chegada continuam usando o número de tropas já embarcado.
+
+## Falso positivo histórico do `secret-scan`
+
+`secret-scan --history` confirma a entrada já registrada em `.secret-scan-allow`: o teste determinístico
+`services/lobbies/test/server.test.ts:10` no commit `9cf30dc3d496700f1e1c403da0e13009fb790cfc` foi
+classificado como atribuição genérica de segredo (`SECR...ef\"`). O fixture foi substituído por um
+placeholder nesse commit e não é carregado pelo serviço de produção. A allowlist exige a justificativa,
+o caminho, a linha, a regra, a forma mascarada e o hash exatos; o scan atual da árvore de trabalho segue
+sem achados.

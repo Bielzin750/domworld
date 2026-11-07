@@ -232,7 +232,7 @@ print("intents: sanitising + rate limit")
 local before = #sim.intents
 server._intent_budget = {}
 for k = 1, 40 do
-	A.session:send_intent({ type = "attack", tile = spawn_a + k, ratio = 0.3 })
+	A.session:send_intent({ type = "attack", tile = spawn_a + k, percent = 30 })
 end
 check(
 	#sim.intents - before == 30,
@@ -281,7 +281,7 @@ pump(t_left / 10 + 0.3)
 check(server:stage() == "over", "sim GAME_OVER → over stage")
 check(A.session.state.phase == 2 and A.session.state.winner == 1, "clients mirror GAME_OVER")
 -- Alice idles past IDLE_DROP between matches; Bob keeps playing
-A.session.env.net.send(Protocol.OP.INTENT, Protocol.encode_intent({ type = "attack", tile = 1 }))
+A.session.env.net.send(Protocol.OP.INTENT, Protocol.encode_intent({ type = "attack", tile = 1, percent = 25 }))
 server:participant(A).active_msec = clock_ms - MatchServer.IDLE_DROP_MSEC - 1000
 server:participant(B).active_msec = clock_ms
 pump(MatchServer.RESULTS_SEC + 0.2)

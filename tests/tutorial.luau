@@ -36,60 +36,41 @@ for i, s in Tutorial.STEPS do
 end
 expect(Tutorial.funnel_step("nope") == nil, "an unknown step has none")
 
--- the slider's cap and the floor under the army
-expect(Tutorial.RATIO_CAP <= 0.5 and Tutorial.RATIO_HIGH <= Tutorial.RATIO_CAP, "the slider stops at half the army or less")
-expect(Tutorial.TROOP_FLOOR > 0 and Tutorial.FLOOR_ARM > Tutorial.TROOP_FLOOR, "the floor arms above itself")
+-- the slider's cap
+expect(
+	Tutorial.RATIO_CAP <= 0.5 and Tutorial.RATIO_HIGH <= Tutorial.RATIO_CAP,
+	"the slider stops at half the army or less"
+)
 expect(Tutorial.COUNTDOWN_TICKS <= 15, "the tutorial's match starts within 1.5 s of the capital")
 do
 	local UICtx = require("../src/client/UI/UICtx")
-	local me = { troops = 10000, max_troops = 20000 }
-	local c = { ratio = 0.4, troop_floor = nil, floor_share = UICtx.floor_share, my = function()
-		return me
-	end }
-	expect(UICtx.order_ratio(c) == 0.4, "no floor: the slider's share goes")
-	c.troop_floor = 0.25
-	expect(UICtx.order_ratio(c) == 0.4, "an army well above the floor sends the slider's share")
-	me.troops = 6000
-	expect(math.abs(UICtx.order_ratio(c) - 1000 / 6000) < 1e-9, "near the floor the order is trimmed to what may go")
-	me.troops = 5050
-	expect(UICtx.order_ratio(c) == 0, "at the floor nothing goes")
-	me.troops = 3000
-	expect(UICtx.order_ratio(c) == 0, "nor below it")
-	me.max_troops = 0
-	expect(UICtx.order_ratio(c) == 0.4, "without a cap known the slider's share goes")
-	-- every order passes UICtx.send: there the floor holds whoever built the order
-	me.troops, me.max_troops = 6000, 20000
+	local me = { troops = 268000 }
+	local c = {
+		ratio = 0.75,
+		my = function()
+			return me
+		end,
+	}
+	expect(UICtx.attack_percent(c) == 75, "the selected stop stays a whole percentage")
+	expect(UICtx.troops_for_ratio(c) == 201000, "75% of 268K is 201K even for a new player")
+	me.troops = 0
+	expect(UICtx.troops_for_ratio(c) == 0, "zero troops previews zero")
+	me.troops = 268000
 	local sent = {}
-	local held = 0
 	local sender = {
-		ratio = 0.4,
-		troop_floor = 0.25,
-		floor_share = UICtx.floor_share,
-		floor_held = { Fire = function()
-			held += 1
-		end },
+		ratio = 0.75,
 		my = c.my,
 		sent_log = {},
-		session = { send_intent = function(_, it)
-			table.insert(sent, it)
-		end },
+		session = {
+			send_intent = function(_, it)
+				table.insert(sent, it)
+			end,
+		},
 	}
-	UICtx.send(sender, { type = "attack", tile = 1, ratio = 1.0 })
-	expect(#sent == 1 and math.abs(sent[1].ratio - 1000 / 6000) < 1e-9, "an order for everything is held to what may go")
-	expect(held == 1, "and the floor says it held one back")
-	me.troops = 4000
-	UICtx.send(sender, { type = "attack", tile = 1, ratio = 0.5 })
-	expect(#sent == 1 and #sender.sent_log == 1, "below the floor it is not sent")
-	expect(held == 2, "nor that one")
-	UICtx.send(sender, { type = "build", kind = "city", tile = 1 })
-	expect(#sent == 2 and held == 2, "other orders are not its business")
-	me.troops = 20000
-	UICtx.send(sender, { type = "attack", tile = 1, ratio = 0.4 })
-	expect(#sent == 3 and held == 2, "an order the floor leaves alone says nothing")
+	UICtx.send(sender, { type = "attack", tile = 1, percent = 75 })
+	expect(#sent == 1 and sent[1].percent == 75, "UICtx sends the exact displayed percentage")
 end
 
--- the tutorial's floor waits until after "grow" (2026-10-27)
-expect((Tutorial.step_index(Tutorial.FLOOR_FROM) or 0) > (Tutorial.step_index("grow") or math.huge), "no floor before the first neighbour")
 do
 	-- grow teaches expand, let the troops refill, expand again: never "keep tapping"
 	local g = Tutorial.STEPS[Tutorial.step_index("grow")]
@@ -111,23 +92,19 @@ do
 	expect(Tutorial.refill(10, 0) == 1, "no cap yet: nothing to wait for")
 end
 
--- a new player's floor after the tutorial: their first ROOKIE_MATCHES matches (2026-10-27)
+-- first-match tracking remains for tutorial and coach state
 expect(Tutorial.rookie(0) and Tutorial.rookie(Tutorial.ROOKIE_MATCHES - 1), "the first matches are a new player's")
 expect(not Tutorial.rookie(Tutorial.ROOKIE_MATCHES), "the next is not")
-expect(Tutorial.ROOKIE_FLOOR > 0 and Tutorial.FLOOR_ARM > Tutorial.ROOKIE_FLOOR, "the new player's floor arms above itself")
--- it arms at FLOOR_ARM of the cap, or FLOOR_ARM_S seconds in: a player who sends every troop as it
--- comes never reaches FLOOR_ARM (2026-10-27: a new nation starts at about a fifth of its cap)
-expect(not Tutorial.floor_armed(10000, 40000, 0), "not at the start, below FLOOR_ARM")
-expect(Tutorial.floor_armed(15000, 40000, 0), "at FLOOR_ARM of the cap")
-expect(Tutorial.floor_armed(1000, 40000, Tutorial.FLOOR_ARM_S), "or FLOOR_ARM_S seconds in, however low")
-expect(not Tutorial.floor_armed(1000, 0, 0), "no cap yet: not by troops")
-expect(Tutorial.FLOOR_ARM_S >= 5 and Tutorial.FLOOR_ARM_S <= 20, "the starting army is theirs to spend for a few seconds only")
 do
 	local Telemetry = require("../src/client/UI/Telemetry")
 	local saved = { matches = 3 }
-	local tel = Telemetry.new({ session = { load_settings = function(_, section)
-		return if section == "stats" then saved else {}
-	end } })
+	local tel = Telemetry.new({
+		session = {
+			load_settings = function(_, section)
+				return if section == "stats" then saved else {}
+			end,
+		},
+	})
 	expect(tel:matches_before() == 3, "matches before: the server's count")
 	tel.matches_started = 1
 	tel._match = { ended = false }
@@ -137,48 +114,6 @@ do
 	tel:new_player()
 	expect(tel:matches_before() == 0, "replaying as a new player: none")
 end
-do
-	local UIAdvisor = require("../src/client/UI/UIAdvisor")
-	local me = { troops = 10000, max_troops = 40000 }
-	local before = 2
-	local played = 0
-	local ctx = { troop_floor = nil }
-	function ctx.alive_player()
-		return true
-	end
-	function ctx.alive_seconds()
-		return played
-	end
-	function ctx.my()
-		return me
-	end
-	local ui = { ctx = ctx, tutorial = { active = false }, telemetry = { matches_before = function()
-		return before
-	end } }
-	local adv = UIAdvisor.new(ui)
-	adv:check_floor()
-	expect(ctx.troop_floor == nil, "a new player's floor waits for the army to grow")
-	me.troops = 15000
-	adv:check_floor()
-	expect(ctx.troop_floor == Tutorial.ROOKIE_FLOOR, "then an order leaves a fifth of the cap at home")
-	ctx.troop_floor = nil
-	me.troops = 2000
-	played = Tutorial.FLOOR_ARM_S - 1
-	adv:check_floor()
-	expect(ctx.troop_floor == nil, "an army sent as it comes: not yet")
-	played = Tutorial.FLOOR_ARM_S
-	adv:check_floor()
-	expect(ctx.troop_floor == Tutorial.ROOKIE_FLOOR, "FLOOR_ARM_S seconds in, the floor holds all the same")
-	ctx.troop_floor = nil
-	before = Tutorial.ROOKIE_MATCHES
-	adv:check_floor()
-	expect(ctx.troop_floor == nil, "not after the first matches")
-	before = 0
-	ui.tutorial.active = true
-	adv:check_floor()
-	expect(ctx.troop_floor == nil, "the tutorial keeps its own")
-end
-
 -- the Stars, once
 local store = {}
 local sent = {}
@@ -210,7 +145,10 @@ store["u7"].crates_bought = 4
 expect(Purchases.reset_new_player(p) == true, "Staging's reset goes through")
 expect(store["u7"].crates_bought == 0 and store["u7"].tutorial_paid == nil, "no crate bought, no bonus paid")
 expect(store["u7"].stars == Tutorial.STARS, "what is owned stays")
-expect(Purchases.tutorial_bonus(p, Tutorial.STARS) == true and Purchases.stars(p) == 2 * Tutorial.STARS, "the bonus can be earned again")
+expect(
+	Purchases.tutorial_bonus(p, Tutorial.STARS) == true and Purchases.stars(p) == 2 * Tutorial.STARS,
+	"the bonus can be earned again"
+)
 
 -- the funnel on the server: each step once a match, in a match only
 local logged = {}
@@ -244,7 +182,10 @@ expect(logged[#logged] == "Tutorial:3:First Tap" and logged[#logged - 1] == "Tut
 Analytics.report(a, "tutorial_skip", 3)
 expect(events[#events] == "Tutorial Skipped:Grew", "a skip names the step it was on")
 expect(Tutorial.funnel_step("attack") < Tutorial.funnel_step("ratio"), "the neighbour comes before the slider")
-expect(Tutorial.RATIO_HIGH <= 0.5 and Tutorial.RATIO_LOW > 0.2, "the slider step asks for a moderate share, never everything")
+expect(
+	Tutorial.RATIO_HIGH <= 0.5 and Tutorial.RATIO_LOW > 0.2,
+	"the slider step asks for a moderate share, never everything"
+)
 do
 	-- the step asks for one stop of the Attack bar: the next one up from where the bar starts, so a
 	-- single tap passes it, and no other stop does
@@ -262,14 +203,23 @@ do
 		end
 	end
 	expect(passing == 1 and goal_i > 0, "exactly one stop passes the step, and it is the one asked for")
-	expect(Tutorial.RATIO_GOAL >= Tutorial.RATIO_LOW and Tutorial.RATIO_GOAL <= Tutorial.RATIO_HIGH, "RATIO_GOAL is inside what passes")
+	expect(
+		Tutorial.RATIO_GOAL >= Tutorial.RATIO_LOW and Tutorial.RATIO_GOAL <= Tutorial.RATIO_HIGH,
+		"RATIO_GOAL is inside what passes"
+	)
 	expect(goal_i == start_i + 1, "it is the next stop up from where the bar starts")
 	expect(Tutorial.RATIO_GOAL <= Tutorial.RATIO_CAP, "and under the tutorial's cap")
-	expect(Tutorial.RATIO_HOLD_S <= 0.25 and Tutorial.RATIO_MAX_S < Tutorial.STEP_MAX_S, "it passes at once, and nobody waits on it as long as on the others")
+	expect(
+		Tutorial.RATIO_HOLD_S <= 0.25 and Tutorial.RATIO_MAX_S < Tutorial.STEP_MAX_S,
+		"it passes at once, and nobody waits on it as long as on the others"
+	)
 	local pct = string.format("%d%%", Tutorial.RATIO_GOAL * 100 + 0.5)
 	for _, s in Tutorial.STEPS do
 		if s.id == "ratio" then
-			expect(string.find(s.touch, pct, 1, true) ~= nil and string.find(s.desktop, pct, 1, true) ~= nil, "the card names the stop")
+			expect(
+				string.find(s.touch, pct, 1, true) ~= nil and string.find(s.desktop, pct, 1, true) ~= nil,
+				"the card names the stop"
+			)
 			expect(#s.touch <= 40, "the phone line fits the card")
 			expect(s.max_s == Tutorial.RATIO_MAX_S, "the step has its own wait")
 		end

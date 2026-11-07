@@ -264,8 +264,8 @@ print("intents")
 do
 	local cases = {
 		{ type = "spawn", tile = 123456 },
-		{ type = "attack", tile = 5, ratio = 0.35 },
-		{ type = "boat", tile = 99, ratio = 1.0 },
+		{ type = "attack", tile = 5, percent = 35 },
+		{ type = "boat", tile = 99, percent = 100 },
 		{ type = "build", kind = "city", tile = 1000 },
 		{ type = "nuke", kind = "hydrogen", tile = 4000 },
 		{ type = "retreat", attack_id = 77 },
@@ -283,9 +283,14 @@ do
 	end
 	U.check(true, "all 11 intent types round-trip")
 	U.assert_eq(
-		{ type = "attack", tile = 5, ratio = 0.01 },
-		Protocol.decode_intent(Protocol.encode_intent({ type = "attack", tile = 5, ratio = -3 })),
-		"ratio clamped"
+		{ type = "attack", tile = 5, percent = 1 },
+		Protocol.decode_intent(Protocol.encode_intent({ type = "attack", tile = 5, percent = 1 })),
+		"smallest valid percent round-trips"
+	)
+	U.check(Protocol.encode_intent({ type = "attack", tile = 5 }) == nil, "attack without a percent is not encoded")
+	U.check(
+		Protocol.encode_intent({ type = "boat", tile = 5, percent = 101 }) == nil,
+		"boat percent above 100 is rejected"
 	)
 	U.assert_eq(
 		{ type = "donate", target = 4, troops = 0 },
@@ -303,9 +308,13 @@ do
 		Protocol.decode_intent(Protocol.encode_intent({ type = "nuke", kind = "atom", tile = 9, amount = 2 })),
 		"nuke amount round-trips"
 	)
-	U.check(Protocol.encode_intent({ type = "build", kind = "city", tile = 1, amount = 0 }) == nil, "amount 0 never encoded")
 	U.check(
-		Protocol.encode_intent({ type = "build", kind = "city", tile = 1, amount = Protocol.MAX_INTENT_AMOUNT + 1 }) == nil,
+		Protocol.encode_intent({ type = "build", kind = "city", tile = 1, amount = 0 }) == nil,
+		"amount 0 never encoded"
+	)
+	U.check(
+		Protocol.encode_intent({ type = "build", kind = "city", tile = 1, amount = Protocol.MAX_INTENT_AMOUNT + 1 })
+			== nil,
 		"amount above the cap never encoded"
 	)
 	do

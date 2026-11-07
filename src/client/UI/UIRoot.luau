@@ -1180,9 +1180,6 @@ function UIRoot._build(self)
 	root:add_child(tooltip)
 
 	self.advisor = UIAdvisor.new(self)
-	ctx.floor_held:Connect(function()
-		self.advisor:on_floor_held()
-	end)
 	self.probe = UILayoutProbe.new(self)
 	local interact = UIInteract.new(ctx)
 	interact.bar = bar
@@ -1684,7 +1681,6 @@ function UIRoot._bind_state(self, s: any)
 	-- resync hands over mid-match)
 	if not (ctx.session ~= nil and ctx.session.state_is_resync == true) then
 		ctx:reset_ratio()
-		ctx.troop_floor = nil -- (a new player's floor arms again in this match: UIAdvisor.check_floor)
 		ctx.alive_from_tick = nil
 		if self.board.expanded then
 			self.board:close_for_match()
@@ -2375,7 +2371,6 @@ end
 local function tips_and_threats(self)
 	self.advisor:check_threats()
 	self.advisor:check_tips()
-	self.advisor:check_floor()
 	self.advisor:flush_volleys()
 end
 

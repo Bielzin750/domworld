@@ -36,6 +36,7 @@ local Protocol = if Net then require(Net.Protocol) else require("../shared/Net/P
 local Coop = if Net then require(Net.Coop) else require("../shared/Net/Coop")
 local Cosmetics: any = if Net then require(Net.Parent.Data.Cosmetics) else require("../shared/Data/Cosmetics")
 local Stars: any = if Net then require(Net.Parent.Data.Stars) else require("../shared/Data/Stars")
+local TroopMath: any = if Net then require(Net.Parent.Core.TroopMath) else require("../shared/Core/TroopMath")
 
 local MatchServer = {}
 MatchServer.__index = MatchServer
@@ -471,6 +472,21 @@ function MatchServer.intent(self: any, peer: any, payload: any): boolean
 	if clean == nil then
 		self.stats.intents_dropped += 1
 		return false
+	end
+	if clean.type == "attack" or clean.type == "boat" then
+		if not TroopMath.is_valid_percent(clean.percent) or clean.ratio ~= nil or clean.troops ~= nil then
+			self.stats.intents_dropped += 1
+			return false
+		end
+		local totals = sim.o_troops
+		local current = if type(totals) == "table" then totals[part.owner] else nil
+		local troops = TroopMath.compute_send(current, clean.percent)
+		if troops == nil then
+			self.stats.intents_dropped += 1
+			return false
+		end
+		clean.percent = nil
+		clean.troops = troops
 	end
 	part.active_msec = self:_now()
 	if clean.type == "donate" then

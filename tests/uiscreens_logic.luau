@@ -342,7 +342,7 @@ inter:on_click(neutral_adj)
 expect(#session.intents == 1, "duplicate click ignored")
 click(enemy_adj)
 expect(
-	#session.intents == 2 and session.intents[2].type == "attack" and session.intents[2].ratio == ctx.ratio,
+	#session.intents == 2 and session.intents[2].type == "attack" and session.intents[2].percent == 25,
 	"click enemy -> attack"
 )
 click(swe_coast)
@@ -360,7 +360,10 @@ do
 		"the stops: 10% 25% 35% 50% 75%, starting at 25%"
 	)
 	ctx:set_ratio(0.8)
-	expect(ctx.ratio == 0.75 and ctx.settings.ratio == nil, "the bar moves to the nearest stop, and nothing is saved of it")
+	expect(
+		ctx.ratio == 0.75 and ctx.settings.ratio == nil,
+		"the bar moves to the nearest stop, and nothing is saved of it"
+	)
 	ctx:set_ratio(1.0)
 	expect(ctx.ratio == 0.75 and fired == 1, "nothing past 75%: the same stop, and nobody is told twice")
 	ctx:set_ratio(0.01)
@@ -376,7 +379,10 @@ do
 		ctx:step_ratio(1)
 		table.insert(walked, ctx.ratio)
 	end
-	expect(table.concat(walked, " ") == "0.25 0.35 0.5 0.75 0.75 0.75", "step_ratio(+1) walks up the stops and stays on the last")
+	expect(
+		table.concat(walked, " ") == "0.25 0.35 0.5 0.75 0.75 0.75",
+		"step_ratio(+1) walks up the stops and stays on the last"
+	)
 	ctx:step_ratio(-3) -- (a wheel's delta: its sign is what counts)
 	expect(ctx.ratio == 0.5, "step_ratio(-n) is one stop down")
 	for _ = 1, 6 do
@@ -396,7 +402,10 @@ do
 	expect(ctx.ratio == 0.1, "a cap under every stop leaves the lowest")
 	fired = 0
 	ctx:set_ratio_max(1.0)
-	expect(ctx.ratio == 0.1 and fired == 1, "lifting the cap leaves the ratio, and the bar is told (the faint stops light up)")
+	expect(
+		ctx.ratio == 0.1 and fired == 1,
+		"lifting the cap leaves the ratio, and the bar is told (the faint stops light up)"
+	)
 	fired = 0
 	ctx:set_ratio(0.75)
 	ctx:reset_ratio()

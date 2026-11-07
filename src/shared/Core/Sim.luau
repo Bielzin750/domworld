@@ -37,6 +37,7 @@ local SimArsenal = require("./SimArsenal")
 local SimAI = require("./SimAI")
 local Teams = require("./Teams")
 local WorldMap = require("./WorldMap")
+local TroopMath = require("./TroopMath")
 local Nations = require("../Data/Nations")
 local Coop = require("../Net/Coop")
 
@@ -955,9 +956,27 @@ function Sim._apply_intent(self: any, id: number, it: { [string]: any })
 		return
 	end
 	if kind == "attack" then
-		self:intent_attack(id, tile, _num(it, "ratio", Rules.DEFAULT_ATTACK_RATIO))
+		if it.troops ~= nil then
+			self:intent_attack_troops(id, tile, _num(it, "troops", 0))
+		elseif it.percent ~= nil then
+			local troops = TroopMath.compute_send(self.o_troops[id], it.percent)
+			if troops ~= nil then
+				self:intent_attack_troops(id, tile, troops)
+			end
+		else
+			self:intent_attack(id, tile, _num(it, "ratio", Rules.DEFAULT_ATTACK_RATIO))
+		end
 	elseif kind == "boat" then
-		self:launch_boat(id, tile, _num(it, "ratio", Rules.DEFAULT_ATTACK_RATIO))
+		if it.troops ~= nil then
+			self:launch_boat_troops(id, tile, _num(it, "troops", 0))
+		elseif it.percent ~= nil then
+			local troops = TroopMath.compute_send(self.o_troops[id], it.percent)
+			if troops ~= nil then
+				self:launch_boat_troops(id, tile, troops)
+			end
+		else
+			self:launch_boat(id, tile, _num(it, "ratio", Rules.DEFAULT_ATTACK_RATIO))
+		end
 	elseif kind == "build" then
 		-- `amount`: a bulk upgrade (level after level, each at the
 		-- next price, until one can't be afforded); only ever more than one level on an existing
