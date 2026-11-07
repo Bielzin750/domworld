@@ -3,6 +3,7 @@
 -- zstd comes from EncodingService in Roblox and from @lune/serde under Lune (tests, tools); other
 -- hosts can plug a decompressor with MapCodec.set_zstd. Base64 is portable Luau (EncodingService's
 -- Base64Decode is used when the engine has it).
+-- Modified for DomWorld, 2026 — see git history for details.
 local MapCodec = {}
 
 local B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
@@ -63,8 +64,8 @@ do
 	if ok and es ~= nil then
 		local algo = (Enum :: any).CompressionAlgorithm.Zstd
 		local ok_z = pcall(function()
-			local z = es:CompressBuffer(buffer.fromstring("rofront"), algo, 3)
-			assert(buffer.tostring(es:DecompressBuffer(z, algo)) == "rofront", "zstd round trip")
+			local z = es:CompressBuffer(buffer.fromstring("DomWorld"), algo, 3)
+			assert(buffer.tostring(es:DecompressBuffer(z, algo)) == "DomWorld", "zstd round trip")
 		end)
 		if ok_z then
 			zstd = function(b: buffer): buffer
@@ -72,7 +73,7 @@ do
 			end
 		end
 		local ok_b = pcall(function()
-			assert(buffer.tostring(es:Base64Decode(buffer.fromstring("cm9mcm9udA=="))) == "rofront", "base64")
+			assert(buffer.tostring(es:Base64Decode(buffer.fromstring("RG9tV29ybGQ="))) == "DomWorld", "base64")
 		end)
 		if ok_b then
 			b64 = function(s: string): buffer

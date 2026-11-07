@@ -340,7 +340,12 @@ function UIAdvisor.on_nuke_launched(self: any, uid: number)
 				ctx:sfx("shell_fire", if mine then -8.0 else -12.0, 0.08)
 			end
 		elseif mine or ctx:tile_screen_pos(n.from_tile).X >= 0.0 then
-			ctx:sfx(if n.kind == Defs.N_SLUG then "shell_fire" else "sam_launch", if mine then -2.0 else -8.0, 0.0, if n.kind == Defs.N_SLUG then 0.6 else 0.85)
+			ctx:sfx(
+				if n.kind == Defs.N_SLUG then "shell_fire" else "sam_launch",
+				if mine then -2.0 else -8.0,
+				0.0,
+				if n.kind == Defs.N_SLUG then 0.6 else 0.85
+			)
 		end
 		return
 	end

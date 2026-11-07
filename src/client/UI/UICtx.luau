@@ -8,6 +8,7 @@
 -- applies one UI scale, see build/notes/ui-kit.md). WorldView / UserInputService use VIEWPORT px.
 -- Every conversion happens here: tile_screen_pos / mouse_pos return logical px, tile_at(pos) takes
 -- logical px, to_view / to_logical convert explicitly.
+-- Modified for DomWorld, 2026 — see git history for details.
 
 local IS_ROBLOX = (game :: any) ~= nil
 
@@ -380,7 +381,7 @@ function UICtx.new()
 	self.touch = false
 	--- Running on a phone / tablet (touch mode never switches off).
 	self.touch_device = false
-	--- The Rofront Staging experience, or Studio: staging-only tools show (Data/Products). See also
+	--- The DomWorld Staging experience, or Studio: staging-only tools show (Data/Products). See also
 	--- admin().
 	self.staging = false
 	if IS_ROBLOX then

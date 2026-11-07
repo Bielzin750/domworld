@@ -160,7 +160,7 @@ def write_glb(path, pos, nrm, uv, tris):
     mn = [min(p[k] for p in pos) for k in range(3)]
     mx = [max(p[k] for p in pos) for k in range(3)]
     gl = {
-        "asset": {"version": "2.0", "generator": "rofront tools/globe/upload_meshes.py"},
+        "asset": {"version": "2.0", "generator": "DomWorld tools/globe/upload_meshes.py"},
         "scene": 0,
         "scenes": [{"nodes": [0]}],
         "nodes": [{"mesh": 0, "name": os.path.splitext(os.path.basename(path))[0]}],
@@ -200,7 +200,7 @@ def _req(method, url, body=None, headers=None, timeout=120):
 
 
 def upload_model(path, name):
-    boundary = "----rofront" + uuid.uuid4().hex
+    boundary = "----DomWorld" + uuid.uuid4().hex
     meta = {"assetType": "Model", "displayName": name[:50], "description": "AIRFRONT globe mesh",
             "creationContext": {"creator": {"userId": CREATOR_USER_ID}}}
     data = open(path, "rb").read()

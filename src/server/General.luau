@@ -1,5 +1,5 @@
 --!strict
--- RoWorld General (Data/Subscription; 2026-10-27): who on this server is subscribed, and their perks.
+-- DomWorld General (Data/Subscription; 2026-10-27): who on this server is subscribed, and their perks.
 -- Roblox says who is (MarketplaceService:GetUserSubscriptionStatusAsync), when they join and whenever
 -- Players.UserSubscriptionStatusChanged fires for the subscription. A General gets the day's crate
 -- and the month's skin (Purchases.general_perks) on joining, on subscribing, and at the first tick of
@@ -16,6 +16,7 @@
 --   General.state(player) -> { on }   for a client that says HELLO
 --   General.tick()            about once a minute (yields)
 --   General.release(player)   PlayerRemoving
+-- Modified for DomWorld, 2026 — see git history for details.
 local IS_ROBLOX = typeof(game) == "Instance"
 local Subscription: any = if IS_ROBLOX
 	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Data.Subscription)

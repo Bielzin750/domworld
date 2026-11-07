@@ -4,6 +4,7 @@
 -- is written to "af_cmd_result" and numbers to af_* attributes once per second.
 --   title | solo <difficulty> | spawn [ocean] | expand [ratio] | join | joinlobby | jointeam | leaveline | public | leave | pause 0|1 | music 0|1 |
 --   theme menu|war | mood [name] | prof [s] | mem | sfx <name> | pops [s] [tiles/s] | menu [settings|game|open|pops|music|done|close] | starter [open|buy|close|new|grant] | burst building|sam | wreck | tutorial [new|next|state|ratio <x>] | mirv [n] | speed <x> | budget <ms> | eliminate | conquer [id] | gold [n] | build <kind> [up] | boat [ratio] [tiles] | focus [owner] | fakelive [n] | adminhuman [n]
+-- Modified for DomWorld, 2026 — see git history for details.
 local Players = game:GetService("Players")
 
 local Diag = {}
@@ -1576,7 +1577,7 @@ function Diag.start(Main: any)
 				-- a sound of ours that can't load: the load-failure hook names it 4 s later
 				local s = Instance.new("Sound")
 				s.Name = "Sfx_failtest"
-				s.SoundId = "rbxassetid://3"
+				s.SoundId = "rbxassetid://0"
 				s.Parent = root
 				s:Play()
 				return "log hook " .. tostring(audio._log_conn ~= nil) .. ", a broken sound added"
@@ -1814,7 +1815,7 @@ function Diag.start(Main: any)
 			local pg = player:FindFirstChildOfClass("PlayerGui")
 			local mn, mv = 0, 0
 			local parts = {}
-			for _, name in { "RofrontMap", "RofrontMapUnits", "RofrontMapLabels" } do
+			for _, name in { "DomWorldMap", "DomWorldMapUnits", "DomWorldMapLabels" } do
 				local n1, v1 = count_gui(pg and pg:FindFirstChild(name))
 				mn += n1
 				mv += v1

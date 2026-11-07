@@ -3,7 +3,7 @@
 icon tests). The five live thumbnails are one illustrated picture in different colours, so personalization has
 nothing to choose between (each 0.34-0.35% qualified play-through). These are different ideas, each a frame of
 the trailer's own captures (build/trailer, Studio film mode, docs/trailer.md): the HUD cropped away, the
-ROWORLD wordmark top left as on the live ones. 1920 x 1080 JPEGs in build/thumbnails/.
+DomWorld wordmark top left as on the live ones. 1920 x 1080 JPEGs in build/thumbnails/.
 
 Usage: .venv/bin/python tools/trailer/thumbnails.py
 """
@@ -36,7 +36,7 @@ def crop(im, box):
     return im.crop(box).resize((W, H), Image.LANCZOS)
 
 
-def wordmark(im, corner, text="ROWORLD"):
+def wordmark(im, corner, text="DomWorld"):
     f = ImageFont.truetype(FONT, 150)
     l, t, r, b = f.getbbox(text)
     pad = 40

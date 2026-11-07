@@ -1463,11 +1463,7 @@ function SimAI:_tribe_boat_tn(sim, id: number): boolean
 				continue
 			end
 			local n = ny * W + nx
-			if
-				readu8(land, n) ~= 1
-				or readi32(owner, n * 4) ~= 0
-				or bit32.band(readu8(flags, n), F_FALLOUT) ~= 0
-			then
+			if readu8(land, n) ~= 1 or readi32(owner, n * 4) ~= 0 or bit32.band(readu8(flags, n), F_FALLOUT) ~= 0 then
 				continue
 			end
 			local shore = -1

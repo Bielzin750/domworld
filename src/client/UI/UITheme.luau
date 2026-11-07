@@ -1341,7 +1341,9 @@ function UITheme.crate_art(): any
 		_crate_art = {}
 		local ok, m = pcall(function()
 			if IS_ROBLOX then
-				return require((game:GetService("ReplicatedStorage"):WaitForChild("Airfront") :: any).Assets.CrateArt) :: any
+				return require(
+						(game:GetService("ReplicatedStorage"):WaitForChild("Airfront") :: any).Assets.CrateArt
+					) :: any
 			end
 			return (require :: any)("../../shared/Assets/CrateArt")
 		end)

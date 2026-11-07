@@ -3,13 +3,14 @@
 --   .bin/lune run tests/sim_bench.luau -- --minutes=15 --seed=1 --human=1 --difficulty=1 --tribes=80
 --   options: --map=<id> (a map id, default world)  --player=pro|basic  --mode=solo|mp
 --            --lat= --lon= (human start, read as an equirectangular position on the map)
---            --png=N (write owner PNGs every N minutes to /private/tmp/rofront-sim via the repo's
+--            --png=N (write owner PNGs every N minutes to /private/tmp/DomWorld-sim via the repo's
 --            Python venv)  --quiet=1 (no per-message lines)
 --
 -- Builds a Sim (the map's nations + N tribes + optionally one scripted human), runs it as fast as possible,
 -- feeds every delta into a GameState and checks the mirror against the Sim (grid, flags, owners,
 -- counts, structures, placement previews) every minute and a snapshot → fresh GameState every
 -- 2 minutes, prints per-minute timing / world statistics in the same format as the original.
+-- Modified for DomWorld, 2026 — see git history for details.
 local process = require("@lune/process")
 local fs = require("@lune/fs")
 
@@ -23,7 +24,7 @@ local SimState = require("../src/shared/Core/SimState")
 local SimColors = require("../src/shared/Core/SimColors")
 local Sim = require("../src/shared/Core/Sim")
 
-local OUT_DIR = "/private/tmp/rofront-sim"
+local OUT_DIR = "/private/tmp/DomWorld-sim"
 
 local minutes = 15
 local seed_value = 1

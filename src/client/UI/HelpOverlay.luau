@@ -5,6 +5,7 @@
 --
 -- Also defines two small containers the kit does not ship: Scroll (ScrollContainer, vertical)
 -- and Grid (GridContainer), both with Godot layout semantics.
+-- Modified for DomWorld, 2026 — see git history for details.
 
 local UITheme = require("./UITheme")
 local W = require("./Widgets")
@@ -13,6 +14,7 @@ local UICtx = require("./UICtx")
 local UIRules = require("./UIRules")
 local Signal = UITheme.core("Signal")
 local Defs = UICtx.core("Defs")
+local GameInfo = UICtx.data("GameInfo")
 
 local HelpOverlay = W.class(W.Control)
 
@@ -252,21 +254,16 @@ HelpOverlay.SECTIONS = {
 		text = "Hold {win}% of the world's land to win (fallout doesn't count). Multiplayer matches end after 40 minutes and the largest nation wins. Lose all your land and you're out.",
 	},
 }
---- The "Credits & licence" card, last: the AGPL's Appropriate Legal Notices (a copyright notice, no
---- warranty, that the game may be shared under the licence, where the licence is) and the credits
---- (2026-10-25: the AGPL licence and its notices and the copyright notice; the flags, map icons, sprites
---- and effects are RoWorld's own or public domain since that day, and the World map since 2026-10-26).
---- NOTICE.md and LICENSE in the source have the full text.
+-- Credits and license notices shown to players. LICENSE and NOTICE.md contain the full source text.
 HelpOverlay.LEGAL = {
-	"RoWorld is a modified version of OpenFront. © OpenFront and Contributors. Changes © 2026 Snick Co.",
-	"RoWorld is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License, version 3, with the additional terms in its LICENSE file. It comes with ABSOLUTELY NO WARRANTY. The licence comes with RoWorld's source code.",
-	"Maps made with Natural Earth and NOAA ETOPO1 data (public domain). Country flags from Wikimedia Commons (public domain). Music by Rodrigo Flores.",
-	"RoWorld is not affiliated with or endorsed by OpenFront.",
+	"DomWorld é baseado em RoWorld, de Luke Chatton, e em OpenFront.",
+	"© OpenFront and Contributors",
+	"DomWorld é software livre sob GNU AGPL v3, incluindo os termos adicionais do arquivo LICENSE.",
+	"O software é fornecido sem garantia. Consulte LICENSE e NOTICE.md no código-fonte.",
+	"DomWorld não é afiliado nem endossado por RoWorld ou OpenFront.",
+	"A arte original do DomWorld é licenciada sob Creative Commons BY-SA 4.0.",
 }
---- Where the source lives, under the credits: plain text with the GitHub mark, since Roblox games
---- can't link off-platform (2026-10-25: "Source <github logo> <repo>" at the bottom; the public repo is
---- lukechatton/roworld, lukechatton/rofront is private).
-HelpOverlay.SOURCE_REPO = "lukechatton/roworld"
+HelpOverlay.SOURCE_REPO = GameInfo.SOURCE_URL
 --- The card that pops up over the repo name when it's pressed (2026-10-25), and how long it stays.
 HelpOverlay.SOURCE_TIP = {
 	title = "Source code",
@@ -326,6 +323,7 @@ function HelpOverlay.new(c: any)
 	self.is_open = false
 	self._built_compact = -1
 	self._scroll = nil
+	self.mode = "help"
 	self:set_anchors_and_offsets_preset(W.PRESET_FULL_RECT)
 	self:set_mouse_filter(W.MOUSE_STOP)
 	self:set_visible(false)
@@ -384,11 +382,14 @@ function HelpOverlay._build(self)
 	local tv = UITheme.vbox(2)
 	tv.size_flags_horizontal = W.EXPAND_FILL
 	tv.size_flags_vertical = W.SHRINK_CENTER
-	tv:add_child(UITheme.label("HOW TO PLAY", if not compact then 24 else 18, 800, UITheme.TEXT, 3))
+	local title = if self.mode == "about" then "ABOUT / LICENSE" else "HOW TO PLAY"
+	tv:add_child(UITheme.label(title, if not compact then 24 else 18, 800, UITheme.TEXT, 3))
 	local paused = ctx:mode() == UICtx.MODE_SOLO and ctx:in_match()
 	tv:add_child(
 		UITheme.label(
-			"Conquer the real world in seven ideas." .. (if paused then "  ·  Game paused" else ""),
+			if self.mode == "about"
+				then "Código-fonte, licença, créditos e avisos do DomWorld."
+				else "Conquer the real world in seven ideas." .. (if paused then "  ·  Game paused" else ""),
 			13,
 			500,
 			UITheme.TEXT_2
@@ -424,28 +425,33 @@ function HelpOverlay._build(self)
 	local body = UITheme.vbox(18)
 	body.size_flags_horizontal = W.EXPAND_FILL
 	body_m:add_child(body)
-	-- Two cards per row on wide screens; "wide" sections span the full row.
-	local row = nil
-	for i, d in ipairs(HelpOverlay.SECTIONS) do
-		local card = self:_section(i, d)
-		if compact or d.wide then
-			body:add_child(card)
-			row = nil
-			continue
+	if self.mode == "about" then
+		body:add_child(HelpOverlay._legal())
+		body:add_child(HelpOverlay._source())
+	else
+		-- Two cards per row on wide screens; "wide" sections span the full row.
+		local row = nil
+		for i, d in ipairs(HelpOverlay.SECTIONS) do
+			local card = self:_section(i, d)
+			if compact or d.wide then
+				body:add_child(card)
+				row = nil
+				continue
+			end
+			if row == nil then
+				row = UITheme.hbox(14)
+				row.size_flags_horizontal = W.EXPAND_FILL
+				body:add_child(row)
+			end
+			row:add_child(card)
+			if row:get_child_count() >= 2 then
+				row = nil
+			end
 		end
-		if row == nil then
-			row = UITheme.hbox(14)
-			row.size_flags_horizontal = W.EXPAND_FILL
-			body:add_child(row)
-		end
-		row:add_child(card)
-		if row:get_child_count() >= 2 then
-			row = nil
-		end
+		body:add_child(self:_controls())
+		body:add_child(HelpOverlay._legal())
+		body:add_child(HelpOverlay._source())
 	end
-	body:add_child(self:_controls())
-	body:add_child(self:_legal())
-	body:add_child(self:_source())
 end
 
 local function card_panel(mh: number, mv: number)
@@ -565,7 +571,7 @@ function HelpOverlay._controls(self)
 	return card
 end
 
-function HelpOverlay._legal(self)
+function HelpOverlay._legal()
 	local card = card_panel(18.0, 16.0)
 	local v = UITheme.vbox(8)
 	card:add_child(v)
@@ -580,23 +586,36 @@ function HelpOverlay._legal(self)
 	return card
 end
 
---- "Source  [<GitHub mark> lukechatton/roworld]", centred below the credits card. Games can't open web
---- links, so pressing the repo name pops up where to find it instead (SOURCE_TIP).
-function HelpOverlay._source(self)
-	local row = UITheme.hbox(4)
-	row.size_flags_horizontal = W.SHRINK_CENTER
-	local cap = UITheme.label("Source", 13, 500, UITheme.TEXT_3)
-	cap.size_flags_vertical = W.SHRINK_CENTER
-	row:add_child(cap)
-	local b = UITheme.button(HelpOverlay.SOURCE_REPO, "GhostButton", "github", 40.0)
-	b:set_font_size(13)
-	b:add_theme_constant_override("icon_max_width", 18)
-	b.size_flags_vertical = W.SHRINK_CENTER
-	b.pressed:Connect(function()
-		self:_show_source_tip(b)
+--- The URL is shown in a selectable text field because Roblox does not open external links in-game.
+function HelpOverlay._source()
+	local v = UITheme.vbox(8)
+	v.size_flags_horizontal = W.EXPAND_FILL
+	v:add_child(UITheme.label("CÓDIGO-FONTE", 14, 800, UITheme.TEXT, 2))
+	local link = UICtx.make("TextBox", {
+		BackgroundColor3 = UITheme.color3(UITheme.GLASS_RAISED),
+		BackgroundTransparency = 0,
+		BorderSizePixel = 0,
+		ClearTextOnFocus = false,
+		FontFace = UITheme.font(500),
+		Text = HelpOverlay.SOURCE_REPO,
+		TextColor3 = UITheme.TEXT,
+		TextEditable = true,
+		TextSize = 14,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Center,
+		Size = UDim2.fromScale(1, 1),
+	}, nil) :: TextBox
+	link.FocusLost:Connect(function()
+		link.Text = HelpOverlay.SOURCE_REPO
 	end)
-	row:add_child(b)
-	return row
+	local wrapped = W.wrap(link)
+	wrapped:set_min_size(Vector2.new(300, 40))
+	v:add_child(wrapped)
+	local tip = UITheme.label("Toque e selecione o endereço para copiá-lo.", 12, 500, UITheme.TEXT_3)
+	tip:set_autowrap(true)
+	v:add_child(tip)
+	return v
 end
 
 --- The tooltip card above the repo name (forced, so taps show it too); it hides after SOURCE_TIP_S,
@@ -670,10 +689,11 @@ function HelpOverlay._place(self)
 	self._panel:reset_size()
 end
 
-function HelpOverlay.open(self)
+function HelpOverlay.open(self, mode: string?)
 	if self.is_open then
 		return
 	end
+	self.mode = if mode == "about" then "about" else "help"
 	self.is_open = true
 	self:_build()
 	self:_place()

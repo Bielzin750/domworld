@@ -306,7 +306,10 @@ function Tracker.result(self: any, id: number, left: boolean?): Result
 		-- (a team game: everyone on the winning team won)
 		won = not gone
 			and sim.phase == PHASE_OVER
-			and (sim.winner == id or ((sim.winner_team or 0) ~= 0 and sim.o_team ~= nil and sim.o_team[id] == sim.winner_team)),
+			and (
+				sim.winner == id
+				or ((sim.winner_team or 0) ~= 0 and sim.o_team ~= nil and sim.o_team[id] == sim.winner_team)
+			),
 		minutes = math.max(0, (seat.out_tick or sim.tick) - seat.start) / TICKS_PER_MINUTE,
 		shares = seat.peak / share,
 		kills = seat.kills,

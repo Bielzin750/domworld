@@ -456,7 +456,9 @@ function TopStatus._refresh_teams(self, me: number)
 		local tcol = s:team_color(top.team)
 		self._lead_box:set_visible(true)
 		T.set_swatch_color(self._lead_sw, tcol)
-		self._lead:set_text(if ctx.compact then T.fmt_pct(ts) else string.format("%s %s", ctx:team_label(top.team), T.fmt_pct(ts)))
+		self._lead:set_text(
+			if ctx.compact then T.fmt_pct(ts) else string.format("%s %s", ctx:team_label(top.team), T.fmt_pct(ts))
+		)
 		table.insert(self._bar.markers, { v = ts, color = T.owner_ui_color(tcol) })
 	else
 		self._lead_box:set_visible(false)

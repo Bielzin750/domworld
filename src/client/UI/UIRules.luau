@@ -283,7 +283,12 @@ function UIRules.result_offers(award: any, inv: any, catalog: any, stars: number
 			ready = ready,
 			text = if ready
 				then "UNLOCK " .. string.upper(goal.title)
-				else string.format("%s  %s / %s", string.upper(goal.title), UICtx.commas(balance), UICtx.commas(goal.stars)),
+				else string.format(
+					"%s  %s / %s",
+					string.upper(goal.title),
+					UICtx.commas(balance),
+					UICtx.commas(goal.stars)
+				),
 		}
 	end
 	if not unlocks.stars2x and catalog.item("stars2x") ~= nil then

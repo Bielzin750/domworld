@@ -7,6 +7,7 @@
 -- "select before attacking" switches and "Show tips again", which stood in the game menu itself
 -- before. The top bar's gear opens the window on that page (on the title too); the game menu's
 -- Settings row turns to it, and DONE turns back.
+-- Modified for DomWorld, 2026 — see git history for details.
 
 local UITheme = require("./UITheme")
 local W = require("./Widgets")
@@ -354,7 +355,7 @@ function PauseMenu.new(c: any)
 	self.pops_toggled = Signal.new()
 	self.restart_requested = Signal.new()
 	self.tips_reset = Signal.new()
-	--- Rofront Staging, and game admins: "Replay as new player" was pressed and confirmed
+	--- DomWorld Staging, and game admins: "Replay as new player" was pressed and confirmed
 	self.new_player_requested = Signal.new()
 	self.is_open = false
 	self._layout_compact = -1
@@ -478,7 +479,7 @@ function PauseMenu.new(c: any)
 		self._tips:set_text("Tips will show again")
 		self._tips:set_disabled(true)
 	end)
-	-- Rofront Staging (and Studio), and game admins on production (2026-10-27): be a new player again,
+	-- DomWorld Staging (and Studio), and game admins on production (2026-10-27): be a new player again,
 	-- to see the tutorial and every other first-time thing (2026-10-04: "Replay as new player"). Asked
 	-- first: it ends the match being played, and on production it is a real account's match count.
 	self._new_player = UITheme.button("Replay as new player", "GhostButton", "retreat", 44.0)

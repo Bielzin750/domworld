@@ -170,7 +170,11 @@ function StarterOffer._build(self)
 		ZIndex = 61,
 	}, root)
 	new("UICorner", { CornerRadius = UDim.new(0, 18) }, win)
-	new("UIStroke", { Color = GOLD, Thickness = 2, Transparency = 0.25, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, win)
+	new(
+		"UIStroke",
+		{ Color = GOLD, Thickness = 2, Transparency = 0.25, ApplyStrokeMode = Enum.ApplyStrokeMode.Border },
+		win
+	)
 	new("UIGradient", {
 		Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(150, 120, 140)),
 		Rotation = 90,
@@ -387,8 +391,16 @@ function StarterOffer._build(self)
 		ZIndex = 65,
 	}, win)
 	new("UICorner", { CornerRadius = UDim.new(0, 14) }, buy)
-	new("UIGradient", { Color = ColorSequence.new(Color3.fromRGB(255, 220, 110), Color3.fromRGB(242, 150, 30)), Rotation = 90 }, buy)
-	new("UIStroke", { Color = INK, Thickness = 2, Transparency = 0.2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, buy)
+	new(
+		"UIGradient",
+		{ Color = ColorSequence.new(Color3.fromRGB(255, 220, 110), Color3.fromRGB(242, 150, 30)), Rotation = 90 },
+		buy
+	)
+	new(
+		"UIStroke",
+		{ Color = INK, Thickness = 2, Transparency = 0.2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border },
+		buy
+	)
 	self._buy_scale = new("UIScale", {}, buy)
 	self._buy_text = text(buy, {
 		Text = "BUY NOW",
@@ -476,7 +488,11 @@ function StarterOffer._tile(_self, win: Instance, it: any, x: number, y: number)
 		ZIndex = 62,
 	}, win)
 	new("UICorner", { CornerRadius = UDim.new(0, 12) }, tile)
-	new("UIGradient", { Color = ColorSequence.new(top:Lerp(NIGHT, 0.45), bottom:Lerp(NIGHT, 0.82)), Rotation = 90 }, tile)
+	new(
+		"UIGradient",
+		{ Color = ColorSequence.new(top:Lerp(NIGHT, 0.45), bottom:Lerp(NIGHT, 0.82)), Rotation = 90 },
+		tile
+	)
 	new("UIStroke", { Color = top:Lerp(WHITE, 0.4), Thickness = 1.5, Transparency = 0.45 }, tile)
 	local crate = UITheme.crate_art()
 	new("ImageLabel", {
@@ -636,7 +652,9 @@ end
 
 function StarterOffer._tick_clock(self)
 	local o = self:_offer()
-	local left = if type(o) == "table" and o.state == "active" and o.ends_at ~= nil
+	local left = if type(o) == "table"
+			and o.state == "active"
+			and o.ends_at ~= nil
 		then o.ends_at - os.clock()
 		else Starter.DURATION_S
 	self._clock.Text = StarterOffer.clock(left)
@@ -654,8 +672,7 @@ function StarterOffer._buy(self)
 	end
 	self._pending = { phase = "prompt", since = os.clock() }
 	local ok = pcall(function()
-		game:GetService("MarketplaceService")
-			:PromptProductPurchase(game:GetService("Players").LocalPlayer, id)
+		game:GetService("MarketplaceService"):PromptProductPurchase(game:GetService("Players").LocalPlayer, id)
 	end)
 	if not ok then
 		self._pending = nil
@@ -767,10 +784,7 @@ function StarterOffer.apply_layout(self)
 	self._k = k * UITheme.scale
 	self._scale.Scale = self._k
 	local u = UITheme.scale
-	self._win.Position = UDim2.fromOffset(
-		(area.Min.X + area.Width * 0.5) * u,
-		(area.Min.Y + area.Height * 0.5) * u
-	)
+	self._win.Position = UDim2.fromOffset((area.Min.X + area.Width * 0.5) * u, (area.Min.Y + area.Height * 0.5) * u)
 end
 
 return StarterOffer

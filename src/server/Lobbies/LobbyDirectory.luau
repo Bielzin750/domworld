@@ -390,7 +390,12 @@ function LobbyDirectory.join(self: any, player: any, id: string, party: { [strin
 				mine = c
 			end
 		end
-		if mine == nil or mine.code == nil or not LobbyRules.joinable(mine, deps.now()) or mine.players + n > mine.max then
+		if
+			mine == nil
+			or mine.code == nil
+			or not LobbyRules.joinable(mine, deps.now())
+			or mine.players + n > mine.max
+		then
 			self:_log("join failed: " .. tostring(err))
 			return false, "Couldn't reach the lobby list. Try again in a moment."
 		end
@@ -400,7 +405,8 @@ function LobbyDirectory.join(self: any, player: any, id: string, party: { [strin
 	end
 	local l = reserved
 	if l == nil or l.code == nil then
-		return false, if n > 1 then "That match has no room for your whole party." else "That match is full or already starting."
+		return false,
+			if n > 1 then "That match has no room for your whole party." else "That match is full or already starting."
 	end
 	local data: { [string]: any } = { lobby = l.id, map = l.map }
 	if n > 1 and party ~= nil then
@@ -479,7 +485,12 @@ end
 --- soonest public match of `mode` (or one it takes from: LobbyRules.takes_from) with room for all of them, in one store step, and sends them
 --- there (yields). `opts.id`: only that lobby; `opts.wanted()`: checked before the teleport (false:
 --- the seats go back). Returns ok, reason, lobby: reason NO_ROOM when no lobby has room now.
-function LobbyDirectory.join_public(self: any, players: { any }, mode: string, opts: { [string]: any }?): (boolean, string?, LobbyRules.Lobby?)
+function LobbyDirectory.join_public(
+	self: any,
+	players: { any },
+	mode: string,
+	opts: { [string]: any }?
+): (boolean, string?, LobbyRules.Lobby?)
 	local deps = self.deps
 	local o: { [string]: any } = opts or {}
 	local n = math.max(1, #players)

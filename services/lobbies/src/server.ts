@@ -164,7 +164,7 @@ export function createServer(store: LobbyStore, opts: ServerOptions): http.Serve
 	let requests = 0;
 	let rejected = 0;
 	const byRoute: Record<string, number> = {};
-	// how the game servers reach us: through Cloudflare (rofront.snick.co) or straight to the port
+	// how the game servers reach us: through Cloudflare (DomWorld.snick.co) or straight to the port
 	const via = { cloudflare: 0, direct: 0 };
 	let lastRejectLog = 0;
 	const auth = new StatsAuth(opts.secret, opts.statsPassword ?? (() => null), () => (opts.nowSec ? opts.nowSec() : Date.now() / 1000));
@@ -333,7 +333,7 @@ export function createServer(store: LobbyStore, opts: ServerOptions): http.Serve
 			}
 			const body = JSON.stringify({
 				ok: true,
-				service: "rofront-lobbies",
+				service: "DomWorld-lobbies",
 				uptime: Math.round((Date.now() - started) / 1000),
 				enabled: opts.flags().enabled,
 				requests,

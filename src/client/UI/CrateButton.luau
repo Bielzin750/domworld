@@ -122,16 +122,12 @@ function CrateButton._build(self)
 		Color = ColorSequence.new(Color3.fromRGB(255, 214, 110), Color3.fromRGB(242, 160, 40)),
 		Rotation = 90,
 	}, pill)
-	new(
-		"UIStroke",
-		{
-			Color = Color3.fromRGB(70, 40, 6),
-			Thickness = 2,
-			Transparency = 0.2,
-			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-		},
-		pill
-	)
+	new("UIStroke", {
+		Color = Color3.fromRGB(70, 40, 6),
+		Thickness = 2,
+		Transparency = 0.2,
+		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+	}, pill)
 	self._pill = pill
 	self._pill_text = new("TextLabel", {
 		BackgroundTransparency = 1,

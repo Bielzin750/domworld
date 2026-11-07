@@ -1018,7 +1018,7 @@ function GameState._apply_tiles(self: GameState, tiles: { number }): { number }
 	local olds = (self :: any)._tiles_old
 	if olds == nil then
 		olds = {}
-		;(self :: any)._tiles_old = olds
+		(self :: any)._tiles_old = olds
 	end
 	for k = #tiles + 1, #olds do
 		olds[k] = nil

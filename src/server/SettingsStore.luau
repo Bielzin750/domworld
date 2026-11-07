@@ -20,6 +20,7 @@
 -- (server/Handoff, 2026-11-03): nothing is read.
 --
 -- The Roblox services are injectable (SettingsStore.configure) so tests drive it headless.
+-- Modified for DomWorld, 2026 — see git history for details.
 
 local IS_ROBLOX = typeof(game) == "Instance"
 local SettingsMod: any = if IS_ROBLOX
@@ -30,7 +31,7 @@ local DsGate = require("./DsGate")
 
 local SettingsStore = {}
 
-SettingsStore.STORE_NAME = "AirfrontSettings_v1"
+SettingsStore.STORE_NAME = "DomWorldSettings_v1"
 SettingsStore.FLUSH_SEC = 12
 SettingsStore.MAX_SECTIONS = SettingsMod.MAX_SECTIONS
 SettingsStore.MAX_KEYS = SettingsMod.MAX_KEYS

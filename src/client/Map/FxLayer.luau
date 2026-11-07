@@ -30,12 +30,13 @@
 -- Every pooled object remembers what it was last given and is written only what changed (2026-10-26,
 -- phones' slow frames: a nuke's 240 debris sprites were written six properties each a frame, with the
 -- view still and between their frames), and spent effects leave their lists in one pass, in order.
+-- Modified for DomWorld, 2026 — see git history for details.
 local ContentProvider = game:GetService("ContentProvider")
 local RS = game:GetService("ReplicatedStorage")
 local Airfront = RS:WaitForChild("Airfront")
 local Defs = require(Airfront:WaitForChild("Core"):WaitForChild("Defs")) :: any
 local Rules = require(Airfront:WaitForChild("Core"):WaitForChild("Rules")) :: any
--- Every sprite here is drawn for Rofront, rows of one atlas (tools/assets/make_map_fx.py; 2026-10-25:
+-- Every sprite here is drawn for DomWorld, rows of one atlas (tools/assets/make_map_fx.py; 2026-10-25:
 -- all new art): the explosions, the debris a nuke leaves and the conquest's flag.
 local MapFx = require(Airfront:WaitForChild("Assets"):WaitForChild("MapFx")) :: any
 local FrameClock = require(script.Parent:WaitForChild("FrameClock")) :: any

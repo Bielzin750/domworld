@@ -10,6 +10,7 @@
 --   UIKIT_SCALE     number: force the UI scale (0 = automatic)
 --   UIKIT_TOUCH     bool: touch mode
 --   UIKIT_SCENE     "hud" (default) | "placing" | "tray" | "intercept"
+-- Modified for DomWorld, 2026 — see git history for details.
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UI = script.Parent.Parent:WaitForChild("UI")
@@ -26,8 +27,8 @@ local Mock = require(script.Parent:WaitForChild("UIKitMock"))
 local Defs = require(game:GetService("ReplicatedStorage").Airfront.Core.Defs)
 
 local BACKDROPS = {
-	europe = { "rbxassetid://112172595346580", "rbxassetid://111073447149561" },
-	globe = { "rbxassetid://103323506509073", "rbxassetid://124385868395526" },
+	europe = { "rbxassetid://0", "rbxassetid://0" },
+	globe = { "rbxassetid://0", "rbxassetid://0" },
 }
 
 T.init()

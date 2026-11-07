@@ -1749,7 +1749,10 @@ function Sim._game_over(self: any, w: number, reason: number, team: number?)
 			Defs.MSG_ALERT,
 			if reason == Defs.OVER_DOMINATION
 				then who .. " has won"
-				else "Time is up — " .. string.lower(string.sub(who, 1, 1)) .. string.sub(who, 2) .. " holds the most land and wins"
+				else "Time is up — "
+					.. string.lower(string.sub(who, 1, 1))
+					.. string.sub(who, 2)
+					.. " holds the most land and wins"
 		)
 	elseif w > 0 and reason == Defs.OVER_DOMINATION then
 		self:msg(-1, Defs.MSG_ALERT, self.o_name[w] .. " has conquered the world")

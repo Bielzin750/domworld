@@ -160,7 +160,11 @@ function Diag.start(ServerMain: any)
 				local n = tonumber(w[3]) or 1
 				local done = 0
 				for _, l in dir:lobbies() do
-					if l.status == "open" and LobbyRules.mode_of(l) == mode and l.starts > now + LobbyRules.JOIN_CLOSE_S then
+					if
+						l.status == "open"
+						and LobbyRules.mode_of(l) == mode
+						and l.starts > now + LobbyRules.JOIN_CLOSE_S
+					then
 						store.update(l.id, function(v: any): any?
 							local d = LobbyRules.decode(v)
 							if d == nil then
@@ -181,7 +185,17 @@ function Diag.start(ServerMain: any)
 			local parts = {}
 			for _, l in dir:lobbies() do
 				if l.status == "open" then
-					table.insert(parts, ("%s %s %s %d/%d in %ds"):format(string.sub(l.id, 1, 6), LobbyRules.mode_of(l), l.map, l.players, l.max, l.starts - now))
+					table.insert(
+						parts,
+						("%s %s %s %d/%d in %ds"):format(
+							string.sub(l.id, 1, 6),
+							LobbyRules.mode_of(l),
+							l.map,
+							l.players,
+							l.max,
+							l.starts - now
+						)
+					)
 				end
 			end
 			local d = dir.demand
@@ -330,7 +344,11 @@ function Diag.start(ServerMain: any)
 				if not Diag.is_fake(peer) and part.owner ~= 0 then
 					local best = 0
 					for id = 1, sim.owner_total do
-						if sim.o_kind[id] == 0 and sim.o_alive[id] == 1 and (best == 0 or sim.o_tiles[id] > sim.o_tiles[best]) then
+						if
+							sim.o_kind[id] == 0
+							and sim.o_alive[id] == 1
+							and (best == 0 or sim.o_tiles[id] > sim.o_tiles[best])
+						then
 							best = id
 						end
 					end

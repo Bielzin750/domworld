@@ -14,6 +14,7 @@
 --                    suggestions: the set's 6 flags as one bundle at a discount).
 --
 -- A receipt grants its flag whenever it comes (the prompt may close after the shop turned over).
+-- Modified for DomWorld, 2026 — see git history for details.
 local IS_ROBLOX = typeof(game) == "Instance"
 local ShopFlags: any = if IS_ROBLOX
 	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Assets.ShopFlags)
@@ -214,7 +215,7 @@ function Shop.set_keys(id: string): { string }
 	return keys
 end
 
---- Set `id`'s bundle product ids: (production, Rofront Staging); 0 = not made yet.
+--- Set `id`'s bundle product ids: (production, DomWorld Staging); 0 = not made yet.
 function Shop.bundle_ids(id: string): (number, number)
 	local s = (ShopFlags.sets or {})[id]
 	return if s then s.product or 0 else 0, if s then s.staging or 0 else 0

@@ -1,10 +1,11 @@
 --!nonstrict
--- RoWorld General's window (Data/Subscription; 2026-10-27): what the monthly subscription gives, and
+-- DomWorld General's window (Data/Subscription; 2026-10-27): what the monthly subscription gives, and
 -- SUBSCRIBE, which opens Roblox's own prompt (MarketplaceService:PromptSubscriptionPurchase). Roblox
 -- bills and renews it; the server hears of it (server/General, OP.GENERAL) and the window then says
 -- the player is a General. Opened from the title's General button.
 --
 --   GeneralOffer.new(ctx)   :bind(session)   :open(from)   :close()   .closed (Signal)   .is_open
+-- Modified for DomWorld, 2026 — see git history for details.
 local UITheme = require("./UITheme")
 local W = require("./Widgets")
 local GlassPanel = require("./GlassPanel")
@@ -96,7 +97,7 @@ function GeneralOffer._build(self)
 	local left = UITheme.vbox(10)
 	left.size_flags_vertical = W.SHRINK_CENTER
 	body:add_child(left)
-	self._title = UITheme.label("ROWORLD GENERAL", 26, 800, UITheme.GOLD, 2)
+	self._title = UITheme.label("DomWorld GENERAL", 26, 800, UITheme.GOLD, 2)
 	left:add_child(self._title)
 	self._sub = UITheme.label("Every perk below, every month.", 13, 500, UITheme.TEXT_2)
 	self._sub:set_autowrap(true)

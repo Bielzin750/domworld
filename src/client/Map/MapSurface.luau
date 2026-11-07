@@ -20,6 +20,7 @@
 --   * a border next to an ally is mixed 35% toward green;
 --   * defended tiles (near a same-owner defense post): border checkerboard x0.7, fill x0.85.
 -- (Lune tests load this file with the shared modules from the repo.)
+-- Modified for DomWorld, 2026 — see git history for details.
 local IS_ROBLOX = (game :: any) ~= nil
 local AssetService = if IS_ROBLOX then game:GetService("AssetService") else nil :: any
 local function core(name: string): any
@@ -556,7 +557,7 @@ function MapSurface.set_map(self: MapSurface, map: any)
 	end
 	self.ok = all_ok
 	if not all_ok then
-		warn("[RoWorld] map: EditableImage unavailable (memory budget) — parts of the map cannot be drawn")
+		warn("[DomWorld] map: EditableImage unavailable (memory budget) — parts of the map cannot be drawn")
 	end
 	self.ready = true
 	if self._state ~= nil then

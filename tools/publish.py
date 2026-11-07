@@ -24,13 +24,13 @@ import urllib.error
 import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, "build", "airfront-release.rbxl")
-TITLE = "Airfront"
+OUT = os.path.join(ROOT, "build", "DomWorld-release.rbxl")
+TITLE = "DomWorld"
 DESCRIPTION = (
-    "Real-time territory conquest on a 3D Earth. Start as a single nation and expand, attack, build "
-    "cities, ports and factories, sail invasions, form alliances, and launch nukes against 88 real-world "
-    "AI nations and hundreds of tribes. Conquer 80% of the world to win. Play solo at three difficulties "
-    "or jump into a shared multiplayer match."
+	"DomWorld is a real-time territorial strategy game for Roblox. Expand your territory, manage resources, "
+	"build structures, form alliances and compete in solo or shared matches. Free software under GNU AGPL v3. "
+	"Source code: https://github.com/Bielzin750/domworld. Derived from RoWorld and OpenFront; not affiliated "
+	"with or endorsed by them."
 )
 
 

@@ -103,7 +103,10 @@ function SimNaval.install(C)
 			return false
 		end
 		-- (a person: kind human and no bot; a bot player's AI holds itself to the AI's limit)
-		if self.o_boats[id] >= Rules.max_boats(self.o_tiles[id], self.o_kind[id] == Defs.KIND_HUMAN and self.o_bot[id] ~= 1) then
+		if
+			self.o_boats[id]
+			>= Rules.max_boats(self.o_tiles[id], self.o_kind[id] == Defs.KIND_HUMAN and self.o_bot[id] ~= 1)
+		then
 			self:msg(id, Defs.MSG_INFO, "Too many transports at sea")
 			return false
 		end
@@ -209,7 +212,11 @@ function SimNaval.install(C)
 			-- human protection).
 			self.o_troops[id] += u.troops
 			if self:shielded(tg) then
-				self:msg(id, Defs.MSG_INFO, string.format("Your transport turned back: %s just spawned", self.o_name[tg]))
+				self:msg(
+					id,
+					Defs.MSG_INFO,
+					string.format("Your transport turned back: %s just spawned", self.o_name[tg])
+				)
 			end
 			return
 		end

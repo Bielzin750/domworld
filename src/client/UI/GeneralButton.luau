@@ -1,12 +1,13 @@
 --!nonstrict
--- The title screen's RoWorld General button (Data/Subscription; 2026-10-27), under the flag shop's and
+-- The title screen's DomWorld General button (Data/Subscription; 2026-10-27), under the flag shop's and
 -- the starter pack's: a night-blue card edged in gold, a general's three stars on a slowly turning
 -- sunburst, GENERAL in gold, a line that cycles through what a General gets, a gold MONTHLY tab on its
 -- corner, a gold glow breathing behind it, a light that crosses it every few seconds and a star that
 -- glints now and then. The first
--- version (a plain glass button reading ROWORLD GENERAL) was easy to miss. A General sees GENERAL and
+-- version (a plain glass button reading DomWorld GENERAL) was easy to miss. A General sees GENERAL and
 -- "Your perks are on". pressed() -> UIRoot opens the window (GeneralOffer). Hidden where the
 -- subscription doesn't exist (Subscription.id() == "").
+-- Modified for DomWorld, 2026 — see git history for details.
 local UITheme = require("./UITheme")
 local W = require("./Widgets")
 local UICtx = require("./UICtx")
@@ -190,7 +191,7 @@ function GeneralButton._build(self)
 	}, card)
 	-- the words
 	text(card, {
-		Text = "ROWORLD",
+		Text = "DomWorld",
 		FontFace = FONT_B,
 		TextSize = 11,
 		TextColor3 = GOLD_LIGHT,

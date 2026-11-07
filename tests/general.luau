@@ -1,7 +1,8 @@
 --!nocheck
--- RoWorld General (Data/Subscription, server/General, Purchases.general_perks, the Rewards bonus;
+-- DomWorld General (Data/Subscription, server/General, Purchases.general_perks, the Rewards bonus;
 -- 2026-10-27): who is subscribed, a crate (or Stars) once a UTC day, the month's skin kept for good,
 -- +50% Stars on every match. Run: .bin/lune run tests/general.luau
+-- Modified for DomWorld, 2026 — see git history for details.
 require("./prelude")
 local Subscription = require("../src/shared/Data/Subscription")
 local Cosmetics = require("../src/shared/Data/Cosmetics")

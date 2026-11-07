@@ -60,7 +60,10 @@ function ChestView.build(vpf: ViewportFrame): any
 		mesh.Scale = v3(p.scale)
 		mesh.Parent = part
 		part.Parent = vpf
-		table.insert(chest.parts, { part = part, mesh = mesh, cf = CFrame.new(table.unpack(p.cf)), lid = p.lid == true, scale = v3(p.scale) })
+		table.insert(
+			chest.parts,
+			{ part = part, mesh = mesh, cf = CFrame.new(table.unpack(p.cf)), lid = p.lid == true, scale = v3(p.scale) }
+		)
 	end
 	return chest
 end

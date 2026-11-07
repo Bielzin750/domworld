@@ -330,7 +330,7 @@ local function extract(heat: number, rt: number, nz: { number }, owned: boolean,
 	local col = G.BLOOM
 	local r, g, bb, a = col[1] * s, col[2] * s, col[3] * s, s
 	-- the particle dots
-	if h2 >(if owned then G.PARTICLE_THRESHOLD_OWNED else G.PARTICLE_THRESHOLD_UNOWNED) then
+	if h2 > (if owned then G.PARTICLE_THRESHOLD_OWNED else G.PARTICLE_THRESHOLD_UNOWNED) then
 		local rate = G.PARTICLE_FLICKER_SPEED * (0.4 + h1 * 1.2)
 		local flick = math.max(0.0, sin(rt * rate + h1 * 12.0) * 0.8 + 0.2)
 		flick *= flick
@@ -510,7 +510,8 @@ function FalloutGlow._draw(self: any, st: any, W: number)
 		self:_show(false)
 		return
 	end
-	fb[1], fb[2], fb[3], fb[4] = math.max(0, i0 - 2), math.max(0, j0 - 2), math.min(bw - 1, i1 + 2), math.min(bh - 1, j1 + 2)
+	fb[1], fb[2], fb[3], fb[4] =
+		math.max(0, i0 - 2), math.max(0, j0 - 2), math.min(bw - 1, i1 + 2), math.min(bh - 1, j1 + 2)
 	-- the noise: as many blocks as the budget allows, round robin; a block without any first (past
 	-- the budget only those: the clock is not asked again, and the loop stops when none is left)
 	local deadline = os.clock() + G.NOISE_BUDGET_S

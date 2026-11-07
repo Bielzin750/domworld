@@ -897,7 +897,12 @@ function Locker.apply_layout(self)
 	-- footer (the title screen credits the flags), slimmer edges, tighter odds, a one-line note
 	self._crate_sub:set_visible(not compact)
 	self._foot:set_visible(not compact)
-	self._panel:set_padding(if compact then 14 else 22, if compact then 10 else 20, if compact then 14 else 22, if compact then 10 else 20)
+	self._panel:set_padding(
+		if compact then 14 else 22,
+		if compact then 10 else 20,
+		if compact then 14 else 22,
+		if compact then 10 else 20
+	)
 	self._v:set_separation(if compact then 8 else 12)
 	self._odds_box:set_separation(if compact then 1 else 3)
 	for _, l in self._odds_labels do

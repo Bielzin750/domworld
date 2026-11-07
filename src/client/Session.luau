@@ -24,6 +24,7 @@
 -- map); a multiplayer mirror uses the snapshot's map_id. A map that is not available locally (only
 -- the default map is replicated) is downloaded first (env.fetch_map_async → Net/MapFetch) while the
 -- build / join job waits; the lobby info's map_id is prefetched.
+-- Modified for DomWorld, 2026 — see git history for details.
 
 -- Roblox: ReplicatedStorage.Airfront; Lune: the source tree.
 local Shared: any = if (game :: any) ~= nil
@@ -262,7 +263,7 @@ function Session.new(env: { [string]: any }?)
 	self._tracker = nil :: any
 	self._solo_reported = false
 	self.crate_result = Signal.new() -- (ok, item_id | reason) an open_crate's answer
-	--- RoWorld General (Data/Subscription; server/General): subscribed, as the server last said
+	--- DomWorld General (Data/Subscription; server/General): subscribed, as the server last said
 	self.general = false
 	--- (on: boolean, given: { crate?, stars?, skin? }?) the server's word: subscribed or not, and what
 	--- the day's perks just gave
@@ -294,7 +295,9 @@ function Session.new(env: { [string]: any }?)
 	self.paused = false
 	self.mobile = self.env.mobile == true
 	self.step_budget_s = if self.mobile then Session.STEP_BUDGET_MOBILE_S else Session.STEP_BUDGET_S
-	self.step_budget_behind_s = if self.mobile then Session.STEP_BUDGET_BEHIND_MOBILE_S else Session.STEP_BUDGET_BEHIND_S
+	self.step_budget_behind_s = if self.mobile
+		then Session.STEP_BUDGET_BEHIND_MOBILE_S
+		else Session.STEP_BUDGET_BEHIND_S
 	self.build_budget_s = if self.mobile then Session.BUILD_BUDGET_MOBILE_S else Session.BUILD_BUDGET_S
 
 	self._warming = false
@@ -542,7 +545,7 @@ function Session.starter_seen(self: any): boolean
 	return true
 end
 
---- Rofront Staging, and game admins on production (the server refuses it from anyone else): be a
+--- DomWorld Staging, and game admins on production (the server refuses it from anyone else): be a
 --- new player again — no match counted, the tutorial's Stars and the first crate's price on offer
 --- again (2026-10-04, the menu's "Replay as new player").
 function Session.new_player(self: any): boolean

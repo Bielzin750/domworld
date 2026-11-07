@@ -8,12 +8,12 @@
 --   set_labels_visible, tile_at_screen, screen_pos_of_tile, camera_distance, project, update.
 --
 -- Rendering: three ScreenGuis under the HUD (DisplayOrder MAP_DISPLAY_ORDER and the two above it):
---   RofrontMap        Surface (MapSurface: terrain + territory images, pixel-crisp, wrapped
+--   DomWorldMap        Surface (MapSurface: terrain + territory images, pixel-crisp, wrapped
 --                     east-west) and the Overlay with what seldom changes: spawn / aim markers,
 --                     rails, ranges, structure plates;
---   RofrontMapUnits   what moves every frame: ships, trains, wakes, munitions, effects, and the
+--   DomWorldMapUnits   what moves every frame: ships, trains, wakes, munitions, effects, and the
 --                     structures' progress bars;
---   RofrontMapLabels  names and front numbers (they change with the troop counts).
+--   DomWorldMapLabels  names and front numbers (they change with the troop counts).
 -- Why three (2026-10-08; players on Windows had stutter bad enough to quit, ten minutes into a
 -- match): Roblox lays out and draws a ScreenGui again as a whole
 -- when anything in it changed, and nothing at all when nothing did. As one ScreenGui the map was
@@ -21,6 +21,7 @@
 -- because some ship had moved a pixel: 9 ms a frame on the Mac that measured it (with the match
 -- paused: 0.2 ms). The moving layers are a small tree of their own now (docs/performance.md).
 -- Input: MapInput (mouse / touch / keys) driving the MapCamera through the camera-rig API.
+-- Modified for DomWorld, 2026 — see git history for details.
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -52,7 +53,7 @@ MapView.SPAWN_MIN_RAD = 10
 MapView.SPAWN_MAX_RAD = 30
 
 local function report(site: string, err: any)
-	warn(string.format("[RoWorld] map view %s: %s", site, tostring(err)))
+	warn(string.format("[DomWorld] map view %s: %s", site, tostring(err)))
 end
 
 local _reported: { [string]: boolean } = {}
@@ -126,7 +127,7 @@ function MapView.new(): MapView
 	self.input_enabled = true
 
 	local gui = Instance.new("ScreenGui")
-	gui.Name = "RofrontMap"
+	gui.Name = "DomWorldMap"
 	gui.IgnoreGuiInset = true
 	-- the whole screen, notch / home-bar areas included: the camera and input work in full-viewport
 	-- px (Camera.ViewportSize), and the map is the backdrop (the default CoreUISafeInsets left dark
@@ -202,8 +203,8 @@ function MapView.new(): MapView
 		table.insert(self._guis, g)
 		return c
 	end
-	local moving = layer_gui("RofrontMapUnits", MapView.MAP_DISPLAY_ORDER + 1)
-	local labels = layer_gui("RofrontMapLabels", MapView.MAP_DISPLAY_ORDER + 2)
+	local moving = layer_gui("DomWorldMapUnits", MapView.MAP_DISPLAY_ORDER + 1)
+	local labels = layer_gui("DomWorldMapLabels", MapView.MAP_DISPLAY_ORDER + 2)
 	--- where a layer of the seldom-changing ScreenGui puts what it animates (StructureLayer's bars)
 	self.moving_overlay = moving
 	self._spawn_ring = ring(overlay, "SpawnPreview", 6)
@@ -274,7 +275,7 @@ function MapView.new(): MapView
 	self.tile_hovered:Connect(function(t: number)
 		self:_on_tile_hovered(t)
 	end)
-	self._render_name = "RofrontMapView"
+	self._render_name = "DomWorldMapView"
 	local FrameClock = require(script.Parent:WaitForChild("FrameClock")) :: any
 	RunService:BindToRenderStep(self._render_name, MapView.RENDER_PRIORITY, function(dt: number)
 		guard("update", self.update, self, FrameClock.dt(dt))

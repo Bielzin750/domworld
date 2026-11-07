@@ -8,7 +8,7 @@ export const STATS_PAGE = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rofront live</title>
+<title>DomWorld live</title>
 <style>
 :root { --bg: #0e1116; --panel: #161b22; --line: #262d36; --text: #e6edf3; --dim: #8b949e; --accent: #f5a524; --good: #3fb950; --bar: #388bfd; --max: #a371f7; }
 * { box-sizing: border-box; }
@@ -58,7 +58,7 @@ tr.new td { animation: flash 2.5s ease-out; }
 </head>
 <body>
 <main>
-<h1>Rofront live <span class="live" id="live"><i></i><span>Connecting…</span></span></h1>
+<h1>DomWorld live <span class="live" id="live"><i></i><span>Connecting…</span></span></h1>
 <p class="sub"><span id="upd"></span></p>
 <div class="hero">
 <div class="k">Players online now</div>
@@ -157,7 +157,7 @@ function render(s) {
   // everyone online: one number, and what they are doing
   const total = sumOf(n);
   document.getElementById("total").innerHTML = num(total) + '<small>' + (total === 1 ? "player" : "players") + '</small>';
-  document.title = num(total) + " online · Rofront";
+  document.title = num(total) + " online · DomWorld";
   document.getElementById("split").innerHTML = ["solo", "playing", "waiting", "title"].map((k) =>
     '<div title="' + k + ': ' + num(n[k]) + '" style="background:' + COLORS[k] + ';width:' + (total > 0 ? ((n[k] || 0) / total) * 100 : 0) + '%"></div>').join("");
   const day24 = s.players24h || [];

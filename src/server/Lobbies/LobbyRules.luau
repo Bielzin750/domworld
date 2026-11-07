@@ -205,7 +205,12 @@ end
 --- Seats of a waiting lobby to give back (MatchHost, before the start): of `l`'s ledger, those whose
 --- player arrived and has left (`arrived` but not `present`), and those whose player has not arrived
 --- ARRIVE_S after taking the seat.
-function LobbyRules.lapsed_seats(l: Lobby, present: { [string]: boolean }, arrived: { [string]: boolean }, now: number): { string }
+function LobbyRules.lapsed_seats(
+	l: Lobby,
+	present: { [string]: boolean },
+	arrived: { [string]: boolean },
+	now: number
+): { string }
 	local out = {}
 	for u, at in l.seats or {} do
 		if present[u] then
@@ -266,7 +271,11 @@ function LobbyRules.max_players(land_tiles: number?, k_lin: number?, server: num
 	if land_tiles ~= nil and land_tiles > 0 then
 		local k = k_lin or 1.0
 		local src_land = land_tiles * k * k
-		full = math.clamp(round5(src_land / 1e6 * LobbyRules.PLAYERS_PER_MILLION_LAND), LobbyRules.MIN_PLAYERS, LobbyRules.MAX_PLAYERS)
+		full = math.clamp(
+			round5(src_land / 1e6 * LobbyRules.PLAYERS_PER_MILLION_LAND),
+			LobbyRules.MIN_PLAYERS,
+			LobbyRules.MAX_PLAYERS
+		)
 	end
 	if type(server) == "number" and server >= LobbyRules.MIN_PLAYERS then
 		full = math.min(full, math.floor(server))
@@ -541,7 +550,7 @@ LobbyRules.TRIOS = "Trios"
 LobbyRules.QUADS = "Quads"
 LobbyRules.HVN = "Humans Vs Nations"
 --- Team-count weights (total 100).
-LobbyRules.TEAM_COUNT_WEIGHTS = ({
+LobbyRules.TEAM_COUNT_WEIGHTS = {
 	{ 2, 10 },
 	{ 3, 10 },
 	{ 4, 10 },
@@ -552,7 +561,7 @@ LobbyRules.TEAM_COUNT_WEIGHTS = ({
 	{ LobbyRules.TRIOS, 7.5 },
 	{ LobbyRules.QUADS, 7.5 },
 	{ LobbyRules.HVN, 20 },
-} :: { { any } })
+} :: { { any } }
 --- Maps made for a number of teams, played with it 3 times in 4.
 LobbyRules.SPECIAL_TEAM_COUNT = {
 	aegean = 2,
@@ -642,7 +651,11 @@ function LobbyRules.team_slots(ffa_slots: number, teams: any): (number, any)
 	if teams == LobbyRules.HVN then
 		return math.max(2, p // 2), teams
 	end
-	local size = if teams == LobbyRules.DUOS then 2 elseif teams == LobbyRules.TRIOS then 3 elseif teams == LobbyRules.QUADS then 4 else nil
+	local size = if teams == LobbyRules.DUOS
+		then 2
+		elseif teams == LobbyRules.TRIOS then 3
+		elseif teams == LobbyRules.QUADS then 4
+		else nil
 	if size ~= nil then
 		return math.max(size * 2, p - p % size), teams
 	end

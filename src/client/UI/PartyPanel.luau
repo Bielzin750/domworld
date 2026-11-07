@@ -1,10 +1,11 @@
 --!nonstrict
--- The party on the title screen (server/Party; team games on: Rofront Staging only for now). Who is
+-- The party on the title screen (server/Party; team games on: DomWorld Staging only for now). Who is
 -- in it (the leader picks the public match and everyone goes with them; a team game puts them on one
 -- team), the invites to answer, and an invite list: the players on this server, and a Roblox invite
 -- for friends elsewhere (accepting it brings them to this server).
 --   PartyPanel.new(ctx) · set_state(state) · apply_layout() · on_action = function(action, user_id?)
 -- Phones: a PARTY button that opens and closes the panel.
+-- Modified for DomWorld, 2026 — see git history for details.
 
 local Players = game:GetService("Players")
 local SocialService = game:GetService("SocialService")
@@ -274,7 +275,9 @@ function PartyPanel.set_state(self, st: any)
 			elseif leader then "You pick the match. Your party comes with you."
 			else "Your party leader picks the match."
 	)
-	self._pill:set_text(if n >= 2 then ("PARTY  %d"):format(n) elseif #self._invites:get_children() > 0 then "PARTY  •" else "PARTY")
+	self._pill:set_text(
+		if n >= 2 then ("PARTY  %d"):format(n) elseif #self._invites:get_children() > 0 then "PARTY  •" else "PARTY"
+	)
 	if #self._invites:get_children() > 0 then
 		-- an invite to answer: phones open the panel
 		self._open = true
@@ -372,10 +375,9 @@ function PartyPanel._refresh_list(self)
 	local ctx = self.ctx
 	local rows_h = if shown > 0 then shown * PartyPanel.ROW_H + (shown - 1) * PartyPanel.ROW_GAP else 0.0
 	local room = if ctx.vp ~= nil
-		then ctx:clear_rect().Max.Y
-			- (self._list_top or 60.0)
-			- 8.0
-			- (if ctx.compact then PartyPanel.LIST_CHROME_COMPACT else PartyPanel.LIST_CHROME)
+		then ctx:clear_rect().Max.Y - (self._list_top or 60.0) - 8.0 - (if ctx.compact
+			then PartyPanel.LIST_CHROME_COMPACT
+			else PartyPanel.LIST_CHROME)
 		else 300.0
 	self._list_scroll:set_visible(shown > 0)
 	self._list_scroll:set_min_size(Vector2.new(0, math.max(PartyPanel.ROW_H, math.min(rows_h, room))))

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Cuts the trailer from the frames tools/trailer/film.py captured (build/trailer/<dir>/NNNNN.jpg):
-the shots in order (hard cuts, cut to the music), the ROWORLD wordmark at the end, and a few
+the shots in order (hard cuts, cut to the music), the DomWorld wordmark at the end, and a few
 captions that say what the gameplay is (Roblox's video rules: real footage, a logo overlay, sparse text
 describing gameplay, no claims; Creator Hub > Configurations > Places > Videos: mp4/mov, <= 60 s,
 <= 1920x1080, 16:9, <= 100 MB, 15 Mbps).
 
-Usage: .venv/bin/python tools/trailer/edit.py   -> build/trailer/roworld_trailer.mp4
+Usage: .venv/bin/python tools/trailer/edit.py   -> build/trailer/DomWorld_trailer.mp4
 """
 import os
 import shutil
@@ -17,7 +17,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 RAW = os.path.join(ROOT, "build", "trailer")
 OUT_DIR = os.path.join(ROOT, "build", "trailer", "out")
-MP4 = os.path.join(ROOT, "build", "trailer", "roworld_trailer.mp4")
+MP4 = os.path.join(ROOT, "build", "trailer", "DomWorld_trailer.mp4")
 FPS = 30
 W, H = 1920, 1080
 FONT = "/Applications/RobloxStudio.app/Contents/Resources/content/fonts/Montserrat-Black.ttf"
@@ -77,9 +77,9 @@ def font(px):
 
 
 def wordmark(px=190):
-    """ROWORLD: a warm gradient fill, a dark outline and a soft shadow (the title screen's look)."""
+    """DomWorld: a warm gradient fill, a dark outline and a soft shadow (the title screen's look)."""
     f = font(px)
-    text = "ROWORLD"
+    text = "DomWorld"
     l, t, r, b = f.getbbox(text)
     tw, th = r - l, b - t
     pad = 40

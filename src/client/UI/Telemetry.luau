@@ -147,14 +147,16 @@ function Telemetry.slow_cause(s: any): string
 		table.insert(parts, { "map_" .. k, v })
 		rest -= v
 	end
-	for _, part in {
-		{ "map", math.max(rest, 0) },
-		{ "hud", ms(s.hud_ms) },
-		{ "sim", ms(s.sim_ms) },
-		{ "net", ms(s.net_ms) },
-		{ "session", ms(s.session_ms) },
-		{ "ui", ms(s.ui_ms) },
-	} do
+	for _, part in
+		{
+			{ "map", math.max(rest, 0) },
+			{ "hud", ms(s.hud_ms) },
+			{ "sim", ms(s.sim_ms) },
+			{ "net", ms(s.net_ms) },
+			{ "session", ms(s.session_ms) },
+			{ "ui", ms(s.ui_ms) },
+		}
+	do
 		table.insert(parts, part)
 	end
 	local total, top = 0.0, parts[1]
@@ -406,7 +408,10 @@ function Telemetry.bind(self, st: any)
 		local k = st.owners[killer]
 		local kind = "unknown"
 		if k ~= nil then
-			kind = if k.kind == Defs.KIND_NATION then "nation" elseif k.kind == Defs.KIND_TRIBE then "tribe" else "player"
+			kind = if k.kind == Defs.KIND_NATION
+				then "nation"
+				elseif k.kind == Defs.KIND_TRIBE then "tribe"
+				else "player"
 		end
 		self:_send("eliminated", Telemetry.minutes(st), kind, killer)
 	end)

@@ -1618,7 +1618,7 @@ function SimStructures.install(C)
 			-- the train's owner and, when different, the same again to the station's owner.
 			if s.kind ~= S_FACTORY then
 				local rel = if s.owner == u.owner
-					then "self"					-- (an ally; a teammate pays a stranger's rate: trainGold "team" = "other")
+					then "self" -- (an ally; a teammate pays a stranger's rate: trainGold "team" = "other")
 
 					elseif self:has_alliance(s.owner, u.owner) then "ally"
 					else "other"

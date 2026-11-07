@@ -170,7 +170,12 @@ function RatioSlider.stop_rect(self, ratio: number): any
 			local r = self:get_global_rect()
 			local cw = r.Width / #stops
 			local h = math.min(self.track_height, r.Height)
-			return Rect.new(r.Min.X + (i - 1) * cw, r.Min.Y + (r.Height - h) * 0.5, r.Min.X + i * cw, r.Min.Y + (r.Height + h) * 0.5)
+			return Rect.new(
+				r.Min.X + (i - 1) * cw,
+				r.Min.Y + (r.Height - h) * 0.5,
+				r.Min.X + i * cw,
+				r.Min.Y + (r.Height + h) * 0.5
+			)
 		end
 	end
 	return nil

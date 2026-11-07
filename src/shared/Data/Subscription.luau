@@ -1,5 +1,5 @@
 --!strict
--- RoWorld General (2026-10-27): a monthly Roblox subscription, paid in Robux (Creator Dashboard ->
+-- DomWorld General (2026-10-27): a monthly Roblox subscription, paid in Robux (Creator Dashboard ->
 -- Monetization -> Subscriptions; Roblox renews and bills it, and players cancel it in Roblox's own
 -- settings). A paying player spent 89 Robux on average against about 600 at the top 500
 -- experiences (the week to 2026-10-26), and nothing they could buy came back every month. Every player
@@ -10,18 +10,19 @@
 --   * the month's General skin (SKINS; Data/Cosmetics.general_skins), theirs to keep.
 --
 -- `ID` is the subscription's id ("EXP-..."; "" = not created yet: nothing offers it), `STAGING` the
--- same subscription in Rofront Staging. Prod's was created inactive (2026-10-27): activate it on the
+-- same subscription in DomWorld Staging. Prod's was created inactive (2026-10-27): activate it on the
 -- dashboard when the build that offers it goes to prod.
+-- Modified for DomWorld, 2026 — see git history for details.
 local IS_ROBLOX = typeof(game) == "Instance"
 local Staging: any = if IS_ROBLOX then require((script :: any).Parent.Staging) else (require :: any)("./Staging")
 
 local Subscription = {}
 
-Subscription.ID = "EXP-6347955979564483083"
-Subscription.STAGING = "EXP-287838471589069369"
-Subscription.NAME = "RoWorld General"
---- The price set on the dashboard (Robux a month); the interface shows Roblox's own.
-Subscription.ROBUX = 399
+Subscription.ID = ""
+Subscription.STAGING = ""
+Subscription.NAME = "DomWorld General"
+-- Offers remain disabled until DomWorld has its own subscription configured in Creator Dashboard.
+Subscription.ROBUX = 0
 Subscription.DAILY_STARS = 2500
 Subscription.STARS_BONUS = 0.5
 --- The General skin of each month ("YYYY-MM", UTC, oldest first): a month without its own gives the

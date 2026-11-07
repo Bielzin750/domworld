@@ -8,7 +8,7 @@ import { FAIL_MAX } from "../src/statsAuth";
 import { createServer } from "../src/server";
 import { LobbyStore } from "../src/store";
 
-const SECRET = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+const SECRET = "YOUR_DOMWORLD_TEST_SECRET_12345678901234567890";
 const PASSWORD = "correct horse battery";
 
 interface Reply {
@@ -196,19 +196,19 @@ test("health: in full to this box, a signed-in browser or a signed request; {ok:
 		const h = JSON.parse((await request(url, "/health")).body);
 		assert.equal(h.hubs, 2);
 		assert.equal(h.matchServers, 1);
-		assert.equal(h.service, "rofront-lobbies");
+		assert.equal(h.service, "DomWorld-lobbies");
 		assert.deepEqual(h.via, { cloudflare: 0, direct: 3 });
 	});
 	await withServer(
 		async (url) => {
 			assert.equal((await request(url, "/health")).body, '{"ok":true}', "trimmed for a stranger");
 			const { cookie } = await login(url);
-			assert.equal(JSON.parse((await request(url, "/health", { headers: { Cookie: cookie } })).body).service, "rofront-lobbies");
+			assert.equal(JSON.parse((await request(url, "/health", { headers: { Cookie: cookie } })).body).service, "DomWorld-lobbies");
 			const ts = String(Math.floor(Date.now() / 1000));
 			const nonce = "health-nonce-0123456789";
 			const sig = signRequest(SECRET, ts, nonce, "GET", "/health", "");
 			const signed = await request(url, "/health", { headers: { "X-TM-Ts": ts, "X-TM-Nonce": nonce, "X-TM-Sig": sig } });
-			assert.equal(JSON.parse(signed.body).service, "rofront-lobbies", "signed");
+			assert.equal(JSON.parse(signed.body).service, "DomWorld-lobbies", "signed");
 			const forged = await request(url, "/health", { headers: { "X-TM-Ts": ts, "X-TM-Nonce": "health-nonce-9999999999", "X-TM-Sig": sig } });
 			assert.equal(forged.body, '{"ok":true}', "a bad signature");
 		},

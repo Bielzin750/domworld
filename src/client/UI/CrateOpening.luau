@@ -30,7 +30,9 @@ local Signal = UITheme.core("Signal")
 
 local IS_ROBLOX = typeof(game) == "Instance"
 local Airfront: any = if IS_ROBLOX then (game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront") else nil
-local Cosmetics: any = if IS_ROBLOX then require(Airfront.Data.Cosmetics) else (require :: any)("../../shared/Data/Cosmetics")
+local Cosmetics: any = if IS_ROBLOX
+	then require(Airfront.Data.Cosmetics)
+	else (require :: any)("../../shared/Data/Cosmetics")
 local Model: any = ChestView.Model
 local TweenService = if IS_ROBLOX then game:GetService("TweenService") else nil
 local RunService = if IS_ROBLOX then game:GetService("RunService") else nil
@@ -64,7 +66,13 @@ local function c3(hex: number): Color3
 	return Color3.fromRGB((hex // 65536) % 256, (hex // 256) % 256, hex % 256)
 end
 
-local function tween(inst: Instance, t: number, props: { [string]: any }, style: Enum.EasingStyle?, dir: Enum.EasingDirection?)
+local function tween(
+	inst: Instance,
+	t: number,
+	props: { [string]: any },
+	style: Enum.EasingStyle?,
+	dir: Enum.EasingDirection?
+)
 	if TweenService == nil then
 		return
 	end
@@ -142,10 +150,15 @@ function CrateOpening._build(self)
 	local root = self.gui
 	-- everything moves together (the screen shake). ZIndex 1: under the kit's buttons row (the kit
 	-- numbers its children from 11); the stage's own layers order among themselves
-	local stage = new("Frame", { Name = "Stage", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ZIndex = 1 }, root)
+	local stage =
+		new("Frame", { Name = "Stage", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ZIndex = 1 }, root)
 	self._stage = stage
 	local function layer(name: string, z: number): Frame
-		return new("Frame", { Name = name, BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ZIndex = z }, stage)
+		return new(
+			"Frame",
+			{ Name = name, BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ZIndex = z },
+			stage
+		)
 	end
 	local function img(name: string, image: string, z: number, parent: Instance?, props: any?): ImageLabel
 		local p = props or {}
@@ -177,24 +190,39 @@ function CrateOpening._build(self)
 	-- a wash of the rarity colour behind everything (after the burst)
 	self._tint = img("Tint", art.glow, 2)
 	-- rays (two counter-rotating layers) + a halo
-	local rays = new("Frame", { Name = "Rays", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 3 }, stage)
+	local rays = new(
+		"Frame",
+		{ Name = "Rays", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 3 },
+		stage
+	)
 	self._rays = rays
 	self._rays_scale = new("UIScale", {}, rays)
-	self._rays_a = img("RaysA", art.rays, 3, rays, { Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(1, 1) })
-	self._rays_b = img("RaysB", art.rays, 3, rays, { Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(1.25, 1.25) })
+	self._rays_a =
+		img("RaysA", art.rays, 3, rays, { Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(1, 1) })
+	self._rays_b =
+		img("RaysB", art.rays, 3, rays, { Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(1.25, 1.25) })
 	-- a Legendary's rays shimmer through the rainbow
 	self._rays_grad = new("UIGradient", { Enabled = false }, self._rays_a)
-	self._halo = img("Halo", art.glow, 3, rays, { Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(0.6, 0.6) })
+	self._halo =
+		img("Halo", art.glow, 3, rays, { Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(0.6, 0.6) })
 	self._back_fx = layer("BackFx", 4)
 	-- the chest: its floor shadow, a floor ring, the light beam, its glow, the viewport, the leak
 	self._shadow = img("Shadow", art.glow, 5, nil, { ImageColor3 = Color3.new(0, 0, 0) })
 	self._floor_ring = img("FloorRing", art.ring, 5)
 	self._beam = img("Beam", art.beam, 6, nil, { AnchorPoint = Vector2.new(0.5, 1) })
 	self._chest_glow = img("ChestGlow", art.glow, 6)
-	local holder = new("Frame", { Name = "Chest", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 7 }, stage)
+	local holder = new(
+		"Frame",
+		{ Name = "Chest", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 7 },
+		stage
+	)
 	self._holder = holder
 	self._holder_scale = new("UIScale", {}, holder)
-	local vpf = new("ViewportFrame", { Name = "View", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ZIndex = 7 }, holder)
+	local vpf = new(
+		"ViewportFrame",
+		{ Name = "View", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ZIndex = 7 },
+		holder
+	)
 	self._vpf = vpf
 	self._chest = ChestView.build(vpf)
 	-- light out of the open chest, and out of the lid's seam while it cracks (in front of the viewport)
@@ -295,7 +323,11 @@ function CrateOpening._build(self)
 		ZIndex = 13,
 	}, card)
 	new("UICorner", { CornerRadius = UDim.new(0.3, 0) }, self._new)
-	new("UIStroke", { Color = Color3.fromRGB(120, 20, 20), Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, self._new)
+	new(
+		"UIStroke",
+		{ Color = Color3.fromRGB(120, 20, 20), Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border },
+		self._new
+	)
 	new("UIPadding", {
 		PaddingLeft = UDim.new(0.1, 0),
 		PaddingRight = UDim.new(0.1, 0),
@@ -338,7 +370,11 @@ function CrateOpening._build(self)
 		ZIndex = 14,
 	}, stage)
 	new("UICorner", { CornerRadius = UDim.new(0.5, 0) }, hint)
-	self._hint_stroke = new("UIStroke", { Color = GOLD, Thickness = 2, Transparency = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, hint)
+	self._hint_stroke = new(
+		"UIStroke",
+		{ Color = GOLD, Thickness = 2, Transparency = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border },
+		hint
+	)
 	self._hint_scale = new("UIScale", {}, hint)
 	self._hint_text = new("TextLabel", {
 		BackgroundTransparency = 1,
@@ -571,16 +607,18 @@ function CrateOpening.play(self, info: any)
 	self._rays_grad.Enabled = false
 	self._rays_scale.Scale = 1
 	self._rays.Position = UDim2.fromOffset(self._cx, self._cy)
-	for _, g in {
-		self._shadow,
-		self._floor_ring,
-		self._beam,
-		self._chest_glow,
-		self._mouth_glow,
-		self._leak,
-		self._leak_flare,
-		self._card_glow,
-	} do
+	for _, g in
+		{
+			self._shadow,
+			self._floor_ring,
+			self._beam,
+			self._chest_glow,
+			self._mouth_glow,
+			self._leak,
+			self._leak_flare,
+			self._card_glow,
+		}
+	do
 		g.ImageTransparency = 1
 	end
 	self._chest_glow.ImageColor3 = GOLD
@@ -720,7 +758,12 @@ function CrateOpening._land(self, gen: number): boolean
 	self._floor_ring.ImageColor3 = GOLD_LIGHT
 	self._floor_ring.Size = UDim2.fromOffset(S * 0.4, S * 0.1)
 	self._floor_ring.ImageTransparency = 0.25
-	tween(self._floor_ring, 0.55, { Size = UDim2.fromOffset(S * 2.2, S * 0.5), ImageTransparency = 1 }, Enum.EasingStyle.Quart)
+	tween(
+		self._floor_ring,
+		0.55,
+		{ Size = UDim2.fromOffset(S * 2.2, S * 0.5), ImageTransparency = 1 },
+		Enum.EasingStyle.Quart
+	)
 	self._rays.Position = UDim2.fromOffset(self._cx, self._cy)
 	self._halo.Size = UDim2.fromScale(0.6, 0.6)
 	tween(self._halo, 0.5, { ImageTransparency = 0.6 })
@@ -886,14 +929,25 @@ function CrateOpening._burst(self, gen: number): boolean
 	tween(self._beam, 0.25, { Size = UDim2.fromOffset(S * 0.5, S * 1.5) }, Enum.EasingStyle.Quart)
 	task.delay(0.15 * self.pace, function()
 		if self._gen == gen then
-			tween(self._beam, 0.9 * self.pace, { ImageTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			tween(
+				self._beam,
+				0.9 * self.pace,
+				{ ImageTransparency = 1 },
+				Enum.EasingStyle.Quad,
+				Enum.EasingDirection.In
+			)
 		end
 	end)
 	place(self._floor_ring, mouth)
 	self._floor_ring.ImageColor3 = light
 	self._floor_ring.Size = UDim2.fromOffset(S * 0.3, S * 0.3)
 	self._floor_ring.ImageTransparency = 0.15
-	tween(self._floor_ring, 0.6, { Size = UDim2.fromOffset(S * 2.8, S * 2.8), ImageTransparency = 1 }, Enum.EasingStyle.Quart)
+	tween(
+		self._floor_ring,
+		0.6,
+		{ Size = UDim2.fromOffset(S * 2.8, S * 2.8), ImageTransparency = 1 },
+		Enum.EasingStyle.Quart
+	)
 	self._mouth_glow.ImageColor3 = col
 	self._mouth_glow.ImageTransparency = 0.1
 	self._chest_glow.ImageColor3 = col
@@ -1005,7 +1059,8 @@ function CrateOpening._reveal(self, gen: number)
 	self._back.Visible = false
 	self._front.Visible = true
 	self._front_stroke.Color = col
-	self._front_grad.Color = ColorSequence.new(col:Lerp(Color3.fromRGB(20, 24, 48), 0.35), col:Lerp(Color3.fromRGB(10, 12, 30), 0.8))
+	self._front_grad.Color =
+		ColorSequence.new(col:Lerp(Color3.fromRGB(20, 24, 48), 0.35), col:Lerp(Color3.fromRGB(10, 12, 30), 0.8))
 	self:_show_item(it)
 	tween(card, 0.22, { Size = w }, Enum.EasingStyle.Back)
 	self._card_scale.Scale = 1.12
@@ -1230,7 +1285,9 @@ function CrateOpening._step(self, dt: number)
 			local q = b.jt / CrateOpening.JOLT_S
 			if q >= 1 then
 				b.jt = nil
-				b.next = b.t + CrateOpening.JOLT_GAP_S[1] + (CrateOpening.JOLT_GAP_S[2] - CrateOpening.JOLT_GAP_S[1]) * k
+				b.next = b.t
+					+ CrateOpening.JOLT_GAP_S[1]
+					+ (CrateOpening.JOLT_GAP_S[2] - CrateOpening.JOLT_GAP_S[1]) * k
 			else
 				local hump = math.sin(q * math.pi)
 				roll = math.sin(q * math.pi * 2) * (1 - q) * math.rad(5 + 7 * k) * b.dir
@@ -1354,7 +1411,8 @@ function CrateOpening._step(self, dt: number)
 	-- the screen shake
 	if (self._shake or 0) > 0.3 then
 		self._shake *= math.exp(-dt * 8)
-		self._stage.Position = UDim2.fromOffset((math.random() - 0.5) * self._shake, (math.random() - 0.5) * self._shake)
+		self._stage.Position =
+			UDim2.fromOffset((math.random() - 0.5) * self._shake, (math.random() - 0.5) * self._shake)
 	elseif self._stage.Position ~= UDim2.new() then
 		self._shake = 0
 		self._stage.Position = UDim2.new()
@@ -1474,21 +1532,23 @@ function CrateOpening.close(self)
 	self._falling = false
 	self._row:set_visible(false)
 	tween(self._dim, 0.2, { BackgroundTransparency = 1 })
-	for _, i in {
-		self._rays_a,
-		self._rays_b,
-		self._halo,
-		self._tint,
-		self._preview,
-		self._card_glow,
-		self._chest_glow,
-		self._mouth_glow,
-		self._shadow,
-		self._leak,
-		self._leak_flare,
-		self._beam,
-		self._floor_ring,
-	} do
+	for _, i in
+		{
+			self._rays_a,
+			self._rays_b,
+			self._halo,
+			self._tint,
+			self._preview,
+			self._card_glow,
+			self._chest_glow,
+			self._mouth_glow,
+			self._shadow,
+			self._leak,
+			self._leak_flare,
+			self._beam,
+			self._floor_ring,
+		}
+	do
 		tween(i, 0.18, { ImageTransparency = 1 })
 	end
 	tween(self._vpf, 0.18, { ImageTransparency = 1 })

@@ -277,7 +277,14 @@ function SimNukes.install(C)
 	-- Hook for the AI.
 	function C:_on_nuke_launched(_id: number, _tg: number, _kind: number) end
 
-	function C:_spawn_nuke(kind: number, id: number, from_tile: number, to_tile: number, flight: number, arc: any?): Nuke
+	function C:_spawn_nuke(
+		kind: number,
+		id: number,
+		from_tile: number,
+		to_tile: number,
+		flight: number,
+		arc: any?
+	): Nuke
 		local tick = self.tick
 		local n = Nuke.new()
 		n.uid = self.next_uid

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Side-by-side crops of original reference shots and rofront captures at matched relative framing.
+"""Side-by-side crops of original reference shots and DomWorld captures at matched relative framing.
 Usage: compare.py out.png ref.png ours.png [x0 y0 x1 y1 (relative 0..1)] [--width 1800]"""
 import sys
 from PIL import Image, ImageDraw
@@ -21,7 +21,7 @@ def main():
     d = ImageDraw.Draw(sheet)
     for i, c in enumerate(ims):
         sheet.paste(c.resize((tw, th), Image.LANCZOS), (i * tw, 24))
-        d.text((i * tw + 8, 4), ["original", "rofront"][i], fill=(255, 255, 255))
+        d.text((i * tw + 8, 4), ["original", "DomWorld"][i], fill=(255, 255, 255))
     sheet.save(out)
 
 if __name__ == "__main__":

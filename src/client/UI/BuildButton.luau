@@ -252,9 +252,7 @@ function BuildButton.hint_spec(self): { [string]: any }
 	local rows: { any } = { { "Cost", if c > 0 then UITheme.fmt_cost(c) .. " gold" else "Free", UITheme.GOLD } }
 	if self.kind == "reinforce" then
 		local o = self.ctx:my()
-		local troops = if o ~= nil
-			then UITheme.core("Rules").reinforce_troops(o.troops or 0, o.max_troops or 0)
-			else 0
+		local troops = if o ~= nil then UITheme.core("Rules").reinforce_troops(o.troops or 0, o.max_troops or 0) else 0
 		table.insert(rows, { "Brings", UITheme.fmt_troops(troops) .. " troops", UITheme.TEXT })
 	elseif not nuke then
 		table.insert(rows, { "Owned", tostring(self._owned), UITheme.TEXT })

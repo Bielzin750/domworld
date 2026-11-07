@@ -1,10 +1,8 @@
 --!strict
--- Client of the lobby service on easy-1 (services/lobbies, docs/lobby-service.md): signed JSON POSTs
--- with our own deadline, every reply's signature checked, a health state, and a clock correction for
--- signing (a server's clock can be minutes out; the service tells a correctly signed request with a
--- stale timestamp its time, and the request is sent once more).
+-- Client for the DomWorld lobby service: signed JSON POSTs with deadlines, verified response
+-- signatures, health tracking, and clock correction when a signed request has a stale timestamp.
 --
--- It is reached at https://rofront.snick.co (Cloudflare, then easy-1's Caddy; 2026-10-12: the
+-- It is reached at https://YOUR_LOBBY_SERVICE_URL (Cloudflare, then easy-1's Caddy; 2026-10-12: the
 -- studio's services live under the snick.co domain). While the domain fails (no answer, or an answer
 -- that isn't the service's: a Cloudflare block or error page) a server uses the service's own port
 -- instead, and tries the domain again after RETRY_PRIMARY_S.
@@ -22,22 +20,22 @@
 --   client:post(path, body) -> (reply?, err?)   reply = the decoded, verified reply (check .ok)
 --   client:healthy() -> boolean                 false after FAIL_THRESHOLD failures in a row
 --   LobbyHttp.roblox(deps?) -> client | nil     the live client (nil: HTTP off / not configured)
+-- Modified for DomWorld, 2026 — see git history for details.
 local Signing = require("./Signing")
 
 local LobbyHttp = {}
 LobbyHttp.__index = LobbyHttp
 
---- The service (easy-1, behind Cloudflare: HTTPS; http:// is redirected).
-LobbyHttp.BASE_URL = "https://rofront.snick.co"
---- Its own port, straight (until it closes, docs/lobby-service.md "Ops"): used while the domain fails.
---- "" = none.
-LobbyHttp.FALLBACK_URL = "http://54.39.159.132:3002"
+-- Set this to the HTTPS origin of your own deployed lobby service.
+LobbyHttp.BASE_URL = "https://YOUR_LOBBY_SERVICE_URL"
+-- Optional direct fallback origin. Leave empty until you configure a second DomWorld endpoint.
+LobbyHttp.FALLBACK_URL = ""
 --- How long a server stays on the fallback before it tries the domain again.
 LobbyHttp.RETRY_PRIMARY_S = 300
 --- Live servers use the service (MemoryStore stays the fallback). false = MemoryStore only.
 --- (On since 2026-09-28, once easy-1's firewall let port 3002 in; the service's LOBBIES switch turns it
 --- off without a publish.)
-LobbyHttp.ENABLED = true
+LobbyHttp.ENABLED = false
 LobbyHttp.TIMEOUT_S = 5
 --- Transport failures in a row before the service counts as down.
 LobbyHttp.FAIL_THRESHOLD = 3

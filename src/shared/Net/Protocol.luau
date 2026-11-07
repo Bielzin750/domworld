@@ -38,6 +38,7 @@
 --   tail body: u8 KIND_TAIL, varuint n, n × (varuint position in the recipient's event list, value)
 -- Snapshot body: u8 KIND_SNAPSHOT, then one map value (grids become tag 13/14 RLE automatically).
 -- Intent body: u8 KIND_INTENT, u8 type index (INTENT_TYPES), u8 field mask, fields in mask order.
+-- Modified for DomWorld, 2026 — see git history for details.
 
 local Coop = require("./Coop")
 
@@ -80,7 +81,7 @@ Protocol.OP = {
 	SOLO_RESULT = 16, -- (report: table) a solo match's result, for its Stars (server/Rewards; reply STARS)
 	SOLO_HOP = 17, -- (difficulty: number, map_id: string?) hub: I am starting a solo match and this server
 	-- is outdated: teleport me to a fresh one to play it there (server/FreshServers; reply HOP_RESULT)
-	NEW_PLAYER = 18, -- Rofront Staging / Studio, and game admins: make me a new player again (matches
+	NEW_PLAYER = 18, -- DomWorld Staging / Studio, and game admins: make me a new player again (matches
 	-- counted, the tutorial's Stars, the first crate's price); the settings and the inventory follow
 	PARTY = 19, -- (action: "invite" | "accept" | "decline" | "leave" | "kick", user_id: number?) hub, team
 	-- games on (ServerMain.team_games): server/Party (reply PARTY_STATE)
@@ -116,7 +117,7 @@ Protocol.OP = {
 	STARTER_SEEN = 41, -- client → server: the starter pack's offer is on my screen: start its clock (once;
 	-- server/Purchases.starter_seen; the INVENTORY that follows carries `starter`)
 	GENERAL = 42, -- server → client: ({ on: boolean, given: { crate: boolean?, stars: number?, skin: string? }? })
-	-- RoWorld General (Data/Subscription; server/General): subscribed or not, and what it just gave
+	-- DomWorld General (Data/Subscription; server/General): subscribed or not, and what it just gave
 }
 
 Protocol.INTENT_TYPES = {

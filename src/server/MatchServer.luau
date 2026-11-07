@@ -37,7 +37,6 @@ local Coop = if Net then require(Net.Coop) else require("../shared/Net/Coop")
 local Cosmetics: any = if Net then require(Net.Parent.Data.Cosmetics) else require("../shared/Data/Cosmetics")
 local Stars: any = if Net then require(Net.Parent.Data.Stars) else require("../shared/Data/Stars")
 
-
 local MatchServer = {}
 MatchServer.__index = MatchServer
 --- Bot players dress like players (they must look like people): this share wears a flag, this share a
@@ -352,7 +351,11 @@ end
 --- Players needed before a vote can start the match: VOTE_MIN_PLAYERS, or 1 once a player has waited
 --- alone in a public waiting room for VOTE_SOLO_AFTER_S.
 function MatchServer.vote_min_players(self: any): number
-	if self.deps.lobby ~= nil and self._alone_since ~= nil and self:_now() - self._alone_since >= MatchServer.VOTE_SOLO_AFTER_S * 1000 then
+	if
+		self.deps.lobby ~= nil
+		and self._alone_since ~= nil
+		and self:_now() - self._alone_since >= MatchServer.VOTE_SOLO_AFTER_S * 1000
+	then
 		return 1
 	end
 	return MatchServer.VOTE_MIN_PLAYERS

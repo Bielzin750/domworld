@@ -7,6 +7,7 @@
 -- Also defines GradientText (the wordmark / game-over headline): per-glyph Rubik Heavy with letter
 -- spacing, the WORD_SHADER vertical gradient, the diagonal shine sweep and the fat drop shadow.
 -- Roblox caps TextSize at 100, so glyphs render at a smaller TextSize under a UIScale.
+-- Modified for DomWorld, 2026 — see git history for details.
 
 local UITheme = require("./UITheme")
 local W = require("./Widgets")
@@ -20,6 +21,7 @@ local GeneralButton = require("./GeneralButton")
 local ShopButton = require("./ShopButton")
 local PartyPanel = require("./PartyPanel")
 local Signal = UITheme.core("Signal")
+local GameInfo = UICtx.data("GameInfo")
 
 local TitleScreen = W.class(W.Control)
 
@@ -31,15 +33,11 @@ local GradientText = W.class(W.Control)
 TitleScreen.GradientText = GradientText
 --- The original's desktop top-left reserve for the wordmark (Airship chat panel; ui_layout_probe.gd).
 TitleScreen.DESKTOP_WORD_RESERVE = 440.0
---- The wordmark is at most this share of the screen's width: the width the old name had ("ROWORLD",
---- since 2026-10-25, is wider than "ROFRONT" and reached under the Arsenal and crate buttons, top right).
+--- The wordmark is at most this share of the screen's width so it stays clear of the buttons at top right.
 TitleScreen.WORD_MAX_W = 0.35
---- The credits line under the dock (desktop, phones). It points at the help window by its top-bar name
---- (2026-10-25: "See Help & Credits" instead of "see How to play"; 2026-10-26: no map credit, the World
---- map is RoWorld's own, made from public-domain data).
-TitleScreen.CREDITS = "© OpenFront and Contributors  ·  Music by Rodrigo Flores  ·  "
-	.. "GNU AGPL v3, no warranty: See Help & Credits"
-TitleScreen.CREDITS_SHORT = "© OpenFront and Contributors  ·  Music: Rodrigo Flores  ·  GNU AGPL v3"
+-- Footer notice remains visible on the title screen and opens the About / License page.
+TitleScreen.CREDITS = "© OpenFront and Contributors  ·  GNU AGPL v3  ·  ABOUT / LICENSE"
+TitleScreen.CREDITS_SHORT = "© OpenFront and Contributors  ·  GNU AGPL v3  ·  ABOUT / LICENSE"
 
 local SHINE_HALF = 70.0 -- smoothstep(0, 70, |x - sweep - (y - y0) * 0.35|)
 
@@ -350,6 +348,7 @@ function TitleScreen.new(c: any)
 	self.pick_map = Signal.new()
 	self.play_multi = Signal.new()
 	self.show_help = Signal.new()
+	self.show_about = Signal.new()
 	self.leave_queue = Signal.new()
 	--- the waiting room's vote-to-start toggle
 	self.vote_start = Signal.new()
@@ -365,7 +364,7 @@ function TitleScreen.new(c: any)
 	--- the starter pack's button (under the pair, while its offer runs): UIRoot opens the offer
 	self.open_starter = Signal.new()
 	self.open_shop = Signal.new()
-	--- RoWorld General's button (Data/Subscription): UIRoot opens its window
+	--- DomWorld General's button (Data/Subscription): UIRoot opens its window
 	self.open_general = Signal.new()
 	--- (action, user_id?) the party panel (Session.party_action)
 	self.party_action = Signal.new()
@@ -397,17 +396,12 @@ function TitleScreen.new(c: any)
 	self:_build_dock()
 	self:_build_queue()
 	self:_build_solo_menu()
-	-- credits: the copyright notice the code's licence asks to keep visible, Rodrigo Flores'
-	-- soundtrack (Orchestral Ambients) and the licence (2026-10-25: the full
-	-- notices are in How to play, HelpOverlay.LEGAL); phones get the short line (apply_layout)
-	self._credits = UITheme.label(
-		TitleScreen.CREDITS,
-		11,
-		500,
-		UITheme.c(UITheme.TEXT_3, 0.85),
-		1
-	)
-	self._credits:set_alignment(W.ALIGN_CENTER)
+	-- The visible footer keeps the required notice and opens the About / License page.
+	self._credits = UITheme.button(TitleScreen.CREDITS, "GhostButton", "", 28.0)
+	self._credits:set_font_size(11)
+	self._credits.pressed:Connect(function()
+		self.show_about:Fire()
+	end)
 	self:add_child(self._credits)
 	-- cosmetic crates: a big animated chest top right (the top bar's small icon was easy to miss)
 	self._crate_btn = CrateButton.new(c)
@@ -433,7 +427,7 @@ function TitleScreen.new(c: any)
 		self.open_starter:Fire()
 	end)
 	self:add_child(self._starter_btn)
-	-- and RoWorld General's (Data/Subscription; 2026-10-27), once the subscription exists
+	-- and DomWorld General's (Data/Subscription; 2026-10-27), once the subscription exists
 	self._general_btn = GeneralButton.new(c)
 	self._general_btn.pressed:Connect(function()
 		self.open_general:Fire()
@@ -492,7 +486,7 @@ function TitleScreen._build_head(self)
 	self:add_child(self._glow)
 	self:move_child(self._glow, 3)
 
-	local word = GradientText.new("ROWORLD", 120, 900)
+	local word = GradientText.new(GameInfo.NAME, 120, 900)
 	word.spacing = 14
 	word.shadow = { color = Color3.new(0.0, 0.02, 0.08), alpha = 0.55, offset_y = 6, outline = 14 }
 	word:set_colors(Color3.new(1, 1, 1), Color3.new(1.0, 0.8, 0.52))
@@ -910,7 +904,10 @@ function TitleScreen.apply_layout(self)
 		Vector2.new(
 			if compact and pv ~= "stack"
 				then 0
-				else math.max(if compact then 250.0 else 0.0, self._mp_content:get_combined_minimum_size().X + 28.0),
+				else math.max(
+					if compact then 250.0 else 0.0,
+					self._mp_content:get_combined_minimum_size().X + 28.0
+				),
 			if compact then 52 else 62
 		)
 	)
@@ -1003,7 +1000,7 @@ function TitleScreen._place_crate_button(self, compact: boolean, head_top: numbe
 	local stop = if shb.visible then shtop + shsz.Y + (if compact then 8.0 else 14.0) else shtop
 	sb:set_anchors(0, 0, 0, 0)
 	sb:set_offsets(right - ssz.X, stop, right, stop + ssz.Y)
-	-- RoWorld General's under them all
+	-- DomWorld General's under them all
 	local gb = self._general_btn
 	gb:set_scale(if compact then GeneralButton.PHONE_K else 1.0)
 	local gsz = gb:size_px()
@@ -1013,7 +1010,7 @@ function TitleScreen._place_crate_button(self, compact: boolean, head_top: numbe
 	gb:set_offsets(right - gsz.X, gtop, right, gtop + gsz.Y)
 end
 
---- RoWorld General's button says whether the player is one (Session.general).
+--- DomWorld General's button says whether the player is one (Session.general).
 function TitleScreen.refresh_general(self)
 	self._general_btn:refresh()
 	self:_refresh_greeting()
@@ -1021,7 +1018,7 @@ end
 
 function TitleScreen._refresh_greeting(self)
 	local n = self.ctx:username()
-	-- (a RoWorld General is greeted as one: Data/Subscription)
+	-- (a DomWorld General is greeted as one: Data/Subscription)
 	local s0 = self.ctx.session
 	local rank = if s0 ~= nil and s0.general == true then "General" else "Commander"
 	local text = if n ~= "Commander" and n ~= "" then ("Welcome, " .. rank .. " " .. n) else ("Welcome, " .. rank)
@@ -1418,7 +1415,8 @@ function TitleScreen._refresh_kind_card(self, card: { [string]: any }, kind: str
 		card.icon:set_visible(false)
 		card.thumb_node:set_visible(false)
 		card.title:set_text(
-			if going then string.upper(tostring(map_name or map))
+			if going
+				then string.upper(tostring(map_name or map))
 				elseif kind == "team" then "TEAM GAME"
 				elseif kind == "world" then "WORLD"
 				else "PUBLIC MATCH"
@@ -1435,13 +1433,13 @@ function TitleScreen._refresh_kind_card(self, card: { [string]: any }, kind: str
 		card.title:set_text(if kind == "team" then "TEAM GAME" elseif kind == "world" then "WORLD" else "PUBLIC MATCH")
 	end
 	-- a team game: its teams first ("4 Teams", "Duos", "Humans Vs Nations")
-	local teams = if l ~= nil and l.mode == "team" and l.teams ~= nil
-		then (
-			if type(l.teams) == "number"
-				then string.format("%d Teams", l.teams)
-				elseif l.teams == "Humans Vs Nations" and ctx.compact then "H vs N"
-				else tostring(l.teams)
-		)
+	local teams = if l ~= nil
+			and l.mode == "team"
+			and l.teams ~= nil
+		then (if type(l.teams) == "number"
+			then string.format("%d Teams", l.teams)
+			elseif l.teams == "Humans Vs Nations" and ctx.compact then "H vs N"
+			else tostring(l.teams))
 		else nil
 	local text
 	if mine and pub.state == "line" then
@@ -1454,11 +1452,22 @@ function TitleScreen._refresh_kind_card(self, card: { [string]: any }, kind: str
 		local players = string.format("%d / %d players", tonumber(l.players) or 0, tonumber(l.max) or 0)
 		if teams ~= nil then
 			text = if ctx.compact and self._dock_variant ~= "stack"
-				then string.format("%s · %d/%d · %s", teams, tonumber(l.players) or 0, tonumber(l.max) or 0, UITheme.fmt_time(left))
+				then string.format(
+					"%s · %d/%d · %s",
+					teams,
+					tonumber(l.players) or 0,
+					tonumber(l.max) or 0,
+					UITheme.fmt_time(left)
+				)
 				else string.format("%s  ·  %s  ·  %s", teams, players, UITheme.fmt_time(left))
 		else
 			text = if ctx.compact and self._dock_variant ~= "stack"
-				then string.format("%d/%d  ·  %s", tonumber(l.players) or 0, tonumber(l.max) or 0, UITheme.fmt_time(left))
+				then string.format(
+					"%d/%d  ·  %s",
+					tonumber(l.players) or 0,
+					tonumber(l.max) or 0,
+					UITheme.fmt_time(left)
+				)
 				else string.format("%s  ·  starts in %s", players, UITheme.fmt_time(left))
 			if next_map ~= nil then
 				text = (if ctx.compact then "" else "Next: ") .. tostring(next_map) .. "  ·  " .. text
@@ -1469,7 +1478,9 @@ function TitleScreen._refresh_kind_card(self, card: { [string]: any }, kind: str
 	end
 	if tight and mine and pub.state == "line" then
 		-- (no CANCEL pill here: a press on the card leaves the line, and the line says so)
-		text = "In line  ·  " .. UITheme.fmt_time(math.max(0, math.floor((UICtx.msec() - self._public_since) / 1000))) .. "  ·  tap to cancel"
+		text = "In line  ·  "
+			.. UITheme.fmt_time(math.max(0, math.floor((UICtx.msec() - self._public_since) / 1000)))
+			.. "  ·  tap to cancel"
 	end
 	card.status:set_text(text)
 	UITheme.set_swatch_color(card.dot, if l ~= nil or mine then UITheme.GREEN else UITheme.AMBER)

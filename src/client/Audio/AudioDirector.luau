@@ -25,6 +25,7 @@
 -- - pop() is the sound of your border growing (added 2026-10-04, so taking land is heard as well as
 --   seen): a run of one bubble pop whose rate follows how fast land is being taken, a little
 --   higher the longer the run lasts.
+-- Modified for DomWorld, 2026 — see git history for details.
 
 local ContentProvider = game:GetService("ContentProvider")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -822,13 +823,7 @@ AudioDirector.REPLACE = { attack_launch = "order_ack" }
 --- Per-sound level trims in dB (the conquest sting was a little loud, 2026-09-26).
 AudioDirector.TRIM_DB = { conquer = -6.0 }
 
-function AudioDirector.play_sfx(
-	self: any,
-	sfx_name: string,
-	volume_db: number?,
-	pitch_jitter: number?,
-	pitch: number?
-)
+function AudioDirector.play_sfx(self: any, sfx_name: string, volume_db: number?, pitch_jitter: number?, pitch: number?)
 	sfx_name = AudioDirector.REPLACE[sfx_name] or sfx_name
 	local stream = self._sfx_streams[sfx_name]
 	if stream == nil then
@@ -964,7 +959,6 @@ function AudioDirector.pop_pitch(heat: number): number
 	local A = AudioDirector
 	return A.POP_PITCH_MIN + (A.POP_PITCH_MAX - A.POP_PITCH_MIN) * math.clamp(heat, 0, 1)
 end
-
 
 --- A voice of `sfx_name`'s own pool: restart its oldest copy beyond MAX_SAME, else an idle one. When
 --- VOICE_COUNT effects already ring, the least important, oldest other voice is stopped — never a
@@ -1268,7 +1262,7 @@ local _foreign_reported = false
 --- that still isn't loaded (once per asset a session), or, when all of ours are loaded, that the
 --- failing one isn't the game's (once a session). Several failures in a moment make one check.
 function AudioDirector._on_load_failure(self: any, msg: string)
-	-- ("Failed to load sound rbxassetid://123: User is not authorized to access Asset.": the dashboard
+	-- ("Failed to load sound rbxassetid://0: User is not authorized to access Asset.": the dashboard
 	-- shows it without the id)
 	self._fail_reason = string.sub(string.match(msg, "Failed to load sound.-: (.*)$") or msg, 1, 80)
 	self._fail_ids = self._fail_ids or {}

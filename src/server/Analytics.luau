@@ -56,6 +56,7 @@
 --   Analytics.joined(player)    PlayerAdded
 --   Analytics.report(player, kind, a, b, c)   an OP.ANALYTICS message
 --   Analytics.left(player)      PlayerRemoving (an open match ends as "Quit Game")
+-- Modified for DomWorld, 2026 — see git history for details.
 
 local Pacer = require("./Pacer")
 
@@ -72,7 +73,8 @@ Analytics.ONBOARDING = {
 	"Second Match",
 }
 Analytics.FUNNEL = "Match"
-Analytics.FUNNEL_STEPS = { "Started", "Spawned", "First Attack", "Survived 3 Min", "Survived 10 Min", "Reached The End" }
+Analytics.FUNNEL_STEPS =
+	{ "Started", "Spawned", "First Attack", "Survived 3 Min", "Survived 10 Min", "Reached The End" }
 Analytics.MODES = { solo0 = "Solo Easy", solo1 = "Solo Medium", solo2 = "Solo Hard", public = "Public" }
 Analytics.KILLERS = { nation = "Nation", tribe = "Tribe", bot = "Bot Player", human = "Real Player" }
 Analytics.WHERE = { title = "Title", match = "In Match" }
@@ -189,7 +191,11 @@ if IS_ROBLOX then
 		if f == nil then
 			return nil
 		end
-		local keys = { Enum.AnalyticsCustomFieldKeys.CustomField01, Enum.AnalyticsCustomFieldKeys.CustomField02, Enum.AnalyticsCustomFieldKeys.CustomField03 }
+		local keys = {
+			Enum.AnalyticsCustomFieldKeys.CustomField01,
+			Enum.AnalyticsCustomFieldKeys.CustomField02,
+			Enum.AnalyticsCustomFieldKeys.CustomField03,
+		}
 		local out = {}
 		for i, v in f do
 			out[keys[i].Name] = Analytics.field(v)
@@ -208,7 +214,17 @@ if IS_ROBLOX then
 			print(string.format("[Analytics] funnel %s %d %s [%s]", funnel, step, name, table.concat(f or {}, ", ")))
 			return
 		end
-		pacer:submit(player, AnalyticsService.LogFunnelStepEvent, AnalyticsService, player, funnel, session, step, name, fields(f))
+		pacer:submit(
+			player,
+			AnalyticsService.LogFunnelStepEvent,
+			AnalyticsService,
+			player,
+			funnel,
+			session,
+			step,
+			name,
+			fields(f)
+		)
 	end
 	deps.custom = function(player: Player, name: string, value: number, f: { string }?)
 		if studio then
@@ -302,7 +318,11 @@ function Analytics.public_join(player: any, result: string, mode: string, wait_s
 		else "Over 60 s"
 	call(deps.custom, player, "Public Join", math.floor(w * 10 + 0.5) / 10, {
 		result,
-		if mode == "team" then "Team" elseif mode == "ffa" then "Free For All" elseif mode == "world" then "World" else "Any",
+		if mode == "team"
+			then "Team"
+			elseif mode == "ffa" then "Free For All"
+			elseif mode == "world" then "World"
+			else "Any",
 		band,
 	})
 end
@@ -562,7 +582,13 @@ function Analytics.report(player: any, kind: any, a: any, b: any, c: any)
 			end_match(player, e, "Left", minutes(a))
 		end
 	elseif kind == "help" then
-		custom(player, "How To Play", 1, if open then m else nil, if type(a) == "string" then Analytics.WHERE[a] else nil)
+		custom(
+			player,
+			"How To Play",
+			1,
+			if open then m else nil,
+			if type(a) == "string" then Analytics.WHERE[a] else nil
+		)
 	elseif kind == "spectate" then
 		custom(player, "Spectate", 1, nil)
 	elseif kind == "takeover_offer" or kind == "takeover_click" then
@@ -605,7 +631,13 @@ function Analytics.report(player: any, kind: any, a: any, b: any, c: any)
 		custom(player, "Tutorial Skipped", 1, m, names[step + 1] or "Unknown")
 	elseif kind == "hop" then
 		-- (the server) a solo start on an outdated server: Sent to a fresh one / None listed / Failed
-		custom(player, "Fresh Server Hop", 1, nil, if a == "sent" then "Sent" elseif a == "none" then "None" else "Failed")
+		custom(
+			player,
+			"Fresh Server Hop",
+			1,
+			nil,
+			if a == "sent" then "Sent" elseif a == "none" then "None" else "Failed"
+		)
 	elseif kind == "arsenal_shop" then
 		-- the Arsenal opened (client, once per visit); detail: from where
 		custom(player, "Arsenal Opened", 1, if open then m else nil, Analytics.ARSENAL_FROM[a] or "Title")
@@ -638,7 +670,7 @@ function Analytics.report(player: any, kind: any, a: any, b: any, c: any)
 			custom(player, "Starter Pack", 1, nil, action)
 		end
 	elseif kind == "general" then
-		-- RoWorld General (Data/Subscription; 2026-10-27): "opened" (client: its window; b = where from),
+		-- DomWorld General (Data/Subscription; 2026-10-27): "opened" (client: its window; b = where from),
 		-- "clicked" (client: SUBSCRIBE pressed), "prompt_done" (client: Roblox's prompt closed after a
 		-- try to buy), "subscribed" (the server: Roblox says so, server/General)
 		local names = { opened = "Opened", clicked = "Clicked", prompt_done = "Prompt Done", subscribed = "Subscribed" }

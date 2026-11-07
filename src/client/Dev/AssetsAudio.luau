@@ -6,6 +6,7 @@
 --   plays    TimePosition advances after :Play()
 --   loop     music only: Looped sound started 0.4 s before the end wraps to ~0.4 s (DidLoop fired)
 --   peak     max AudioAnalyzer.PeakLevel while playing (compare with the source WAV's sample peak)
+-- Modified for DomWorld, 2026 — see git history for details.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ContentProvider = game:GetService("ContentProvider")
@@ -212,7 +213,7 @@ for _, e in entries do
 	)
 end
 list.Text = string.format(
-	"<b>RoWorld audio check</b> — %d entries, %d failing, preload %.1fs\n\n%s",
+	"<b>DomWorld audio check</b> — %d entries, %d failing, preload %.1fs\n\n%s",
 	#entries,
 	fails,
 	preload_s,

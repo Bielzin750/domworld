@@ -3,6 +3,7 @@
 -- + failover, LobbyHttp, Signing) under Lune, against the real Node service over HTTP.
 -- Needs a running service: tools/lobby_service_test.sh starts one on a free port and runs this with
 -- RL_TEST_URL / RL_TEST_SECRET; without them the test only checks the signing vectors.
+-- Modified for DomWorld, 2026 — see git history for details.
 require("./prelude")
 local net = require("@lune/net")
 local serde = require("@lune/serde")
@@ -109,7 +110,7 @@ do
 	c2:post("/v1/x", {})
 	c2:post("/v1/x", {})
 	expect(hits[#hits] == "https://domain.test", "without a fallback it stays on its URL")
-	expect(LobbyHttp.BASE_URL == "https://rofront.snick.co", "the live URL is the domain, over HTTPS")
+	expect(LobbyHttp.BASE_URL == "https://YOUR_LOBBY_SERVICE_URL", "the live URL is the domain, over HTTPS")
 end
 
 local URL = process.env.RL_TEST_URL

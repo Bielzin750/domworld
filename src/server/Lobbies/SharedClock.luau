@@ -10,10 +10,11 @@
 --   SharedClock.start(deps?)  measure now and every RESYNC_S (deps: datastore, log — injectable)
 --   SharedClock.now()         os.time() corrected by the offset (seconds, fractional)
 --   SharedClock.ready()       measured once, or gave up (lobby scheduling waits for this)
+-- Modified for DomWorld, 2026 — see git history for details.
 
 local SharedClock = {}
 
-SharedClock.STORE = "rofront_clock"
+SharedClock.STORE = "domworld_clock"
 SharedClock.KEY = "probe"
 --- Each measurement writes one of this many keys ("probe1" .. "probe256", at random). A DataStore key
 --- takes a write every few seconds, and every server wrote "probe": at ~880 servers most of those writes

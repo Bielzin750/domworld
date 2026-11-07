@@ -9,11 +9,12 @@
 --     win. Each warhead had its whole trail and a pulsing target ring. One MIRV on a World map,
 --     measured 2026-10-09 on the Mac that measures docs/performance.md: 208 warheads, 16,784 objects
 --     in the unit layer where 1,000 had been, 27 ms of its script a frame where 2 had been, frames of
---     183 ms. A player's report the same day: "I went down to like 3fps nearing the end of a rofront
+--     183 ms. A player's report the same day: "I went down to like 3fps nearing the end of a DomWorld
 --     game".
 --   * so the trails share a budget, and MIRV warheads lose their target rings while many fly.
 --
 -- Pure Luau (no Roblox types): tests/trail_budget.luau.
+-- Modified for DomWorld, 2026 — see git history for details.
 local TrailBudget = {}
 
 --- The most dots one trail has.

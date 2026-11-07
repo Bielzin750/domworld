@@ -1,8 +1,8 @@
 // The login in front of the human-facing pages (/stats, /stats.json, /stats/events, the full /health):
-// docs/lobby-service.md "Stats login". Added 2026-10-12, with the move to https://rofront.snick.co, so the
+// docs/lobby-service.md "Stats login". Added 2026-10-12, with the move to https://YOUR_LOBBY_SERVICE_URL, so the
 // pages are not open to anyone.
 //
-// - One password, STATS_PASSWORD in ~/rofront-lobbies/.env (chmod 600), read again every few seconds:
+// - One password, STATS_PASSWORD in ~/DomWorld-lobbies/.env (chmod 600), read again every few seconds:
 //   changing it there signs everyone out, no restart.
 // - A right password gets a cookie for COOKIE_DAYS: "<expiry>.<hex HMAC>", keyed by the service secret
 //   and the password. HttpOnly, Secure, SameSite=Lax.
@@ -168,7 +168,7 @@ export function loginPage(next: string, message: string | null): string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Rofront live · sign in</title>
+<title>DomWorld live · sign in</title>
 <style>
 :root { --bg: #0e1116; --panel: #161b22; --line: #262d36; --text: #e6edf3; --dim: #8b949e; --accent: #f5a524; --bad: #f85149; }
 * { box-sizing: border-box; }
@@ -185,7 +185,7 @@ button { padding: 10px 12px; border: 0; border-radius: 8px; background: var(--ac
 </head>
 <body>
 <form method="post" action="/login">
-<h1>Rofront live</h1>
+<h1>DomWorld live</h1>
 <p>Sign in to see the live stats.</p>
 ${message ? `<p class="msg" role="alert">${esc(message)}</p>` : ""}
 <label for="pw">Password</label>

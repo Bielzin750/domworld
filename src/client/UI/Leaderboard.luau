@@ -629,7 +629,12 @@ function Leaderboard._refresh_teams(self)
 		local sw = T.swatch(col, 10.0, 3)
 		sw.size_flags_vertical = W.SHRINK_CENTER
 		row:add_child(sw)
-		local nm = T.label(ctx:team_label(r.team), 12, if r.team == mine then 800 else 600, if r.team == mine then T.owner_ui_color(col) else T.TEXT)
+		local nm = T.label(
+			ctx:team_label(r.team),
+			12,
+			if r.team == mine then 800 else 600,
+			if r.team == mine then T.owner_ui_color(col) else T.TEXT
+		)
 		nm.size_flags_horizontal = W.EXPAND_FILL
 		nm.size_flags_vertical = W.SHRINK_CENTER
 		nm.text_overrun_behavior = W.OVERRUN_ELLIPSIS

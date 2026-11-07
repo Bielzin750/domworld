@@ -8,6 +8,7 @@
 -- Main's top bar at 50) holding a Widgets.Root (the kit's Godot-like node tree, logical px with
 -- one UI scale). One render-step loop (after the camera) runs every per-frame update, then the
 -- kit's tweens / layout (Widgets.step). Main owns M / Home and the top-bar buttons.
+-- Modified for DomWorld, 2026 — see git history for details.
 
 local UITheme = require("./UITheme")
 local W = require("./Widgets")
@@ -172,7 +173,7 @@ function UIRoot.setup(self, session: any, world: any, audio: any)
 		if self.general ~= nil then
 			self.general:bind(session)
 		end
-		-- RoWorld General (Data/Subscription): the title's button and greeting, and what a day gave
+		-- DomWorld General (Data/Subscription): the title's button and greeting, and what a day gave
 		self:_sig(session, "general_changed", function(on: boolean, given: any)
 			self.title:refresh_general()
 			self:_on_general(on, given)
@@ -187,7 +188,9 @@ function UIRoot.setup(self, session: any, world: any, audio: any)
 		self:_sig(session, "unlocked", function(key: string)
 			self.bar:refresh_buttons()
 			-- (the starter pack just bought says so once for its three items)
-			local pack = self.starter ~= nil and self.starter.bought_at ~= nil and os.clock() - self.starter.bought_at < 5
+			local pack = self.starter ~= nil
+				and self.starter.bought_at ~= nil
+				and os.clock() - self.starter.bought_at < 5
 			if self.arsenal ~= nil and not self.arsenal.is_open and not pack then
 				local it = ArsenalData.item(key)
 				ctx:sfx("unlock")
@@ -376,7 +379,7 @@ function UIRoot.start_tutorial(self)
 	})
 end
 
---- Rofront Staging, and game admins on production: "Replay as new player" (the game menu, and the
+--- DomWorld Staging, and game admins on production: "Replay as new player" (the game menu, and the
 --- settings page: the title's gear). Everything first-time is as new again and the title follows,
 --- where the tutorial starts.
 function UIRoot.replay_as_new_player(self)
@@ -478,14 +481,14 @@ function UIRoot.add_hud_control(self, node: any)
 	self.ctx:world_call("set_hud_controls", { self:hud_controls() })
 end
 
-function UIRoot.toggle_help(self)
+function UIRoot.toggle_help(self, mode: string?)
 	if self.help.is_open then
 		self.help:close()
 	else
 		self.radial:close(false)
 		self.interact:cancel_aim(false)
 		self.tooltip:hide_tip()
-		self.help:open()
+		self.help:open(mode)
 		self.help_toggled:Fire(true)
 		self.telemetry:help(if self.title.visible then "title" else "match")
 	end
@@ -616,7 +619,7 @@ function UIRoot._starter_auto(self)
 	self:open_starter("auto")
 end
 
---- RoWorld General's window (Data/Subscription): the title's General button.
+--- DomWorld General's window (Data/Subscription): the title's General button.
 function UIRoot.open_general(self, from: string)
 	if self.general == nil or self.general.is_open then
 		return
@@ -625,7 +628,7 @@ function UIRoot.open_general(self, from: string)
 	self:_update_input_gate()
 end
 
---- The server's word on RoWorld General: what a General's day just gave says so (a toast), and a
+--- The server's word on DomWorld General: what a General's day just gave says so (a toast), and a
 --- new General is thanked.
 function UIRoot._on_general(self, on: boolean, given: any)
 	if type(given) == "table" then
@@ -987,6 +990,9 @@ function UIRoot._build(self)
 	title.show_help:Connect(function()
 		self:toggle_help()
 	end)
+	title.show_about:Connect(function()
+		self:toggle_help("about")
+	end)
 	title.open_locker:Connect(function()
 		self:open_locker()
 	end)
@@ -1130,7 +1136,7 @@ function UIRoot._build(self)
 		self:_update_input_gate()
 	end)
 	root:add_child(starter)
-	-- RoWorld General's window (the title's General button; Data/Subscription)
+	-- DomWorld General's window (the title's General button; Data/Subscription)
 	local general = GeneralOffer.new(ctx)
 	general.name = "GeneralOffer"
 	self.general = general

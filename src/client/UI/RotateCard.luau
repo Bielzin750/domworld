@@ -2,6 +2,7 @@
 -- Port of scripts/ui/rotate_card.gd (UIRotateCard)
 -- Full-screen "Rotate your phone" card shown on touch devices while the viewport is portrait
 -- (the game is designed for landscape; StarterGui.ScreenOrientation normally keeps us there).
+-- Modified for DomWorld, 2026 — see git history for details.
 
 local UITheme = require("./UITheme")
 local W = require("./Widgets")
@@ -34,7 +35,7 @@ function RotateCard.new(c: any)
 	t:set_alignment(W.ALIGN_CENTER)
 	cc:add_child(t)
 	local s = UITheme.label(
-		"RoWorld is played in landscape.\nTurn your device sideways to continue.",
+		"DomWorld is played in landscape.\nTurn your device sideways to continue.",
 		15,
 		500,
 		UITheme.TEXT_2

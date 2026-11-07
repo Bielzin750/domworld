@@ -26,7 +26,7 @@
 --   Purchases.has_unlock(player, key) / Purchases.unlock_mask(player)   what the player has unlocked
 --   Purchases.starter_state(player) -> false | { state = "ready" } | { state = "active", left = s }
 --   Purchases.starter_seen(player)   the starter pack is on their screen: its clock starts (once; yields)
---   Purchases.general_perks(player, day, skin, crates) -> given?   a RoWorld General's day (yields)
+--   Purchases.general_perks(player, day, skin, crates) -> given?   a DomWorld General's day (yields)
 -- The Arsenal (Data/Arsenal): a product whose `grants` is "unlock:<key>" is not a credit — its receipt
 -- unlocks that item for good (and pays the item's bonus Stars once). The same unlock bought twice (the
 -- shop never offers it) pays Stars instead, DUPLICATE_STARS_PER_ROBUX for each Robux of its price.
@@ -47,6 +47,7 @@
 -- Exclusive cosmetics (Cosmetics.exclusive_skins, made for particular players): every read of a
 -- record for a player (clean(v, user_id)) owns what Cosmetics.granted(user_id) lists, and the first
 -- time (not yet in `gifts`) puts it on; nobody else's record can hold one.
+-- Modified for DomWorld, 2026 — see git history for details.
 local IS_ROBLOX = typeof(game) == "Instance"
 local Products: any = if IS_ROBLOX
 	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Data.Products)
@@ -69,7 +70,7 @@ local Subscription: any = if IS_ROBLOX
 
 local Purchases = {}
 
-Purchases.STORE = "RofrontPurchases_v1"
+Purchases.STORE = "DomWorldPurchases_v1"
 --- Receipts remembered per player (a retried ProcessReceipt is always about a recent one).
 Purchases.RECEIPTS_KEPT = 100
 Purchases.MAX_CREDITS = 1000
@@ -94,7 +95,7 @@ type Record = {
 	starter: { started: number, ends: number, used: boolean? }?,
 	--- exclusive items already given (and put on once): Cosmetics.granted
 	gifts: { [string]: boolean },
-	--- RoWorld General: the UTC day whose perks were given (Purchases.general_perks)
+	--- DomWorld General: the UTC day whose perks were given (Purchases.general_perks)
 	general_day: number?,
 }
 
@@ -500,14 +501,20 @@ function Purchases.grant(user_id: number, kind: string, receipt: string, n: numb
 					local id = Shop.item_id(k)
 					if rec.owned[id] then
 						local share = if total > 0 then paid * Shop.price(Shop.flag(k)) / total else 0
-						rec.stars = math.min(rec.stars + math.floor(share * Purchases.DUPLICATE_STARS_PER_ROBUX), Purchases.MAX_STARS)
+						rec.stars = math.min(
+							rec.stars + math.floor(share * Purchases.DUPLICATE_STARS_PER_ROBUX),
+							Purchases.MAX_STARS
+						)
 					else
 						rec.owned[id] = true
 						wear = wear or id -- (the keys come rarest first)
 					end
 				end
 				if #keys == 0 then
-					rec.stars = math.min(rec.stars + math.floor(paid * Purchases.DUPLICATE_STARS_PER_ROBUX), Purchases.MAX_STARS)
+					rec.stars = math.min(
+						rec.stars + math.floor(paid * Purchases.DUPLICATE_STARS_PER_ROBUX),
+						Purchases.MAX_STARS
+					)
 				end
 				local worn = Shop.key_of(rec.equipped.flag)
 				local worn_set = if worn ~= nil then (Shop.flag(worn) :: any).set else nil
@@ -843,7 +850,7 @@ function Purchases.tutorial_bonus(player: any, amount: number): boolean
 	return paid
 end
 
---- RoWorld General (Data/Subscription; 2026-10-27; server/General calls it while Roblox says the
+--- DomWorld General (Data/Subscription; 2026-10-27; server/General calls it while Roblox says the
 --- player is subscribed): UTC day `day`'s crate credit, or, where crates aren't allowed (`crates`
 --- false), Subscription.DAILY_STARS Stars, once a day; and the month's General skin `skin`, kept for
 --- good (put on when no skin is worn). Returns what it gave now ({ crate?, stars?, skin? }; {} when
@@ -892,7 +899,7 @@ function Purchases.general_perks(player: any, day: number, skin: string?, crates
 	return given
 end
 
---- Rofront Staging's "Replay as new player": the tutorial's Stars can be earned again, the first
+--- DomWorld Staging's "Replay as new player": the tutorial's Stars can be earned again, the first
 --- crate's price is on offer again, and so is the starter pack (as one who never paid, its clock not
 --- started, and without the pack's three items, which a new player doesn't have: the only things
 --- taken; Stars, cosmetics and other unlocks stay). `keep_owned` (a game admin on production,

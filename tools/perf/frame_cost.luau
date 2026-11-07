@@ -8,6 +8,7 @@
 --
 -- Read docs/performance.md first. Studio renders 15 frames a second while its window is not in front,
 -- so "per rendered frame" then holds 67 ms of changes: compare runs, don't read them as frame times.
+-- Modified for DomWorld, 2026 — see git history for details.
 local Players = game:GetService("Players")
 local LibMP = (require :: any)("@rbx/LibMP")
 local pg = Players.LocalPlayer:WaitForChild("PlayerGui")
@@ -66,7 +67,7 @@ local function objects(gui: Instance?): number
 end
 
 local out = { "ms per rendered frame, main thread" }
-local guis = { "RofrontMap", "RofrontMapUnits", "RofrontMapLabels", "AirfrontUI" }
+local guis = { "DomWorldMap", "DomWorldMapUnits", "DomWorldMapLabels", "AirfrontUI" }
 local counts = {}
 for _, name in guis do
 	table.insert(counts, ("%s %d"):format(name, objects(pg:FindFirstChild(name))))

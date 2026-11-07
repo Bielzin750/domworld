@@ -1,8 +1,8 @@
 {
-  "name": "rofront-lobbies",
+  "name": "domworld-lobbies",
   "version": "1.0.0",
   "private": true,
-  "description": "The public-lobby store for Rofront (Roblox): lobby records, reserved-server lookups and leases, replacing MemoryStore.",
+  "description": "Optional self-hosted public lobby coordination service for DomWorld (Roblox).",
   "main": "dist/src/main.js",
   "scripts": {
     "build": "tsc -p .",

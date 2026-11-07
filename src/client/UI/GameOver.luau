@@ -168,11 +168,20 @@ function GameOver.new(c: any)
 	self._take_chips = chips
 	self._chip = {}
 	self._chip_panels = {}
-	for _, c in { { "land", "globe", "LAND", UITheme.AMBER }, { "troops", "troops", "TROOPS", UITheme.CYAN }, { "gold", "gold", "GOLD", UITheme.GOLD } } do
+	for _, c in
+		{
+			{ "land", "globe", "LAND", UITheme.AMBER },
+			{ "troops", "troops", "TROOPS", UITheme.CYAN },
+			{ "gold", "gold", "GOLD", UITheme.GOLD },
+		}
+	do
 		local chip = W.Panel.new()
 		chip:set_mouse_filter(W.MOUSE_IGNORE)
 		chip.size_flags_horizontal = W.EXPAND_FILL
-		chip:add_theme_stylebox_override("panel", UITheme.flat(UITheme.rgba(1, 1, 1, 0.06), 10, UITheme.rgba(1, 1, 1, 0.1), 1, 10.0, 7.0))
+		chip:add_theme_stylebox_override(
+			"panel",
+			UITheme.flat(UITheme.rgba(1, 1, 1, 0.06), 10, UITheme.rgba(1, 1, 1, 0.1), 1, 10.0, 7.0)
+		)
 		local ch = UITheme.hbox(8)
 		local ic = UITheme.icon_rect(c[2], 18.0, c[4])
 		ic.size_flags_vertical = W.SHRINK_CENTER
@@ -279,10 +288,19 @@ function GameOver.new(c: any)
 	sb:add_theme_color_override("icon_normal_color", UITheme.GOLD)
 	sb:add_theme_color_override("icon_hover_color", UITheme.GOLD)
 	for _, st in ipairs({ "normal", "disabled" }) do
-		sb:add_theme_stylebox_override(st, UITheme.flat(UITheme.c(UITheme.GOLD, 0.1), UITheme.R_MD, UITheme.c(UITheme.GOLD, 0.5), 1, 14.0, 8.0))
+		sb:add_theme_stylebox_override(
+			st,
+			UITheme.flat(UITheme.c(UITheme.GOLD, 0.1), UITheme.R_MD, UITheme.c(UITheme.GOLD, 0.5), 1, 14.0, 8.0)
+		)
 	end
-	sb:add_theme_stylebox_override("hover", UITheme.flat(UITheme.c(UITheme.GOLD, 0.18), UITheme.R_MD, UITheme.GOLD, 1, 14.0, 8.0))
-	sb:add_theme_stylebox_override("pressed", UITheme.flat(UITheme.c(UITheme.GOLD, 0.26), UITheme.R_MD, UITheme.GOLD, 1, 14.0, 8.0))
+	sb:add_theme_stylebox_override(
+		"hover",
+		UITheme.flat(UITheme.c(UITheme.GOLD, 0.18), UITheme.R_MD, UITheme.GOLD, 1, 14.0, 8.0)
+	)
+	sb:add_theme_stylebox_override(
+		"pressed",
+		UITheme.flat(UITheme.c(UITheme.GOLD, 0.26), UITheme.R_MD, UITheme.GOLD, 1, 14.0, 8.0)
+	)
 	sb:set_visible(false)
 	sb.pressed:Connect(function()
 		self.ctx:hide_hint(sb)
@@ -334,10 +352,19 @@ function GameOver.new(c: any)
 		b:add_theme_color_override("icon_normal_color", UITheme.GOLD)
 		b:add_theme_color_override("icon_hover_color", UITheme.GOLD)
 		for _, st in ipairs({ "normal", "disabled" }) do
-			b:add_theme_stylebox_override(st, UITheme.flat(UITheme.c(UITheme.GOLD, 0.06), UITheme.R_MD, UITheme.c(UITheme.GOLD, 0.35), 1, 14.0, 6.0))
+			b:add_theme_stylebox_override(
+				st,
+				UITheme.flat(UITheme.c(UITheme.GOLD, 0.06), UITheme.R_MD, UITheme.c(UITheme.GOLD, 0.35), 1, 14.0, 6.0)
+			)
 		end
-		b:add_theme_stylebox_override("hover", UITheme.flat(UITheme.c(UITheme.GOLD, 0.16), UITheme.R_MD, UITheme.GOLD, 1, 14.0, 6.0))
-		b:add_theme_stylebox_override("pressed", UITheme.flat(UITheme.c(UITheme.GOLD, 0.24), UITheme.R_MD, UITheme.GOLD, 1, 14.0, 6.0))
+		b:add_theme_stylebox_override(
+			"hover",
+			UITheme.flat(UITheme.c(UITheme.GOLD, 0.16), UITheme.R_MD, UITheme.GOLD, 1, 14.0, 6.0)
+		)
+		b:add_theme_stylebox_override(
+			"pressed",
+			UITheme.flat(UITheme.c(UITheme.GOLD, 0.24), UITheme.R_MD, UITheme.GOLD, 1, 14.0, 6.0)
+		)
 		b:set_visible(false)
 		self._offers:add_child(b)
 		return b
@@ -734,7 +761,14 @@ function GameOver._size_take(self)
 	for _, chip in self._chip_panels do
 		chip:add_theme_stylebox_override(
 			"panel",
-			UITheme.flat(UITheme.rgba(1, 1, 1, 0.06), 10, UITheme.rgba(1, 1, 1, 0.1), 1, if compact then 8.0 else 10.0, if compact then 4.0 else 7.0)
+			UITheme.flat(
+				UITheme.rgba(1, 1, 1, 0.06),
+				10,
+				UITheme.rgba(1, 1, 1, 0.1),
+				1,
+				if compact then 8.0 else 10.0,
+				if compact then 4.0 else 7.0
+			)
 		)
 	end
 	for _, value in self._chip do

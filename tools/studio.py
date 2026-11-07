@@ -32,7 +32,7 @@ class Client:
         self.next_id = 1
         threading.Thread(target=self._reader, daemon=True).start()
         self.request("initialize", {"protocolVersion": "2025-06-18", "capabilities": {},
-                                    "clientInfo": {"name": "rofront-cli", "version": "1.0"}})
+                                    "clientInfo": {"name": "DomWorld-cli", "version": "1.0"}})
         self.notify("notifications/initialized", {})
 
     def _reader(self):

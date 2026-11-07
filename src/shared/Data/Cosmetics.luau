@@ -17,6 +17,7 @@
 -- A crate rolls a rarity by RARITIES odds, then an item of that rarity the player doesn't own yet
 -- (uniformly); rarities with nothing left drop out and the odds of the rest scale up (odds() gives
 -- the player's own odds, shown before every purchase — Roblox's paid random items rules).
+-- Modified for DomWorld, 2026 — see git history for details.
 local IS_ROBLOX = typeof(game) == "Instance"
 local Flags: any = if IS_ROBLOX
 	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Assets.Flags)
@@ -311,7 +312,7 @@ Cosmetics.exclusive_skins = {
 --- How an exclusive item shows in the Locker (not a crate rarity: no odds).
 Cosmetics.EXCLUSIVE = { id = "exclusive", name = "Exclusive", odds = 0, color = 0xFF6FD8 }
 
---- RoWorld General's skins (Data/Subscription; 2026-10-27): a new one each month for subscribers,
+--- DomWorld General's skins (Data/Subscription; 2026-10-27): a new one each month for subscribers,
 --- who keep it. Never in a crate nor on a bot player, not in the Locker's "N of M"; only
 --- server/Purchases.general_perks gives one, and anyone given one may own it. Several colours, as an
 --- exclusive's.
@@ -414,7 +415,7 @@ function Cosmetics.exclusives(): { Item }
 	return exclusives
 end
 
---- RoWorld General's skins (Cosmetics.general_skins), as items.
+--- DomWorld General's skins (Cosmetics.general_skins), as items.
 function Cosmetics.generals(): { Item }
 	return generals
 end

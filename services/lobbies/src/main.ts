@@ -1,4 +1,4 @@
-// Entry point (pm2 app "rofront-lobbies"). docs/lobby-service.md "Ops".
+// Entry point (pm2 app "DomWorld-lobbies"). docs/lobby-service.md "Ops".
 import * as fs from "fs";
 import * as path from "path";
 import { envReader, loadConfig, readEnabled } from "./config";
@@ -163,7 +163,7 @@ server.on("error", (e) => {
 	process.exit(1);
 });
 server.listen(config.port, config.host, () => {
-	log("info", `rofront-lobbies listening on ${config.host}:${config.port} (lobbies ${enabled ? "ON" : "off"})`);
+	log("info", `DomWorld-lobbies listening on ${config.host}:${config.port} (lobbies ${enabled ? "ON" : "off"})`);
 });
 
 let lastCounts = "";

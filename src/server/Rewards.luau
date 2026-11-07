@@ -11,13 +11,14 @@
 --   Rewards.configure(deps)          { add_stars = fn(player, n) -> (ok, balance), double = fn(player)
 --                                      -> boolean, general = fn(player) -> boolean, send = fn(player,
 --                                      payload), now = fn() -> s, log? }
--- A RoWorld General (Data/Subscription) gets Subscription.STARS_BONUS of the match's Stars on top
+-- A DomWorld General (Data/Subscription) gets Subscription.STARS_BONUS of the match's Stars on top
 -- (before 2x Stars doubles: the "general" line).
 --   Rewards.solo_started(player, mode)   the client's match_start ("solo0" / "solo1" / "solo2")
 --   Rewards.solo_result(player, report)  OP.SOLO_RESULT (yields)
 --   Rewards.pay(player, result, mode)    a result this server measured itself (yields)
 --   Rewards.release(player)              PlayerRemoving
 -- The payload sent to the client (OP.STARS): { lines = { { key, amount } }, total, balance, mode }.
+-- Modified for DomWorld, 2026 — see git history for details.
 local IS_ROBLOX = typeof(game) == "Instance"
 local Stars: any = if IS_ROBLOX
 	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Data.Stars)

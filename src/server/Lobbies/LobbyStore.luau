@@ -7,11 +7,12 @@
 -- Both expose: list(), get(id), put(lobby, ttl_s), update(id, fn), remove(id), lock(name, ttl_s),
 -- bind_psid(psid, id, ttl_s), lobby_for_psid(psid), take(spec), release(id, uids). All MemoryStore
 -- calls yield and may throw (callers pcall).
+-- Modified for DomWorld, 2026 — see git history for details.
 local LobbyRules = require("./LobbyRules")
 
 local LobbyStore = {}
 
-LobbyStore.NAMESPACE = "rofront_v1"
+LobbyStore.NAMESPACE = "domworld_v1"
 LobbyStore.LIST_LIMIT = 50
 
 --- What a record is written as. A team game's record (and World's own kind's, 2026-10-19) keeps its

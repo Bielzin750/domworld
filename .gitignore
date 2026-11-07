@@ -4,6 +4,16 @@
 build/
 *.rbxl.lock
 __pycache__/
-assets/audio/
 .claude/worktrees/
 src/server/Lobbies/Secret.luau
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+secrets/
+.DS_Store
+.mcp.json
+*.local.json
+DOMWORLD_CODEX_PROMPT.md

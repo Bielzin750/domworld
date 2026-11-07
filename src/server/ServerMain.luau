@@ -13,6 +13,7 @@
 -- Maps: the terrain of every map but the default lives in script.Parent.MapData (server only);
 -- WorldMap gets a provider for it, and AirfrontNet.GetMap (Net/MapFetch) serves it to clients that
 -- need a map for solo play or an upcoming multiplayer match.
+-- Modified for DomWorld, 2026 — see git history for details.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -61,9 +62,9 @@ local ServerMain = {}
 ServerMain.server = nil :: any
 --- Messages a client may send per second before the rest is ignored (intents have their own 30/s).
 ServerMain.MAX_MESSAGES_PER_SEC = 90
---- The production experience (Rofront; build/publish.json). Other experiences running this code
---- (Rofront Staging) stay off the services production shares.
-ServerMain.PROD_UNIVERSE = 10768172922
+--- The production experience (DomWorld; build/publish.json). Other experiences running this code
+--- (DomWorld Staging) stay off the services production shares.
+ServerMain.PROD_UNIVERSE = 0
 --- Team games and parties in production (docs/teams-and-parties.md; always on in Staging and Studio).
 ServerMain.TEAM_GAMES_LIVE = true
 --- SETTING messages per second per client (clients throttle each section to 2/s).
@@ -96,7 +97,7 @@ local function report_once(where: string, err: any)
 	end
 	reported[key] = true
 	reported_n += 1
-	warn(string.format("[RoWorldServer] %s failed: %s", where, text))
+	warn(string.format("[DomWorldServer] %s failed: %s", where, text))
 end
 
 local function core(name: string): any
@@ -265,7 +266,7 @@ function ServerMain.start()
 		lobby_url = if type(u) == "string" and u ~= "" then u else nil
 	elseif LobbyHttp.ENABLED and game.GameId == ServerMain.PROD_UNIVERSE then
 		-- (only the production experience: the service is one shared lobby list, and another
-		-- experience, like Rofront Staging, must not show up in it; MemoryStore is its own per experience)
+		-- experience, like DomWorld Staging, must not show up in it; MemoryStore is its own per experience)
 		lobby_url = LobbyHttp.BASE_URL
 	end
 	if lobby_url ~= nil and LobbySecret ~= nil then
@@ -925,7 +926,7 @@ function ServerMain.start()
 				end
 			end)
 		elseif op == OP.NEW_PLAYER then
-			-- "Replay as new player" (the game menu): Rofront Staging / Studio, and on production the game's
+			-- "Replay as new player" (the game menu): DomWorld Staging / Studio, and on production the game's
 			-- admins (2026-10-27: to play a first session as a new player does), who keep what they own there
 			local test = Staging.here() or RunService:IsStudio()
 			if not test and player:GetAttribute("AF_Admin") ~= true then
@@ -1331,7 +1332,7 @@ function ServerMain.start()
 	-- Paid random items (the cosmetic crates) are not offered where Roblox's policy restricts them
 	-- (PolicyService.ArePaidRandomItemsRestricted); unknown until checked = restricted.
 	local crates_allowed: { [Player]: boolean } = {}
-	--- the policy was asked (an answer or not): RoWorld General's daily perk waits for it
+	--- the policy was asked (an answer or not): DomWorld General's daily perk waits for it
 	local policy_known: { [Player]: boolean } = {}
 	inventory_of = function(player: Player): any
 		local inv = Purchases.inventory(player)
@@ -1437,7 +1438,7 @@ function ServerMain.start()
 		end,
 		log = print,
 	})
-	-- RoWorld General (Data/Subscription; 2026-10-27): Roblox says who is subscribed; server/General
+	-- DomWorld General (Data/Subscription; 2026-10-27): Roblox says who is subscribed; server/General
 	-- gives the perks
 	General.configure({
 		status = function(player: Player): boolean?
@@ -1597,7 +1598,8 @@ function ServerMain.start()
 			stars_lost = Purchases.lost.payouts - counted.lost,
 			stars_lost_amount = Purchases.lost.stars - counted.lost_stars,
 		}
-		counted.hits, counted.misses, counted.none, counted.sent = handoff.hits, handoff.misses, handoff.none, handoff.sent
+		counted.hits, counted.misses, counted.none, counted.sent =
+			handoff.hits, handoff.misses, handoff.none, handoff.sent
 		counted.lost, counted.lost_stars = Purchases.lost.payouts, Purchases.lost.stars
 		local sim = server:sim()
 		if sim ~= nil then

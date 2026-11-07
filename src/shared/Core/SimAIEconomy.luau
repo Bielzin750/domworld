@@ -359,7 +359,9 @@ function SimAIEconomy.install(C)
 			end
 		end
 		for _, kind in E.BUILD_ORDER do
-			if self:_structure_due(sim, id, kind, cities, age) and self:_spawn_structure(sim, id, kind, cities, threat) then
+			if
+				self:_structure_due(sim, id, kind, cities, age) and self:_spawn_structure(sim, id, kind, cities, threat)
+			then
 				self.last_build[id] = sim.tick
 				return
 			end
@@ -724,7 +726,11 @@ function SimAIEconomy.install(C)
 	-- Warship swarms (Hard only): when 10+ warships sail and some enemy owns more than
 	-- 10, one of the three richest AI owners builds a warship on top of one of them.
 	function C:_counter_infestation(sim, id: number)
-		if sim:ai_difficulty(id) < 2 or #sim.warship_list <= WARSHIP_FLEET_CAP or sim.o_warships[id] >= WARSHIP_FLEET_CAP then
+		if
+			sim:ai_difficulty(id) < 2
+			or #sim.warship_list <= WARSHIP_FLEET_CAP
+			or sim.o_warships[id] >= WARSHIP_FLEET_CAP
+		then
 			return
 		end
 		if sim.o_gold[id] < self:_warship_cost(sim, id) or sim.o_alevel[id * STRUCT_KINDS + S_PORT] <= 0 then

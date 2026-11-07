@@ -39,7 +39,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("scenes")
     ap.add_argument("--ts", type=float, default=1.0)
-    ap.add_argument("--out", default="/private/tmp/airfront-shots/rofront-overlaysb")
+    ap.add_argument("--out", default="/private/tmp/airfront-shots/DomWorld-overlaysb")
     ap.add_argument("--timeout", type=float, default=300)
     ap.add_argument("--no-sync", action="store_true")
     a = ap.parse_args()

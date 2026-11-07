@@ -407,7 +407,9 @@ function Tutorial._process(self, delta: number)
 			if self._spot ~= nil then
 				-- the camera goes there, close enough that a thumb hits the land around it
 				local w = ctx.world
-				local d = if w ~= nil and w.rig ~= nil and type(w.rig.scale_to_distance) == "function"
+				local d = if w ~= nil
+						and w.rig ~= nil
+						and type(w.rig.scale_to_distance) == "function"
 					then w.rig:scale_to_distance(Tutorial.SPAWN_PX)
 					else -1.0
 				ctx:world_call("focus_tile", { self._spot, d, 0.9 })
@@ -528,9 +530,7 @@ function Tutorial._process(self, delta: number)
 			local high = r > Data.RATIO_HIGH
 			if high ~= self._ratio_high then
 				self._ratio_high = high
-				self._text:set_text(
-					if high then Data.RATIO_TOO_MUCH elseif ctx.touch then step.touch else step.desktop
-				)
+				self._text:set_text(if high then Data.RATIO_TOO_MUCH elseif ctx.touch then step.touch else step.desktop)
 				self:_tint(if high then UITheme.RED else UITheme.AMBER)
 			end
 			-- the mark goes around the stop to tap
@@ -555,7 +555,11 @@ function Tutorial._process(self, delta: number)
 					return
 				else
 					-- no neighbour yet: keep growing towards one
-					self._text:set_text(if ctx.touch then "Keep growing until you meet a neighbour" else "Keep growing until you meet a neighbour")
+					self._text:set_text(
+						if ctx.touch
+							then "Keep growing until you meet a neighbour"
+							else "Keep growing until you meet a neighbour"
+					)
 					if self._idle > Data.NUDGE_S then
 						point = ui.advisor:frontier_point()
 					end
@@ -637,7 +641,7 @@ function Tutorial._draw_mark(self, p: Vector2, word: string?, around: number?)
 	local outer = inner + (if around ~= nil then 16.0 else 22.0)
 	UICtx.set_circle(self._ring_a, p, outer - (outer - inner) * k1)
 	UICtx.set_circle(self._ring_b, p, outer - (outer - inner) * k2);
-	(self._ring_a:FindFirstChild("Stroke") :: UIStroke).Transparency = 1 - k1 * 0.95;
+	(self._ring_a:FindFirstChild("Stroke") :: UIStroke).Transparency = 1 - k1 * 0.95
 	(self._ring_b:FindFirstChild("Stroke") :: UIStroke).Transparency = 1 - k2 * 0.95
 	self._dot.Visible = around == nil
 	UICtx.set_circle(self._dot, p, 6.0)
