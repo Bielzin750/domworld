@@ -12,7 +12,6 @@
 local ContextActionService = game:GetService("ContextActionService")
 local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterGui = game:GetService("StarterGui")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -112,13 +111,56 @@ type Hud = { gui: ScreenGui, bar: Frame, buttons: { [string]: any }, tip: TextLa
 
 local hud: Hud? = nil
 
-local function icon_id(name: string): string?
-	local icons = optional(ReplicatedStorage:FindFirstChild("DomWorld"), { "Assets", "UiIcons" })
-	if type(icons) ~= "table" then
+local function icon_id(_name: string): string?
+	-- The top bar uses its text/shape fallback until DomWorld uploads original images.
+	return nil
+end
+
+local function make_procedural_icon(parent: Instance, name: string): Frame?
+	if name ~= "exit" and name ~= "settings" then
 		return nil
 	end
-	local id = icons["hud_" .. name]
-	return if type(id) == "string" then id else nil
+	local root = Instance.new("Frame")
+	root.Name = "ProceduralGlyph"
+	root.AnchorPoint = Vector2.new(0.5, 0.5)
+	root.Position = UDim2.fromScale(0.5, 0.5)
+	root.Size = UDim2.fromOffset(18, 18)
+	root.BackgroundTransparency = 1
+	root.Visible = false
+	root.ZIndex = 3
+	root.Parent = parent
+	local function part(part_name: string, size: Vector2, position: Vector2, rounded: boolean?)
+		local frame = Instance.new("Frame")
+		frame.Name = part_name
+		frame.Position = UDim2.fromOffset(position.X, position.Y)
+		frame.Size = UDim2.fromOffset(size.X, size.Y)
+		frame.BackgroundColor3 = Color3.new(1, 1, 1)
+		frame.BorderSizePixel = 0
+		frame.ZIndex = 3
+		frame.Parent = root
+		if rounded then
+			local corner = Instance.new("UICorner")
+			corner.CornerRadius = UDim.new(1, 0)
+			corner.Parent = frame
+		end
+		return frame
+	end
+	if name == "exit" then
+		local ring = part("PowerRing", Vector2.new(14, 14), Vector2.new(2, 3), true)
+		ring.BackgroundTransparency = 1
+		local stroke = Instance.new("UIStroke")
+		stroke.Color = Color3.new(1, 1, 1)
+		stroke.Thickness = 2
+		stroke.Parent = ring
+		part("PowerStem", Vector2.new(2, 9), Vector2.new(8, 0), true)
+	else
+		part("SettingsCore", Vector2.new(5, 5), Vector2.new(6.5, 6.5), true)
+		part("North", Vector2.new(2, 5), Vector2.new(8, 0), true)
+		part("South", Vector2.new(2, 5), Vector2.new(8, 13), true)
+		part("West", Vector2.new(5, 2), Vector2.new(0, 8), true)
+		part("East", Vector2.new(5, 2), Vector2.new(13, 8), true)
+	end
+	return root
 end
 
 local FALLBACK_GLYPH = {
@@ -127,8 +169,8 @@ local FALLBACK_GLYPH = {
 	help = "?",
 	leaderboard = "≡",
 	globe = "⌂",
-	exit = "⏻",
-	settings = "⚙",
+	exit = "×",
+	settings = "+",
 }
 
 local function show_tip(h: Hud, button: GuiObject?, text: string?)
@@ -185,13 +227,14 @@ local function make_button(h: Hud, key: string, icon: string, tooltip: string, o
 	glyph.Name = "Glyph"
 	glyph.BackgroundTransparency = 1
 	glyph.Size = UDim2.fromScale(1, 1)
-	glyph.FontFace = Font.fromId(12187365977, Enum.FontWeight.Bold)
+	glyph.FontFace = Font.fromEnum(Enum.Font.GothamBold)
 	glyph.TextSize = 20
 	glyph.TextColor3 = Color3.new(1, 1, 1)
 	glyph.Visible = false
 	glyph.ZIndex = 3
 	glyph.Parent = b
-	local entry = { button = b, icon = img, glyph = glyph, tooltip = tooltip }
+	local shape = make_procedural_icon(b, icon)
+	local entry = { button = b, icon = img, glyph = glyph, shape = shape, tooltip = tooltip }
 	local function set_icon(name: string)
 		local id = icon_id(name)
 		if id then
@@ -201,7 +244,10 @@ local function make_button(h: Hud, key: string, icon: string, tooltip: string, o
 		else
 			img.Visible = false
 			glyph.Text = FALLBACK_GLYPH[name] or "•"
-			glyph.Visible = true
+			glyph.Visible = shape == nil
+			if shape then
+				shape.Visible = true
+			end
 		end
 		-- music off: the fallback glyph is dimmed (the real icon has its own slash)
 		glyph.TextTransparency = if name == "music_off" then 0.55 else 0
@@ -358,7 +404,7 @@ local function build_hud(player: Player)
 	tip.BackgroundColor3 = FILL
 	tip.BackgroundTransparency = 0.1
 	tip.TextColor3 = Color3.new(1, 1, 1)
-	tip.FontFace = Font.fromId(12187365977, Enum.FontWeight.Medium)
+	tip.FontFace = Font.fromEnum(Enum.Font.GothamMedium)
 	tip.TextSize = 14
 	tip.Visible = false
 	tip.ZIndex = 5

@@ -57,20 +57,26 @@ function BuildButton.new(c: any, k: string, hk: string)
 		t.Parent = g
 		return t
 	end
-	local ic = Instance.new("ImageLabel")
+	local ic = Instance.new("TextLabel")
 	ic.Name = "Glyph"
 	ic.BackgroundTransparency = 1
 	ic.BorderSizePixel = 0
 	ic.AnchorPoint = Vector2.zero
-	ic.ScaleType = Enum.ScaleType.Fit
+	ic.Font = Enum.Font.GothamBold
+	ic.TextScaled = true
+	ic.TextColor3 = UITheme.TEXT
+	ic.Text = ""
 	ic.ZIndex = 4
 	ic.Parent = g
 	self._glyph = ic
-	local lock = Instance.new("ImageLabel")
+	local lock = Instance.new("TextLabel")
 	lock.Name = "Lock"
 	lock.BackgroundTransparency = 1
 	lock.BorderSizePixel = 0
-	lock.ScaleType = Enum.ScaleType.Fit
+	lock.Font = Enum.Font.GothamBold
+	lock.TextScaled = true
+	lock.TextColor3 = UITheme.GOLD
+	lock.Text = "▣"
 	lock.ZIndex = 6
 	lock.Visible = false
 	lock.Parent = g
@@ -384,9 +390,26 @@ function BuildButton._redraw(self)
 	local ip = self.icon_px
 	local sc = UITheme.scale
 	local g = self._glyph
-	g.Image = UITheme.icon(self.kind) or ""
-	g.ImageColor3 = UITheme.color3(icol)
-	self:_part(g, "ImageTransparency", UITheme.alpha(icol))
+	g.Text = ({
+		city = "▦",
+		port = "⊓",
+		factory = "▤",
+		defense = "⊙",
+		sam = "S",
+		silo = "▥",
+		artillery = "A",
+		airfield = "H",
+		railgun = "R",
+		atom = "A",
+		hydrogen = "H",
+		mirv = "M",
+		warship = "W",
+		boat = "B",
+		attack = "↗",
+		nuke = "N",
+	})[self.kind] or string.upper(string.sub(self.kind, 1, 1))
+	g.TextColor3 = UITheme.color3(icol)
+	self:_part(g, "TextTransparency", UITheme.alpha(icol))
 	local ipx = math.floor(ip * sc + 0.5)
 	g.Size = UDim2.fromOffset(ipx, ipx)
 	g.Position = UDim2.fromOffset(
@@ -409,8 +432,7 @@ function BuildButton._redraw(self)
 	if arsenal_locked then
 		ctext = ""
 		local lpx = math.floor(12 * sc + 0.5)
-		lock.Image = UITheme.icon("lock") or ""
-		lock.ImageColor3 = UITheme.color3(UITheme.GOLD)
+		lock.TextColor3 = UITheme.color3(UITheme.GOLD)
 		lock.Size = UDim2.fromOffset(lpx, lpx)
 		lock.Position = UDim2.fromOffset(
 			math.floor(size.X * 0.5 * sc + 0.5) - lpx // 2,

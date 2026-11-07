@@ -13,6 +13,7 @@ local UITheme = require("./UITheme")
 local W = require("./Widgets")
 local GlassPanel = require("./GlassPanel")
 local UIMaps = require("./UIMaps")
+local MapPreview = require("./MapPreview")
 local UICtx = require("./UICtx")
 local CrateButton = require("./CrateButton")
 local ArsenalButton = require("./ArsenalButton")
@@ -1426,6 +1427,7 @@ function TitleScreen._refresh_kind_card(self, card: { [string]: any }, kind: str
 		card.thumb_node:set_visible(true)
 		local e = UIMaps.get(map)
 		card.thumb.Image = if e and e.thumb then e.thumb else ""
+		MapPreview.apply(card.thumb, tostring(map))
 		card.title:set_text(string.upper(tostring(map_name or map)))
 	else
 		card.icon:set_visible(true)

@@ -6,23 +6,7 @@ local UITheme = require("./UITheme")
 local W = require("./Widgets")
 local GlassPanel = require("./GlassPanel")
 
-local _kit: any = nil
-local function kit_assets(): any
-	if _kit == nil then
-		_kit = {}
-		pcall(function()
-			local rs = game:GetService("ReplicatedStorage")
-			local assets = (rs:WaitForChild("DomWorld") :: any):FindFirstChild("Assets")
-			local mod = assets and assets:FindFirstChild("UIKit")
-			if mod then
-				_kit = require(mod) :: any
-			end
-		end)
-	end
-	return _kit
-end
-
--- --- Spinner (18 px: faint ring + a rotating amber arc) ------------------------------------------
+-- --- Spinner (18 px: faint ring + a rotating amber mark) -----------------------------------------
 
 local Spinner = W.class(W.Control)
 
@@ -32,25 +16,44 @@ function Spinner.new()
 	self.t = 0.0
 	self:set_min_size(Vector2.new(18, 18))
 	self:set_mouse_filter(W.MOUSE_IGNORE)
-	local k = kit_assets()
-	local function img(id: string?, z: number): ImageLabel
-		local i = Instance.new("ImageLabel")
-		i.BackgroundTransparency = 1
-		i.BorderSizePixel = 0
-		i.AnchorPoint = Vector2.new(0.5, 0.5)
-		i.Position = UDim2.fromScale(0.5, 0.5)
-		i.Size = UDim2.fromScale(1, 1)
-		i.Image = id or ""
-		i.ZIndex = z
-		i.Parent = self.gui
-		return i
-	end
-	self._ring = img(k.spinner_ring, 1)
-	self._ring.ImageColor3 = Color3.new(1, 1, 1)
-	self:_part(self._ring, "ImageTransparency", 0.14)
-	self._arc = img(k.spinner_arc, 2)
-	self._arc.ImageColor3 = UITheme.AMBER
-	self:_part(self._arc, "ImageTransparency", 1.0)
+	local ring = Instance.new("Frame")
+	ring.Name = "Ring"
+	ring.BackgroundTransparency = 1
+	ring.AnchorPoint = Vector2.new(0.5, 0.5)
+	ring.Position = UDim2.fromScale(0.5, 0.5)
+	ring.Size = UDim2.fromScale(1, 1)
+	ring.ZIndex = 1
+	ring.Parent = self.gui
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0.5, 0)
+	corner.Parent = ring
+	local edge = Instance.new("UIStroke")
+	edge.Color = Color3.new(1, 1, 1)
+	edge.Thickness = 1.5
+	edge.Transparency = 0.55
+	edge.Parent = ring
+	local arc = Instance.new("Frame")
+	arc.Name = "Arc"
+	arc.BackgroundTransparency = 1
+	arc.AnchorPoint = Vector2.new(0.5, 0.5)
+	arc.Position = UDim2.fromScale(0.5, 0.5)
+	arc.Size = UDim2.fromScale(1, 1)
+	arc.ZIndex = 2
+	arc.Parent = self.gui
+	local mark = Instance.new("Frame")
+	mark.Name = "ArcMark"
+	mark.AnchorPoint = Vector2.new(0.5, 0)
+	mark.Position = UDim2.fromScale(0.5, 0.02)
+	mark.Size = UDim2.fromScale(0.2, 0.42)
+	mark.BackgroundColor3 = UITheme.AMBER
+	mark.BorderSizePixel = 0
+	mark.ZIndex = 2
+	mark.Parent = arc
+	local mark_corner = Instance.new("UICorner")
+	mark_corner.CornerRadius = UDim.new(0.5, 0)
+	mark_corner.Parent = mark
+	self._ring = ring
+	self._arc = arc
 	return self
 end
 

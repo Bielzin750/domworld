@@ -93,17 +93,15 @@ function Coach.new(c: any)
 	self._arrow = UICtx.canvas(self.gui, "CoachArrow")
 	self._arrow.ZIndex = 1
 	self._dashes = {}
-	self._head = UICtx.make("ImageLabel", {
+	self._head = UICtx.make("Frame", {
+		BackgroundColor3 = UITheme.AMBER,
 		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Size = UDim2.fromOffset(14, 14),
-		ImageColor3 = UITheme.AMBER,
-		ScaleType = Enum.ScaleType.Stretch,
 	}, self._arrow)
-	pcall(function()
-		local Shapes = require((game:GetService("ReplicatedStorage"):WaitForChild("DomWorld") :: any).Assets.UiShapes)
-		self._head.Image = Shapes.arrow_head or ""
-	end)
+	UICtx.make("UICorner", { CornerRadius = UDim.new(0.12, 0) }, self._head)
+	UICtx.make("UIStroke", { Color = UITheme.INK, Thickness = 1 }, self._head)
 	self._pulse = UICtx.ring(self._arrow, Vector2.zero, 8, 2, UITheme.AMBER, 1)
 	self._dot = UICtx.circle(self._arrow, Vector2.zero, 4, UITheme.AMBER, 1)
 	self._arrow.Visible = false
@@ -465,7 +463,7 @@ function Coach._draw_arrow(self)
 	local centre = tip_base + dir * 3.0
 	self._head.Position = UDim2.fromOffset(centre.X, centre.Y)
 	self._head.Rotation = ang
-	self._head.ImageTransparency = 1 - 0.9 * a
+	self._head.BackgroundTransparency = 1 - 0.9 * a
 	-- Pulsing ring on the target
 	local k = (self._t % 1.2) / 1.2
 	UICtx.set_circle(self._pulse, to, 8.0 + 18.0 * k);

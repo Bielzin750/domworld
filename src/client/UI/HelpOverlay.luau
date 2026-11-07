@@ -132,8 +132,8 @@ function Scroll.new()
 	g.ScrollBarThickness = 6
 	g.ScrollBarImageColor3 = Color3.new(1, 1, 1)
 	g.ScrollBarImageTransparency = 0.82
-	g.TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
-	g.BottomImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
+	g.TopImage = ""
+	g.BottomImage = ""
 	g.VerticalScrollBarInset = Enum.ScrollBarInset.None
 	g.ElasticBehavior = Enum.ElasticBehavior.WhenScrollable
 	g.CanvasSize = UDim2.fromOffset(0, 0)
@@ -530,17 +530,19 @@ function HelpOverlay._medallion(self, icon_name: string, c: Color3)
 	wrap:set_mouse_filter(W.MOUSE_IGNORE)
 	wrap.size_flags_vertical = W.SHRINK_BEGIN
 	wrap:set_min_size(Vector2.new(52, 52))
-	local glow = UICtx.make("ImageLabel", {
+	local glow = UICtx.make("Frame", {
 		Name = "Glow",
-		BackgroundTransparency = 1,
+		BackgroundColor3 = c,
+		BackgroundTransparency = 0.82,
+		BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromScale(72 / 52, 72 / 52),
-		Image = UICtx.shapes().disc_glow or "",
-		ImageColor3 = c,
 		ZIndex = 1,
 	}, wrap.gui)
-	wrap:_part(glow, "ImageTransparency", 0.18)
+	UICtx.make("UICorner", { CornerRadius = UDim.new(0.5, 0) }, glow)
+	UICtx.make("UIStroke", { Color = c, Thickness = 2, Transparency = 0.45 }, glow)
+	wrap:_part(glow, "BackgroundTransparency", 0.82)
 	local p = W.Panel.new()
 	p:set_mouse_filter(W.MOUSE_IGNORE)
 	p:set_anchors_and_offsets_preset(W.PRESET_FULL_RECT)

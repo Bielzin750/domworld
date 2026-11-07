@@ -137,7 +137,7 @@ VolumeRow.TRACK_MAX = 170.0
 --- A wheel notch moves it this much.
 VolumeRow.WHEEL_STEP = 0.05
 
-local FONT_PCT = Font.fromId(UITheme.FONT_ID, Enum.FontWeight.Bold)
+local FONT_PCT = Font.fromEnum(Enum.Font.GothamBold)
 
 function VolumeRow.new(text: string, icon_name: string)
 	local self = setmetatable({}, VolumeRow.__mt)

@@ -69,7 +69,7 @@ function Tutorial.new(c: any, ui: any)
 		BackgroundColor3 = Color3.fromRGB(14, 20, 38),
 		BackgroundTransparency = 0.15,
 		Text = "Tap here",
-		FontFace = Font.fromId(12187365977, Enum.FontWeight.Bold),
+		FontFace = Font.fromEnum(Enum.Font.GothamBold),
 		TextSize = 13,
 		TextColor3 = Color3.new(1, 1, 1),
 		AutomaticSize = Enum.AutomaticSize.XY,

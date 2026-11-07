@@ -1945,18 +1945,70 @@ function ColorRect.set_color(self, col)
 	self:_part(self.gui, "BackgroundTransparency", UITheme.alpha(col))
 end
 
--- --- Icon (TextureRect with a UiIcons glyph) ----------------------------------------------------------------
+-- --- Icon (procedural DomWorld glyph, drawn from UI primitives) ----------------------------------------
 
 local Icon = class(Control)
 W.Icon = Icon
 
 function Icon.new(icon_name: string?)
 	local self = new_of(Icon)
-	Control._init(self, "ImageLabel")
-	local g = self.gui :: ImageLabel
-	g.ScaleType = Enum.ScaleType.Fit
-	g.ResampleMode = Enum.ResamplerMode.Default
-	-- decoration (Godot TextureRect passes input on)
+	Control._init(self, "Frame")
+	local g = self.gui :: Frame
+	g.Name = "DomWorldIcon"
+	g.BackgroundTransparency = 1
+	g.BorderSizePixel = 0
+	g.Active = false
+	local plate = Instance.new("Frame")
+	plate.Name = "Plate"
+	plate.AnchorPoint = Vector2.new(0.5, 0.5)
+	plate.Position = UDim2.fromScale(0.5, 0.5)
+	plate.Size = UDim2.fromScale(0.92, 0.92)
+	plate.BackgroundColor3 = Color3.fromRGB(15, 24, 45)
+	plate.BackgroundTransparency = 0.82
+	plate.BorderSizePixel = 0
+	plate.ZIndex = 1
+	plate.Parent = g
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0.28, 0)
+	corner.Parent = plate
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 1
+	stroke.Transparency = 0.2
+	stroke.Parent = plate
+	local gradient = Instance.new("UIGradient")
+	gradient.Rotation = 35
+	gradient.Color = ColorSequence.new(Color3.fromRGB(255, 200, 105), Color3.fromRGB(77, 191, 229))
+	gradient.Parent = plate
+	local glyph = Instance.new("TextLabel")
+	glyph.Name = "Glyph"
+	glyph.BackgroundTransparency = 1
+	glyph.AnchorPoint = Vector2.new(0.5, 0.5)
+	glyph.Position = UDim2.fromScale(0.5, 0.48)
+	glyph.Size = UDim2.fromScale(0.82, 0.82)
+	glyph.Font = Enum.Font.GothamBold
+	glyph.TextScaled = true
+	glyph.TextWrapped = false
+	glyph.Text = ""
+	glyph.TextColor3 = UITheme.TEXT
+	glyph.ZIndex = 2
+	glyph.Parent = g
+	local brand = Instance.new("TextLabel")
+	brand.Name = "BrandMark"
+	brand.BackgroundTransparency = 1
+	brand.AnchorPoint = Vector2.new(0.5, 0.5)
+	brand.Position = UDim2.fromScale(0.5, 0.5)
+	brand.Size = UDim2.fromScale(0.86, 0.65)
+	brand.Font = Enum.Font.GothamBlack
+	brand.Text = "DW"
+	brand.TextScaled = true
+	brand.TextColor3 = Color3.fromRGB(255, 211, 128)
+	brand.Visible = false
+	brand.ZIndex = 3
+	brand.Parent = g
+	self._plate = plate
+	self._stroke = stroke
+	self._glyph = glyph
+	self._brand = brand
 	self:set_mouse_filter(W.MOUSE_IGNORE)
 	self.color = UITheme.TEXT
 	self:set_icon(icon_name or "")
@@ -1964,22 +2016,85 @@ function Icon.new(icon_name: string?)
 	return self
 end
 
+local ICON_GLYPHS = {
+	alliance = "⇄",
+	app_icon = "",
+	atom = "A",
+	attack = "↗",
+	betray = "!",
+	boat = "∩",
+	check = "✓",
+	chevron = "›",
+	city = "▦",
+	clock = "◷",
+	close = "×",
+	crown = "♛",
+	defense = "⊙",
+	donate = "+",
+	exit = "X",
+	eye = "◉",
+	factory = "▤",
+	github = "G",
+	globe = "◎",
+	gold = "◆",
+	help = "?",
+	hud_exit = "X",
+	hud_globe = "◎",
+	hud_help = "?",
+	hud_leaderboard = "≡",
+	hud_music_off = "♪",
+	hud_music_on = "♪",
+	hud_settings = "S",
+	hydrogen = "H",
+	info = "i",
+	layers = "▱",
+	leaderboard = "≡",
+	lock = "▣",
+	mirv = "M",
+	music_off = "♪",
+	music_on = "♪",
+	play = "▶",
+	pops = "+",
+	port = "⊓",
+	retreat = "↙",
+	sam = "S",
+	settings = "S",
+	silo = "▥",
+	skull = "×",
+	star = "✦",
+	target = "◎",
+	troops = "▰",
+	users = "••",
+	warship = "◆",
+	robux = "R",
+}
+
 function Icon.set_icon(self, icon_name: string)
 	if self.icon_name == icon_name then
 		return
 	end
 	self.icon_name = icon_name
-	local id = if icon_name ~= "" then UITheme.icon(icon_name) else nil
-	(self.gui :: ImageLabel).Image = id or ""
+	local is_brand = icon_name == "app_icon"
+	self._brand.Visible = is_brand
+	self._glyph.Visible = not is_brand and icon_name ~= ""
+	self._plate.Visible = icon_name ~= ""
+	self._glyph.Text = ICON_GLYPHS[icon_name] or string.upper(string.sub(icon_name, 1, 1))
+	self._glyph.TextSize = if string.len(self._glyph.Text) > 1 then 20 else 26
 end
 Icon.set_texture = Icon.set_icon
 
---- self_modulate (tint + alpha).
+--- Colour, alpha and the original DW monogram are all rendered from UI primitives.
 function Icon.set_color(self, col)
 	self.color = col
-	local g = self.gui :: ImageLabel
-	g.ImageColor3 = UITheme.color3(col)
-	self:_part(g, "ImageTransparency", UITheme.alpha(col))
+	local color = UITheme.color3(col)
+	local alpha = UITheme.alpha(col)
+	self._glyph.TextColor3 = color
+	self._stroke.Color = color
+	self._brand.TextColor3 = color
+	self:_part(self._glyph, "TextTransparency", alpha)
+	self:_part(self._brand, "TextTransparency", alpha)
+	self:_part(self._plate, "BackgroundTransparency", 0.18 * alpha)
+	self:_part(self._stroke, "Transparency", 0.8 * alpha)
 end
 Icon.set_self_modulate = Icon.set_color
 

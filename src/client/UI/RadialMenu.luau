@@ -3,9 +3,8 @@
 -- unavailable actions are greyed and explain themselves in the caption under the ring. Items with
 -- a `sub` list open a second ring (Build ▸, Nuke ▸); the centre button goes back / closes.
 --
--- Roblox: drawn with plain instances in a logical-px canvas. Ring segments are static annular
--- sector masks (Assets/UiShapes, tools/ui/make_shapes.py) rotated into place and tinted; circles
--- are Frames with UICorner / UIStroke. While open, a full-screen button swallows pointer input
+-- Roblox: drawn with plain instances in a logical-px canvas. Ring segments use rounded Frames,
+-- circles use UICorner / UIStroke. While open, a full-screen button swallows pointer input
 -- (Godot MOUSE_FILTER_STOP) and the opening finger of a long-press is followed through
 -- UserInputService (press-slide-release picks).
 
@@ -18,21 +17,6 @@ local function T(): any
 		_T = UICtx.mod("UITheme")
 	end
 	return _T
-end
-
-local _Shapes: any = nil
-local function Shapes(): any
-	if _Shapes == nil then
-		local ok, m = pcall(function()
-			if UICtx.IS_ROBLOX then
-				local rs = game:GetService("ReplicatedStorage")
-				return require((rs:WaitForChild("DomWorld") :: any):WaitForChild("Assets"):WaitForChild("UiShapes"))
-			end
-			return (require :: any)("../../shared/Assets/UiShapes")
-		end)
-		_Shapes = if ok then m else {}
-	end
-	return _Shapes
 end
 
 local TAU = 2 * math.pi
@@ -125,12 +109,15 @@ function RadialMenu._build(self: any)
 	self._center_btn.ZIndex = 6
 	self._center_stroke =
 		UICtx.make("UIStroke", { Thickness = 1, Color = Color3.new(1, 1, 1), Transparency = 0.84 }, self._center_btn)
-	self._center_icon = UICtx.make("ImageLabel", {
+	self._center_icon = UICtx.make("TextLabel", {
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromOffset(16, 16),
-		ScaleType = Enum.ScaleType.Fit,
+		FontFace = T().font(800),
+		Text = "X",
+		TextScaled = true,
+		TextColor3 = T().TEXT_2,
 		ZIndex = 7,
 	}, self._center_btn)
 	-- Title / caption pills (outside the scaled group: fixed text size like the original).
@@ -190,22 +177,25 @@ function RadialMenu._seg(self: any, i: number): any
 	end
 	local Th = T()
 	local holder = self._seg_holder
-	local function mask(z: number): ImageLabel
-		return UICtx.make("ImageLabel", {
-			BackgroundTransparency = 1,
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			ScaleType = Enum.ScaleType.Stretch,
-			ZIndex = z,
-		}, holder)
-	end
+	local fill = UICtx.make("Frame", {
+		BackgroundTransparency = 1,
+		BackgroundColor3 = rgb(0.2, 0.32, 0.52),
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		ZIndex = 2,
+	}, holder)
+	UICtx.make("UICorner", { CornerRadius = UDim.new(0.5, 0) }, fill)
+	local outline = UICtx.make("UIStroke", { Color = Color3.new(1, 1, 1), Thickness = 1, Transparency = 1 }, fill)
 	s = {
-		fill = mask(2),
-		line = mask(3),
-		icon = UICtx.make("ImageLabel", {
+		fill = fill,
+		line = outline,
+		icon = UICtx.make("TextLabel", {
 			BackgroundTransparency = 1,
 			AnchorPoint = Vector2.new(0.5, 0.5),
-			ScaleType = Enum.ScaleType.Fit,
 			Size = UDim2.fromOffset(24, 24),
+			FontFace = Th.font(800),
+			Text = "",
+			TextScaled = true,
 			ZIndex = 4,
 		}, holder),
 		label = UICtx.make("TextLabel", {
@@ -520,27 +510,8 @@ end
 -- Drawing
 -- ---------------------------------------------------------------------------------------------
 
---- Variant of the segment masks closest to the ring's r_in / r_out ratio.
-local function variant_for(ri: number, ro: number): (string?, number)
-	local S = Shapes()
-	local best, bq = nil, math.huge
-	if S.variants == nil then
-		return nil, 1
-	end
-	local q = ri / ro
-	for name, v in S.variants do
-		local d = math.abs(v.ri / v.ro - q)
-		if d < bq then
-			bq = d
-			best = name
-		end
-	end
-	return best, if best then ro / S.variants[best].ro else 1
-end
-
 function RadialMenu._redraw(self: any)
 	local Th = T()
-	local S = Shapes()
 	local anim = self._anim
 	if anim <= 0.0 then
 		self._ring.Visible = false
@@ -562,13 +533,12 @@ function RadialMenu._redraw(self: any)
 	self._backdrop.BackgroundTransparency = 1 - 0.36 * alpha
 	local n = #self.items
 	local span = TAU / math.max(n, 1)
-	local S_px = S.px or 2
 	for i = 1, math.max(n, #self._segs) do
 		local sg = self._segs[i]
 		if i > n then
 			if sg then
 				sg.fill.Visible = false
-				sg.line.Visible = false
+				sg.line.Transparency = 1
 				sg.icon.Visible = false
 				sg.label.Visible = false
 			end
@@ -600,52 +570,32 @@ function RadialMenu._redraw(self: any)
 		end
 		local ro2 = ro + (if hov and ok then 6.0 else 0.0)
 		local rad = (i - 1) * span -- clockwise from 12 o'clock (segment centre)
-		local ang = math.deg(rad)
-		local vname, k = variant_for(ri, ro2)
-		local fkey = if vname and n >= 2 then string.format("%s_%d_fill", vname, math.min(n, 8)) else nil
-		local lkey = if vname and n >= 2 then string.format("%s_%d_line", vname, math.min(n, 8)) else nil
-		local fd = if fkey and S.segments then S.segments[fkey] else nil
-		local ld = if lkey and S.segments then S.segments[lkey] else nil
-		local cs, sn = math.cos(rad), math.sin(rad)
-		local function place(img: ImageLabel, d: any)
-			if d == nil then
-				img.Visible = false
-				return
-			end
-			local sc = k / S_px -- logical px per mask px
-			img.Visible = true
-			img.Image = S.pages[d.page] or ""
-			img.ImageRectOffset = Vector2.new(d.x, d.y)
-			img.ImageRectSize = Vector2.new(d.w, d.h)
-			img.Size = UDim2.fromOffset(d.w * sc, d.h * sc)
-			local vx, vy = (d.w * 0.5 - d.cx) * sc, (d.h * 0.5 - d.cy) * sc
-			img.Position = UDim2.fromOffset(vx * cs - vy * sn, vx * sn + vy * cs)
-			img.Rotation = ang
-		end
-		if n == 1 then
-			-- A single item: the whole annulus (no gap) as a thick stroked circle.
-			sg.fill.Visible = false
-			sg.line.Visible = false
-			self:_single_ring(true, ri, ro2, fill, alpha, edge_a)
-		else
-			self:_single_ring(false)
-			place(sg.fill, fd)
-			place(sg.line, ld)
-		end
-		sg.fill.ImageColor3 = fill
-		sg.fill.ImageTransparency = 1 - alpha
-		sg.line.ImageColor3 = Color3.new(1, 1, 1)
-		sg.line.ImageTransparency = 1 - edge_a * alpha
-		-- Icon and label
 		local mid = rad - math.pi * 0.5
 		local rm = (ri + ro2) * 0.5
 		local ip = Vector2.new(math.cos(mid), math.sin(mid)) * (rm - 5.0)
+		if n == 1 then
+			-- A single item: the whole annulus (no gap) as a thick stroked circle.
+			sg.fill.Visible = false
+			sg.line.Transparency = 1
+			self:_single_ring(true, ri, ro2, fill, alpha, edge_a)
+		else
+			self:_single_ring(false)
+			sg.fill.Visible = true
+			sg.fill.Position = UDim2.fromOffset(math.cos(mid) * rm, math.sin(mid) * rm)
+			sg.fill.Size = UDim2.fromOffset(2 * rm * math.sin(span * 0.42), math.max(10, ro2 - ri - 6))
+			sg.fill.Rotation = math.deg(mid) + 90
+		end
+		sg.fill.BackgroundColor3 = fill
+		sg.fill.BackgroundTransparency = 1 - alpha
+		sg.line.Color = Color3.new(1, 1, 1)
+		sg.line.Transparency = 1 - edge_a * alpha
+		-- Icon and label
 		sg.icon.Visible = true
-		local id = Th.icon(tostring(it.icon or "info"))
-		sg.icon.Image = id or ""
+		local icon_name = tostring(it.icon or "info")
+		sg.icon.Text = if icon_name == "close" then "X" else string.upper(string.sub(icon_name, 1, 1))
 		sg.icon.Position = UDim2.fromOffset(ip.X, ip.Y - 5)
-		sg.icon.ImageColor3 = icol
-		sg.icon.ImageTransparency = 1 - icol_a * alpha
+		sg.icon.TextColor3 = icol
+		sg.icon.TextTransparency = 1 - icol_a * alpha
 		sg.label.Visible = true
 		sg.label.Text = tostring(it.label or "")
 		sg.label.TextSize = UICtx.ts(math.max(11, Th.min_font_size or 0))
@@ -663,9 +613,9 @@ function RadialMenu._redraw(self: any)
 	self._center_btn.BackgroundTransparency = 1 - alpha
 	self._center_stroke.Transparency = 1 - 0.16 * alpha
 	self._center_hover_drawn = self._center_hover
-	self._center_icon.Image = Th.icon(if self._in_sub then "retreat" else "close") or ""
-	self._center_icon.ImageColor3 = Th.TEXT_2
-	self._center_icon.ImageTransparency = 1 - alpha
+	self._center_icon.Text = if self._in_sub then "<" else "X"
+	self._center_icon.TextColor3 = Th.TEXT_2
+	self._center_icon.TextTransparency = 1 - alpha
 	-- Title above, caption below.
 	local head = if self._in_sub then string.upper(self._sub_title) else self.title
 	local hcol = if self._in_sub then Th.TEXT else self.title_color

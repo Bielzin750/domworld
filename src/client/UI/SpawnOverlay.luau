@@ -28,7 +28,7 @@ local SpawnOverlay = W.class(W.Control)
 SpawnOverlay.TITLE_PX = 14
 --- The ring's side on a wide screen (phones: 36).
 SpawnOverlay.RING_PX = 40
---- A wide screen shows up to HEADS commanders' head shots, HEAD_PX wide, each over the last by
+--- A wide screen shows up to HEADS commanders' initials, HEAD_PX wide, each over the last by
 --- HEAD_OVERLAP: the ones who have placed first, the rest dimmed.
 SpawnOverlay.HEADS = 5
 SpawnOverlay.HEAD_PX = 20
@@ -105,7 +105,7 @@ function SpawnOverlay.new(c: any)
 	self._placed:set_visible(false)
 	v:add_child(self._placed)
 	row:add_child(v)
-	-- a wide screen: the count beside the text, behind a few head shots
+	-- a wide screen: the count beside the text, behind a few player initials
 	self._side = UITheme.hbox(8)
 	self._side.size_flags_vertical = W.SHRINK_CENTER
 	self._side:add_child(UITheme.vdivider(26.0))
@@ -258,7 +258,7 @@ function SpawnOverlay._refresh_players(self)
 		return
 	end
 	self._count:set_text(string.format("%d / %d placed", placed, #humans))
-	-- the head shots (the cosmetics map's `face`, as in the leaderboard and on the map): those who
+	-- the player initials (the cosmetics map's `face`, as in the leaderboard and on the map): those who
 	-- have placed first
 	table.sort(humans, function(a, b)
 		if a.spawned ~= b.spawned then
@@ -288,11 +288,20 @@ function SpawnOverlay._refresh_players(self)
 	end
 	self._heads:set_visible(#shown > 0)
 	for _, h in ipairs(shown) do
-		local img = Instance.new("ImageLabel")
+		local img = Instance.new("Frame")
 		img.BackgroundColor3 = Color3.fromRGB(40, 52, 82)
+		img.BackgroundTransparency = if h.spawned then 0 else 0.55
 		img.BorderSizePixel = 0
-		img.Image = UICtx.data("Cosmetics").face_image(cosmetics[h.id].face)
-		img.ImageTransparency = if h.spawned then 0 else 0.55
+		local initial = Instance.new("TextLabel")
+		initial.BackgroundTransparency = 1
+		initial.Size = UDim2.fromScale(1, 1)
+		initial.FontFace = Font.fromEnum(Enum.Font.GothamBold)
+		initial.Text = string.upper(string.sub(tostring(h.name or "?"), 1, 1))
+		initial.TextColor3 = Color3.new(1, 1, 1)
+		initial.TextScaled = true
+		initial.TextTransparency = if h.spawned then 0 else 0.55
+		initial.ZIndex = 2
+		initial.Parent = img
 		local corner = Instance.new("UICorner")
 		corner.CornerRadius = UDim.new(0.5, 0)
 		corner.Parent = img

@@ -27,8 +27,8 @@ local Mock = require(script.Parent:WaitForChild("UIKitMock"))
 local Defs = require(game:GetService("ReplicatedStorage").DomWorld.Core.Defs)
 
 local BACKDROPS = {
-	europe = { "rbxassetid://0", "rbxassetid://0" },
-	globe = { "rbxassetid://0", "rbxassetid://0" },
+	europe = { "", "" },
+	globe = { "", "" },
 }
 
 T.init()

@@ -204,8 +204,7 @@ UITheme.scale = 1.0
 -- Fonts & text metrics
 -- =============================================================================================
 
-UITheme.FONT_ID = 12187365977
---- Line height of Rubik in em (hhea ascender 935 + descender 250).
+--- Line height estimate for the built-in Gotham family.
 UITheme.LINE_EM = 1.185
 --- Baseline from the top of a line, in em.
 UITheme.ASCENT_EM = 0.935
@@ -213,15 +212,15 @@ UITheme.ASCENT_EM = 0.935
 local WEIGHT_ENUM: { [number]: any } = {}
 if IS_ROBLOX then
 	WEIGHT_ENUM = {
-		[100] = Enum.FontWeight.Thin,
-		[200] = Enum.FontWeight.ExtraLight,
-		[300] = Enum.FontWeight.Light,
-		[400] = Enum.FontWeight.Regular,
-		[500] = Enum.FontWeight.Medium,
-		[600] = Enum.FontWeight.SemiBold,
-		[700] = Enum.FontWeight.Bold,
-		[800] = Enum.FontWeight.ExtraBold,
-		[900] = Enum.FontWeight.Heavy,
+		[100] = Enum.Font.Gotham,
+		[200] = Enum.Font.Gotham,
+		[300] = Enum.Font.Gotham,
+		[400] = Enum.Font.Gotham,
+		[500] = Enum.Font.GothamMedium,
+		[600] = Enum.Font.GothamMedium,
+		[700] = Enum.Font.GothamBold,
+		[800] = Enum.Font.GothamBlack,
+		[900] = Enum.Font.GothamBlack,
 	}
 end
 
@@ -239,7 +238,7 @@ function UITheme.font(weight: number?): any
 	local w = snap_weight(weight)
 	local f = _fonts[w]
 	if f == nil and IS_ROBLOX then
-		f = Font.fromId(UITheme.FONT_ID, WEIGHT_ENUM[w])
+		f = Font.fromEnum(WEIGHT_ENUM[w])
 		_fonts[w] = f
 	end
 	return f
@@ -1023,7 +1022,7 @@ local function table_width(text: string, weight: number, tabular: boolean?): num
 end
 
 local _measure_label: any = nil
-local _fonts_ready = false
+local _fonts_ready = IS_ROBLOX
 local _cache: { [string]: number } = {}
 local _cache_n = 0
 
@@ -1051,72 +1050,15 @@ local function measure_label(): any
 	return l
 end
 
---- Load the Rubik weights (yields). Call once at startup before building UI; afterwards all text
---- metrics are exact and synchronous.
--- Width of "0" at TextSize 100 per weight when Rubik is really loaded (Roblox falls back to
--- another font's metrics until it is): used to verify the load.
-local PROBE_0 = { [400] = 54, [500] = 55.5, [600] = 56.5, [700] = 57.5, [800] = 59.5, [900] = 61 }
-local _init_running = false
-
---- Fired once the Rubik weights are loaded and text metrics become exact (Widgets re-lays out
---- every tree then). UITheme.init() may be called by the app at startup (recommended: it yields
---- ~1-2 s once); if it is not, the kit starts it in the background on the first measurement and
---- uses approximate metrics until it completes -- never caching them.
+--- Fired once built-in fonts are ready (Widgets re-lays out every tree then).
 UITheme.fonts_loaded = nil :: any
 
-local function probe_ok(): boolean
-	local l = measure_label()
-	if l == nil then
-		return false
-	end
-	for w, want in pairs(PROBE_0) do
-		l.FontFace = UITheme.font(w)
-		l.TextSize = 100
-		l.TextWrapped = false
-		l.Size = UDim2.fromOffset(1000000, 100000)
-		l.Text = "0"
-		if math.abs(l.TextBounds.X - want) > 2 then
-			return false
-		end
-	end
-	return true
-end
-
---- Load the Rubik weights (yields). Afterwards all text metrics are exact and synchronous.
+--- Built-in Gotham faces require no network download or uploaded font asset.
 function UITheme.init()
 	if _fonts_ready or not IS_ROBLOX then
 		return
 	end
-	if _init_running then
-		while _init_running do
-			task.wait()
-		end
-		return
-	end
-	_init_running = true
-	local TS = game:GetService("TextService")
-	for attempt = 1, 20 do
-		for _, w in ipairs({ 400, 500, 600, 700, 800, 900 }) do
-			local p = Instance.new("GetTextBoundsParams")
-			p.Text = "0"
-			p.Font = UITheme.font(w)
-			p.Size = 20
-			pcall(function()
-				TS:GetTextBoundsAsync(p)
-			end)
-		end
-		measure_label()
-		if probe_ok() then
-			break
-		end
-		if attempt == 20 and IS_ROBLOX and game:GetService("RunService"):IsStudio() then
-			-- (live: a slow font download, nothing to act on — it filled the error report)
-			warn("[UITheme] Rubik metrics could not be verified; text layout may be approximate")
-		end
-		task.wait(0.25)
-	end
 	_fonts_ready = true
-	_init_running = false
 	table.clear(_cache)
 	_cache_n = 0
 	if UITheme.fonts_loaded ~= nil then
@@ -1157,9 +1099,6 @@ function UITheme.measure_ref(text: string, weight: number): number
 		v = l.TextBounds.X
 	else
 		-- fonts not loaded yet: approximate, do not cache, load in the background
-		if IS_ROBLOX and not _init_running then
-			task.spawn(UITheme.init)
-		end
 		return approx_width(text, UITheme.REF_TS / UITheme.LINE_EM, w)
 	end
 	if _cache_n > 4000 then
@@ -1330,9 +1269,7 @@ local _icons: any = nil
 --- Asset id of a white UI glyph (assets/icons/ui, assets/ui, "hud_*", "app_icon"), or nil when
 --- the assets manifest does not have it (callers degrade gracefully: no icon).
 --- Icons every Roblox client ships (rbxasset textures, white: tint with ImageColor3).
-UITheme.BUILTIN_ICONS = {
-	robux = "rbxasset://textures/ui/common/robux@3x.png",
-}
+UITheme.BUILTIN_ICONS = {}
 
 local _crate_art: any = nil
 --- The cosmetic crate's 2D art (Assets/CrateArt: white masks; the chest itself is 3D, ChestView).
@@ -1354,65 +1291,10 @@ function UITheme.crate_art(): any
 	return _crate_art
 end
 
-function UITheme.icon(icon_name: string): string?
-	local builtin = UITheme.BUILTIN_ICONS[icon_name]
-	if builtin ~= nil then
-		return builtin
-	end
-	if icon_name == "crate" then
-		return UITheme.crate_art().icon
-	end
-	if _icons == nil then
-		_icons = {}
-		if IS_ROBLOX then
-			local ok, m = pcall(function()
-				local rs = game:GetService("ReplicatedStorage")
-				local assets = (rs:WaitForChild("DomWorld") :: any):FindFirstChild("Assets")
-				local mod = assets and assets:FindFirstChild("UiIcons")
-				return if mod then require(mod) :: any else nil
-			end)
-			if ok and type(m) == "table" then
-				_icons = table.clone(m)
-			end
-			-- the Arsenal's glyphs (Assets/ArsenalArt.ui: artillery, mega, star, lock...)
-			local ok2, a = pcall(function()
-				local rs = game:GetService("ReplicatedStorage")
-				local assets = (rs:WaitForChild("DomWorld") :: any):FindFirstChild("Assets")
-				local mod = assets and assets:FindFirstChild("ArsenalArt")
-				return if mod then require(mod) :: any else nil
-			end)
-			if ok2 and type(a) == "table" and type(a.ui) == "table" then
-				for k, v in a.ui do
-					if _icons[k] == nil then
-						_icons[k] = v
-					end
-				end
-			end
-			-- the structures' and units' glyphs as the map draws them (Assets/MapSprites.ui: city, port,
-			-- warship, atom...), over the ones above, so the build bar and the menus show what the map
-			-- shows (2026-10-25)
-			local ok3, s = pcall(function()
-				local rs = game:GetService("ReplicatedStorage")
-				local assets = (rs:WaitForChild("DomWorld") :: any):FindFirstChild("Assets")
-				local mod = assets and assets:FindFirstChild("MapSprites")
-				return if mod then require(mod) :: any else nil
-			end)
-			if ok3 and type(s) == "table" and type(s.ui) == "table" then
-				for k, v in s.ui do
-					_icons[k] = v
-				end
-			end
-		else
-			local ok, m = pcall(function()
-				return (require :: any)("../../shared/Assets/UiIcons")
-			end)
-			if ok and type(m) == "table" then
-				_icons = m
-			end
-		end
-	end
-	local id = _icons[icon_name]
-	return if type(id) == "string" and id ~= "" then id else nil
+function UITheme.icon(_icon_name: string): string?
+	-- Image assets were intentionally removed. Widgets.Icon renders this name with a built-in
+	-- geometric/text glyph; legacy ImageLabels receive nil and never request asset id 0.
+	return nil
 end
 
 -- =============================================================================================

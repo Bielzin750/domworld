@@ -15,6 +15,7 @@
 -- on a screen too short for them.
 
 local UITheme = require("./UITheme")
+local FlagVisual = require("./FlagVisual")
 local W = require("./Widgets")
 local GlassPanel = require("./GlassPanel")
 local UICtx = require("./UICtx")
@@ -63,14 +64,14 @@ function GameOver.new(c: any)
 	self:set_anchors_and_offsets_preset(W.PRESET_FULL_RECT)
 	self:set_mouse_filter(W.MOUSE_STOP)
 	self:set_visible(false)
-	local dimg = Instance.new("ImageLabel")
+	local dimg = Instance.new("Frame")
+	dimg.BackgroundColor3 = Color3.fromRGB(4, 7, 20)
 	dimg.BackgroundTransparency = 1
-	dimg.ScaleType = Enum.ScaleType.Stretch
-	dimg.Image = UICtx.shapes().over_dim or ""
+	dimg.BorderSizePixel = 0
 	dimg.Active = true
 	self._dim = W.wrap(dimg)
 	self._dim:set_mouse_filter(W.MOUSE_STOP)
-	self._dim:_part(dimg, "ImageTransparency", 1.0)
+	self._dim:_part(dimg, "BackgroundTransparency", 1.0)
 	self._dim:set_anchors_and_offsets_preset(W.PRESET_FULL_RECT)
 	self:add_child(self._dim)
 
@@ -218,17 +219,19 @@ function GameOver.new(c: any)
 		HorizontalAlignment = Enum.HorizontalAlignment.Center,
 		SortOrder = Enum.SortOrder.LayoutOrder,
 	}, tag)
-	local rbx = Instance.new("ImageLabel")
+	local rbx = Instance.new("TextLabel")
 	rbx.BackgroundTransparency = 1
-	rbx.Image = UITheme.icon("robux") or ""
-	rbx.ImageColor3 = Color3.fromRGB(255, 226, 150)
+	rbx.Text = "R"
+	rbx.FontFace = Font.fromEnum(Enum.Font.GothamBlack)
+	rbx.TextScaled = true
+	rbx.TextColor3 = Color3.fromRGB(255, 226, 150)
 	rbx.LayoutOrder = 1
 	rbx.ZIndex = 41
 	rbx.Parent = tag
 	local price = Instance.new("TextLabel")
 	price.BackgroundTransparency = 1
 	price.AutomaticSize = Enum.AutomaticSize.X
-	price.FontFace = Font.fromId(12187365977, Enum.FontWeight.Heavy)
+	price.FontFace = Font.fromEnum(Enum.Font.GothamBlack)
 	price.TextColor3 = Color3.fromRGB(255, 226, 150)
 	price.LayoutOrder = 2
 	price.ZIndex = 41
@@ -236,7 +239,7 @@ function GameOver.new(c: any)
 	tag.Parent = bg
 	self._take_tag, self._take_tag_pad, self._take_rbx, self._take_price = tag, pad, rbx, price
 	self._take_btn:_part(tag, "BackgroundTransparency", 1.0)
-	self._take_btn:_part(rbx, "ImageTransparency", 1.0)
+	self._take_btn:_part(rbx, "TextTransparency", 1.0)
 	self._take_btn:_part(price, "TextTransparency", 1.0)
 	-- a shine sweeping over the button now and then
 	local shine = Instance.new("Frame")
@@ -262,14 +265,15 @@ function GameOver.new(c: any)
 	self._take:set_visible(false)
 	self._center:add_child(self._take)
 	-- the card's gold glow (a raw image in the column, under the card)
-	local glow = Instance.new("ImageLabel")
+	local glow = Instance.new("Frame")
 	glow.Name = "TakeGlow"
 	glow.BackgroundTransparency = 1
-	glow.Image = UITheme.crate_art().glow or ""
-	glow.ImageColor3 = UITheme.color3(UITheme.GOLD)
-	glow.ImageTransparency = 1
+	glow.BackgroundColor3 = UITheme.color3(UITheme.GOLD)
+	glow.BorderSizePixel = 0
 	glow.ZIndex = 1
 	glow.Parent = self._center.gui
+	UICtx.make("UICorner", { CornerRadius = UDim.new(0.5, 0) }, glow)
+	UICtx.make("UIStroke", { Color = UITheme.color3(UITheme.GOLD), Thickness = 3, Transparency = 0.5 }, glow)
 	self._take_glow = glow
 	self._take_t = 0.0
 	self._gap4 = spacer(16)
@@ -678,7 +682,7 @@ function GameOver._show_takeover(self)
 		self._again:_theme_changed()
 	end
 	if not show then
-		self._take_glow.ImageTransparency = 1
+		self._take_glow.BackgroundTransparency = 1
 		return
 	end
 	local name = tostring(info.name)
@@ -690,8 +694,12 @@ function GameOver._show_takeover(self)
 		img.Image = fl.image
 		img.ImageRectOffset = Vector2.new(fl.item.x, fl.item.y)
 		img.ImageRectSize = Vector2.new(fl.item.w, fl.item.h)
+		FlagVisual.apply(img, fl.item.id)
 	elseif info.color ~= nil then
+		FlagVisual.apply(self._take_flag_img, "", false)
 		UITheme.set_swatch_color(self._take_sw, info.color)
+	else
+		FlagVisual.apply(self._take_flag_img, "", false)
 	end
 	self._take_title:set_text("TAKE OVER " .. string.upper(name))
 	self._take_btn:set_disabled(info.busy == true)
@@ -1134,8 +1142,8 @@ end
 function GameOver._animate_take(self, delta: number)
 	local glow = self._take_glow
 	if not self._take.visible then
-		if glow.ImageTransparency < 1 then
-			glow.ImageTransparency = 1
+		if glow.BackgroundTransparency < 1 then
+			glow.BackgroundTransparency = 1
 		end
 		return
 	end
@@ -1149,7 +1157,7 @@ function GameOver._animate_take(self, delta: number)
 	glow.Position = UDim2.fromOffset(rel.X + sz.X * 0.5, rel.Y + sz.Y * 0.5)
 	glow.Size = UDim2.fromOffset(sz.X * 1.75, sz.Y * 2.3)
 	local a = (0.5 + 0.15 * math.sin(t * 2.6)) * self._take.modulate_a * self.modulate_a
-	glow.ImageTransparency = 1 - a
+	glow.BackgroundTransparency = 1 - a
 	local k = (t % 3.2) / 0.9
 	self._take_shine.Offset = Vector2.new(if k < 1 then -1 + 2 * k else 1, 0)
 end

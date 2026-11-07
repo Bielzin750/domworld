@@ -17,6 +17,7 @@
 -- bottom_edge(), my_rank(), mark_dirty(), refresh(); per frame update(dt).
 
 local UITheme = require("./UITheme")
+local FlagVisual = require("./FlagVisual")
 local W = require("./Widgets")
 local GlassPanel = require("./GlassPanel")
 local Cosmetics: any = if typeof(game) == "Instance"
@@ -69,7 +70,7 @@ function Row.new(c: any)
 	h:add_child(self.rank)
 	self.sw = T.swatch(T.TEXT, 10.0, 3)
 	h:add_child(self.sw)
-	-- the owner's flag (Data/Cosmetics), when one is equipped: placed to the left of the head shot
+	-- the owner's optional procedural flag (Data/Cosmetics), when one is equipped
 	-- (2026-10-22)
 	local fimg = Instance.new("ImageLabel")
 	fimg.BackgroundTransparency = 1
@@ -82,15 +83,24 @@ function Row.new(c: any)
 	self.flag:set_visible(false)
 	self._flag_id = ""
 	h:add_child(self.flag)
-	-- a person's Roblox head shot (the cosmetics map's `face`; 2026-10-04): a small profile picture
-	-- next to each name
-	local himg = Instance.new("ImageLabel")
+	-- a procedural initial mark beside each name; no profile image request is needed.
+	local himg = Instance.new("Frame")
 	himg.BackgroundColor3 = Color3.fromRGB(40, 52, 82)
 	himg.BorderSizePixel = 0
 	local hc = Instance.new("UICorner")
 	hc.CornerRadius = UDim.new(0.5, 0)
 	hc.Parent = himg
+	local hmark = Instance.new("TextLabel")
+	hmark.Name = "Initial"
+	hmark.BackgroundTransparency = 1
+	hmark.Size = UDim2.fromScale(1, 1)
+	hmark.FontFace = Font.fromEnum(Enum.Font.GothamBold)
+	hmark.TextColor3 = Color3.new(1, 1, 1)
+	hmark.TextScaled = true
+	hmark.ZIndex = 2
+	hmark.Parent = himg
 	self._face_img = himg
+	self._face_mark = hmark
 	self.face = W.wrap(himg)
 	self.face:set_min_size(Vector2.new(18, 18))
 	self.face.size_flags_vertical = W.SHRINK_CENTER
@@ -157,9 +167,10 @@ function Row.set_row(self, o: any, r: number)
 	local face = if cz ~= nil and cz.face ~= nil then cz.face else 0
 	if face ~= self._face_id then
 		self._face_id = face
-		self._face_img.Image = if face > 0 then Cosmetics.face_image(face) else ""
 		self.face:set_visible(face > 0)
 	end
+	self._face_img.BackgroundColor3 = T.color3(o.color)
+	self._face_mark.Text = string.upper(string.sub(tostring(o.name or "?"), 1, 1))
 	local fid = if cz ~= nil and cz.flag ~= nil then cz.flag else ""
 	if fid ~= self._flag_id then
 		self._flag_id = fid
@@ -168,8 +179,10 @@ function Row.set_row(self, o: any, r: number)
 			self._flag_img.Image = Cosmetics.flag_image(it)
 			self._flag_img.ImageRectOffset = Vector2.new(it.x, it.y)
 			self._flag_img.ImageRectSize = Vector2.new(it.w, it.h)
+			FlagVisual.apply(self._flag_img, it.id)
 			self.flag:set_visible(true)
 		else
+			FlagVisual.apply(self._flag_img, "", false)
 			self.flag:set_visible(false)
 		end
 	end

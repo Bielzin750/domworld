@@ -5,15 +5,19 @@
 
 local UITheme = require("./UITheme")
 local W = require("./Widgets")
+local RobloxTypes = if (game :: any) == nil then require("@lune/roblox") else nil :: any
+local Color3Type = if RobloxTypes then RobloxTypes.Color3 else Color3
+local NumberSequenceType = if RobloxTypes then RobloxTypes.NumberSequence else NumberSequence
+local NumberSequenceKeypointType = if RobloxTypes then RobloxTypes.NumberSequenceKeypoint else NumberSequenceKeypoint
 
 local Banner = W.class(W.Control)
 
-local BAND = Color3.new(0.01, 0.015, 0.05)
+local BAND = Color3Type.new(0.01, 0.015, 0.05)
 -- vertical gradient: alpha 0 -> 0.62 -> 0
-local BAND_SEQ = NumberSequence.new({
-	NumberSequenceKeypoint.new(0.0, 1.0),
-	NumberSequenceKeypoint.new(0.5, 0.0),
-	NumberSequenceKeypoint.new(1.0, 1.0),
+local BAND_SEQ = NumberSequenceType.new({
+	NumberSequenceKeypointType.new(0.0, 1.0),
+	NumberSequenceKeypointType.new(0.5, 0.0),
+	NumberSequenceKeypointType.new(1.0, 1.0),
 })
 
 --- UIBanner.make(ctx, title, sub, col, hold = 1.6, top_y = -1, height = 0, small = false)
