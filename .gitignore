@@ -17,3 +17,4 @@ secrets/
 .mcp.json
 *.local.json
 DOMWORLD_CODEX_PROMPT.md
+services/lobbies/*.jsonl

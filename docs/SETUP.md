@@ -18,6 +18,14 @@ rojo build release.project.json -o build/DomWorld-release.rbxl
 
 Abra o arquivo gerado no Roblox Studio. Para sincronização interativa, use o plugin Rojo e conecte-o ao projeto local. Os IDs do universo e place não são necessários para compilar.
 
+Para sincronização em tempo real, em outro PowerShell na raiz do projeto rode:
+
+```powershell
+rojo serve default.project.json
+```
+
+No Roblox Studio, abra o plugin Rojo, escolha **Connect** e use `localhost:34872`. Depois pressione **Play**. O modo **Solo Easy** funciona localmente sem IDs de universo/place e sem o serviço de lobbies.
+
 ## 3. Serviço de lobbies local
 
 Requisitos: Node.js 20 ou superior.
@@ -51,8 +59,8 @@ Implante o serviço em uma máquina ou plataforma controlada por você, configur
 ```powershell
 rojo build default.project.json -o build/DomWorld.rbxl
 rojo build release.project.json -o build/DomWorld-release.rbxl
-selene src
+selene --allow-warnings src
 stylua --check src
 ```
 
-Os testes Luau usam Lune (`.bin/lune run tests/<arquivo>.luau`); rode cada arquivo de teste. Os testes do serviço são executados com `npm test` em `services/lobbies/`.
+Selene ainda reporta avisos antigos do port; `--allow-warnings` retorna 0 somente quando não há erros. Os testes Luau usam Lune (`.bin/lune run tests/<arquivo>.luau`); rode cada arquivo de teste. Os testes do serviço são executados com `npm test` em `services/lobbies/`.
