@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Ícone geométrico DomWorld">
+  <rect width="512" height="512" rx="112" fill="#101b35"/>
+  <circle cx="256" cy="256" r="168" fill="none" stroke="#51d6c4" stroke-width="20"/>
+  <path d="m256 106 130 75v150l-130 75-130-75V181z" fill="none" stroke="#f5bd68" stroke-width="18"/>
+  <path d="M194 192h29v128h-29zm47 0h27l55 79v-79h28v128h-25l-57-82v82h-28z" fill="#fff"/>
+</svg>

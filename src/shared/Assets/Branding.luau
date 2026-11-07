@@ -3,7 +3,8 @@
 -- (TitleScreen `_emblem`, RotateCard icon) = AIRFRONT's app icon, 512×512 with transparent
 -- rounded corners. The publishing icon (assets/branding/experience_icon_512.png) is not
 -- used in game and is set in the experience settings instead.
+-- Modified for DomWorld, 2026 — see git history for details.
 return {
-	app_icon = "rbxassetid://81884831811669",
-	logo_mark = "rbxassetid://81884831811669",
+	app_icon = "rbxassetid://0",
+	logo_mark = "rbxassetid://0",
 }

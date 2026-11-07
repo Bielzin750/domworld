@@ -2,8 +2,9 @@
 -- The Arsenal previews' ground: pieces of our World map (public-domain data), drawn like a match.
 -- cell: a scene's size in the atlas (tiles = px); scenes[key]: its cells (one per frame, top left)
 -- and its border's split of the scene (nil: the player's land only).
+-- Modified for DomWorld, 2026 — see git history for details.
 return {
-	id = "rbxassetid://103272438740711",
+	id = "rbxassetid://0",
 	size = Vector2.new(980, 368),
 	cell = Vector2.new(192, 88),
 	scenes = {

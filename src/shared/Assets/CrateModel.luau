@@ -7,6 +7,7 @@
 --   flips far back (Tribes: 140 degrees) so it stays low.
 -- The meshes and texture are 2022 user uploads (bryan3838): legacy user uploads load in any experience
 -- (Tribes ships the same ids live).
+-- Modified for DomWorld, 2026 — see git history for details.
 return {
 	size = { 5, 4.6666, 5 },
 	hinge = { 0, 1.6667, 2.5 },
@@ -18,8 +19,8 @@ return {
 		{
 			name = "Lid",
 			lid = true,
-			mesh = "rbxassetid://8562367045",
-			tex = "rbxassetid://8562367073",
+			mesh = "rbxassetid://0",
+			tex = "rbxassetid://0",
 			size = { 5, 3, 5 },
 			scale = { 1.7012, 1.7012, 1.7012 },
 			cf = { 0, 3.1666, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 },
@@ -28,8 +29,8 @@ return {
 		{
 			name = "Bottom",
 			lid = false,
-			mesh = "rbxassetid://8562367050",
-			tex = "rbxassetid://8562367073",
+			mesh = "rbxassetid://0",
+			tex = "rbxassetid://0",
 			size = { 4.6666, 2.3333, 4.6666 },
 			scale = { 1.7012, 1.7012, 1.7012 },
 			cf = { 0, 1.1667, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 },
