@@ -16,13 +16,13 @@
 -- Roblox: one pooled Frame per owner (name + troops TextLabels with UIStroke); TextSize caps at
 -- 100 px, beyond that a UIScale enlarges the whole plate.
 local RS = game:GetService("ReplicatedStorage")
-local Core = RS:WaitForChild("Airfront"):WaitForChild("Core")
+local Core = RS:WaitForChild("DomWorld"):WaitForChild("Core")
 local Defs = require(Core:WaitForChild("Defs")) :: any
 local Rules = require(Core:WaitForChild("Rules")) :: any
 local NumberFormat = require(Core:WaitForChild("NumberFormat")) :: any
-local Sprites = require(RS:WaitForChild("Airfront"):WaitForChild("Assets"):WaitForChild("MapSprites")) :: any
-local Cosmetics = require(RS:WaitForChild("Airfront"):WaitForChild("Data"):WaitForChild("Cosmetics")) :: any
-local Coop = require(RS:WaitForChild("Airfront"):WaitForChild("Net"):WaitForChild("Coop")) :: any
+local Sprites = require(RS:WaitForChild("DomWorld"):WaitForChild("Assets"):WaitForChild("MapSprites")) :: any
+local Cosmetics = require(RS:WaitForChild("DomWorld"):WaitForChild("Data"):WaitForChild("Cosmetics")) :: any
+local Coop = require(RS:WaitForChild("DomWorld"):WaitForChild("Net"):WaitForChild("Coop")) :: any
 local FrameClock = require(script.Parent:WaitForChild("FrameClock")) :: any
 
 local readi32 = buffer.readi32

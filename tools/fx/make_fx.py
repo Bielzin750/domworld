@@ -2,7 +2,7 @@
 """Generate the overlays-b FX textures (particles, beams, trails, range-ring lines, warship overlays)
 and upload them; writes src/shared/Assets/Fx.luau.
 
-Ports the procedural looks of the original shaders (~/games/airfront/shaders/fx_*.gdshader,
+Ports the procedural looks of the original shaders (~/games/domworld/shaders/fx_*.gdshader,
 combat_fx.gdshaderinc, range_ring.gdshader, map_icon.gdshader procedural modes) into static images:
 white RGB + alpha masks are tinted at runtime (ParticleEmitter.Color / Beam.Color / ImageColor3);
 two-tone looks (dark halo + bright line, white-hot core in a tinted glow) are split into layers.
@@ -254,7 +254,7 @@ UNIT_CELLS = [
     ("sam", (4, 0), False),
 ]
 UNIT_TIERS = (32, 64, 128)
-SRC_ATLAS = os.path.expanduser("~/games/airfront/assets/icons/map_atlas.png")
+SRC_ATLAS = os.path.expanduser("~/games/domworld/assets/icons/map_atlas.png")
 
 
 def build_units():

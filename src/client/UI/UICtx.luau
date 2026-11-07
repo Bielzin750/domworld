@@ -12,7 +12,7 @@
 
 local IS_ROBLOX = (game :: any) ~= nil
 
---- Shared Core module by name (ReplicatedStorage.Airfront.Core in Roblox, src/shared/Core in Lune),
+--- Shared Core module by name (ReplicatedStorage.DomWorld.Core in Roblox, src/shared/Core in Lune),
 --- required once and kept (see UICtx.prime: a require late in a session can fail).
 local _core: { [string]: any } = {}
 local function core(name: string): any
@@ -22,7 +22,7 @@ local function core(name: string): any
 	end
 	if IS_ROBLOX then
 		local rs = game:GetService("ReplicatedStorage")
-		m = require((rs:WaitForChild("Airfront") :: any):WaitForChild("Core"):WaitForChild(name))
+		m = require((rs:WaitForChild("DomWorld") :: any):WaitForChild("Core"):WaitForChild(name))
 	else
 		m = (require :: any)("../../shared/Core/" .. name)
 	end
@@ -156,7 +156,7 @@ UICtx.SFX_GAP = {
 	ship_sink = 300,
 }
 
---- A shared Data module (ReplicatedStorage.Airfront.Data: "Arsenal", "Stars", "Products"...),
+--- A shared Data module (ReplicatedStorage.DomWorld.Data: "Arsenal", "Stars", "Products"...),
 --- required once and kept.
 local _data: { [string]: any } = {}
 function UICtx.data(name: string): any
@@ -166,7 +166,7 @@ function UICtx.data(name: string): any
 	end
 	if typeof(game) == "Instance" then
 		local rs = (game :: any):GetService("ReplicatedStorage")
-		m = require((rs:WaitForChild("Airfront") :: any).Data[name])
+		m = require((rs:WaitForChild("DomWorld") :: any).Data[name])
 	else
 		m = (require :: any)("../../shared/Data/" .. name)
 	end
@@ -452,7 +452,7 @@ function UICtx.shapes(): any
 		local ok, m = pcall(function()
 			if IS_ROBLOX then
 				local rs = game:GetService("ReplicatedStorage")
-				return require((rs:WaitForChild("Airfront") :: any):WaitForChild("Assets"):WaitForChild("UiShapes"))
+				return require((rs:WaitForChild("DomWorld") :: any):WaitForChild("Assets"):WaitForChild("UiShapes"))
 			end
 			return (require :: any)("../../shared/Assets/UiShapes")
 		end)

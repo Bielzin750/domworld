@@ -1,6 +1,6 @@
 --!nonstrict
 -- Port of scripts/ui/title_screen.gd (UITitleScreen)
--- Title screen over the live attract-mode globe: AIRFRONT wordmark, Play Solo with difficulty
+-- Title screen over the live attract-mode globe: DOMWORLD wordmark, Play Solo with difficulty
 -- chips, Multiplayer with live server status, How to Play, credits. Also shows the "joining
 -- multiplayer" queue card while a match is being prepared.
 --

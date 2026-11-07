@@ -1,6 +1,6 @@
 extends Node
 ## sim-parity: lockstep trace of the ORIGINAL Sim. Copy this file (and lockstep.tscn) into the tests/
-## folder of a scratch copy of ~/games/airfront (never the original) and run headless:
+## folder of a scratch copy of ~/games/domworld (never the original) and run headless:
 ##   LS_SEED=1 LS_TICKS=9000 LS_OUT=/path/orig.txt "$AE" --headless --path <copy> \
 ##       --scene res://tests/parity_lockstep.tscn --quit-after 100000000
 ## env: LS_SEED, LS_TICKS, LS_TRIBES (80), LS_DIFF (1), LS_HUMAN (0 = AI only, 1 = passive human,

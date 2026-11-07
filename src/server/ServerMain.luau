@@ -3,7 +3,7 @@
 -- server duties of scripts/main.gd). Every Roblox server hosts one shared match (MatchServer); players
 -- pick Solo (runs on their client, never touches the server) or Multiplayer on the title screen.
 --
--- Networking: ReplicatedStorage.AirfrontNet.ToServer / ToClient RemoteEvents (one per direction, so
+-- Networking: ReplicatedStorage.DomWorldNet.ToServer / ToClient RemoteEvents (one per direction, so
 -- everything in a direction is strictly ordered: snapshot before deltas, deltas in tick order). The
 -- first argument is an op code (Net/Protocol.OP). Deltas / snapshots / intents are buffers.
 --
@@ -11,7 +11,7 @@
 -- logging (workspace attribute AF_NET_STATS = true prints a line every 30 s).
 --
 -- Maps: the terrain of every map but the default lives in script.Parent.MapData (server only);
--- WorldMap gets a provider for it, and AirfrontNet.GetMap (Net/MapFetch) serves it to clients that
+-- WorldMap gets a provider for it, and DomWorldNet.GetMap (Net/MapFetch) serves it to clients that
 -- need a map for solo play or an upcoming multiplayer match.
 -- Modified for DomWorld, 2026 — see git history for details.
 
@@ -20,7 +20,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
 
-local Shared = ReplicatedStorage:WaitForChild("Airfront")
+local Shared = ReplicatedStorage:WaitForChild("DomWorld")
 local Protocol = require(Shared.Net.Protocol) :: any
 local MapFetch = require(Shared.Net.MapFetch) :: any
 local LobbyRules = require(script.Parent.Lobbies.LobbyRules) :: any
@@ -130,7 +130,7 @@ function ServerMain.start()
 	end
 
 	local folder = Instance.new("Folder")
-	folder.Name = "AirfrontNet"
+	folder.Name = "DomWorldNet"
 	if WorldMapMod ~= nil then
 		MapFetch.serve(folder, function(id: string): any
 			return WorldMapMod.load_data(id)

@@ -9,7 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local AssetService = game:GetService("AssetService")
 local HttpService = game:GetService("HttpService")
 
-local Assets = ReplicatedStorage:WaitForChild("Airfront"):WaitForChild("Assets")
+local Assets = ReplicatedStorage:WaitForChild("DomWorld"):WaitForChild("Assets")
 local UiIcons = require(Assets:WaitForChild("UiIcons"))
 local Branding = require(Assets:WaitForChild("Branding"))
 

@@ -30,8 +30,8 @@
 --     bot_faces = {number}?,                      -- Roblox user ids: the head shots bot players wear
 --   }
 
--- Roblox: ReplicatedStorage.Airfront.Net; Lune: the source tree.
-local Net: any = if (game :: any) ~= nil then (game :: any):GetService("ReplicatedStorage").Airfront.Net else nil
+-- Roblox: ReplicatedStorage.DomWorld.Net; Lune: the source tree.
+local Net: any = if (game :: any) ~= nil then (game :: any):GetService("ReplicatedStorage").DomWorld.Net else nil
 local Protocol = if Net then require(Net.Protocol) else require("../shared/Net/Protocol")
 local Coop = if Net then require(Net.Coop) else require("../shared/Net/Coop")
 local Cosmetics: any = if Net then require(Net.Parent.Data.Cosmetics) else require("../shared/Data/Cosmetics")

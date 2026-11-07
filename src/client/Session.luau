@@ -26,9 +26,9 @@
 -- build / join job waits; the lobby info's map_id is prefetched.
 -- Modified for DomWorld, 2026 — see git history for details.
 
--- Roblox: ReplicatedStorage.Airfront; Lune: the source tree.
+-- Roblox: ReplicatedStorage.DomWorld; Lune: the source tree.
 local Shared: any = if (game :: any) ~= nil
-	then (game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront")
+	then (game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld")
 	else nil
 local Coop = if Shared then require(Shared.Net.Coop) else require("../shared/Net/Coop")
 local Protocol = if Shared then require(Shared.Net.Protocol) else require("../shared/Net/Protocol")
@@ -117,7 +117,7 @@ local function roblox_env(): { [string]: any }
 	local ReplicatedStorage = game:GetService("ReplicatedStorage")
 	local UserInputService = game:GetService("UserInputService")
 	local GuiService = game:GetService("GuiService")
-	local Core = ReplicatedStorage:WaitForChild("Airfront"):WaitForChild("Core")
+	local Core = ReplicatedStorage:WaitForChild("DomWorld"):WaitForChild("Core")
 
 	local env: { [string]: any } = {}
 	env.now = os.clock
@@ -158,7 +158,7 @@ local function roblox_env(): { [string]: any }
 		end
 		return (require :: any)(m)
 	end
-	-- Network: the server creates ReplicatedStorage.AirfrontNet; connect once it replicates.
+	-- Network: the server creates ReplicatedStorage.DomWorldNet; connect once it replicates.
 	-- The server answers HELLO with the player's saved settings (SETTINGS): saves wait for them.
 	local net: { [string]: any } = { connected = false, sends_settings = true, busy_s = 0.0 }
 	local handler: ((number, ...any) -> ())? = nil
@@ -172,7 +172,7 @@ local function roblox_env(): { [string]: any }
 		handler = fn
 	end
 	task.spawn(function()
-		local folder = ReplicatedStorage:WaitForChild("AirfrontNet", math.huge)
+		local folder = ReplicatedStorage:WaitForChild("DomWorldNet", math.huge)
 		local ts = folder:WaitForChild("ToServer") :: RemoteEvent
 		local tc = folder:WaitForChild("ToClient") :: RemoteEvent
 		tc.OnClientEvent:Connect(function(op: any, ...: any)
@@ -376,7 +376,7 @@ function Session.bind(self: any)
 	local RunService = game:GetService("RunService")
 	-- (the frame's dt: a Studio film steps it, Map/FrameClock)
 	local FrameClock = require((script :: any).Parent:WaitForChild("Map"):WaitForChild("FrameClock")) :: any
-	RunService:BindToRenderStep("AirfrontSession", Enum.RenderPriority.First.Value, function(dt: number)
+	RunService:BindToRenderStep("DomWorldSession", Enum.RenderPriority.First.Value, function(dt: number)
 		local t0 = os.clock()
 		self:process(FrameClock.dt(dt))
 		self.perf.process_s += os.clock() - t0

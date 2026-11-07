@@ -1,6 +1,6 @@
 --!strict
 -- Port of scripts/ui/ui_theme.gd
--- AIRFRONT design system: colour tokens, the 8 px spacing scale, Rubik weights, text metrics, the
+-- DOMWORLD design system: colour tokens, the 8 px spacing scale, Rubik weights, text metrics, the
 -- icon cache, style factories and widget helpers. Everything is static so any component can use it.
 --
 -- Roblox notes (see build/notes/ui-kit.md):
@@ -19,7 +19,7 @@ local UITheme = {}
 
 UITheme.IS_ROBLOX = IS_ROBLOX
 
---- Shared Core module by name (ReplicatedStorage.Airfront.Core in Roblox, src/shared/Core in Lune),
+--- Shared Core module by name (ReplicatedStorage.DomWorld.Core in Roblox, src/shared/Core in Lune),
 --- required once and kept. A require later in a session can fail: in some live sessions every require
 --- after some moment errors "Cannot require a RobloxScript module from a non RobloxScript context"
 --- (from 2026-10-10, 34.6K a day by 10-23), so the client asks for what it needs at start
@@ -32,7 +32,7 @@ local function core(name: string): any
 	end
 	if IS_ROBLOX then
 		local rs = game:GetService("ReplicatedStorage")
-		m = require((rs:WaitForChild("Airfront") :: any):WaitForChild("Core"):WaitForChild(name))
+		m = require((rs:WaitForChild("DomWorld") :: any):WaitForChild("Core"):WaitForChild(name))
 	else
 		m = (require :: any)("../../shared/Core/" .. name)
 	end
@@ -1032,7 +1032,7 @@ local function measure_label(): any
 		return _measure_label
 	end
 	local holder = Instance.new("ScreenGui")
-	holder.Name = "AirfrontTextMeasure"
+	holder.Name = "DomWorldTextMeasure"
 	holder.Enabled = false
 	holder.ResetOnSpawn = false
 	local l = Instance.new("TextLabel")
@@ -1342,7 +1342,7 @@ function UITheme.crate_art(): any
 		local ok, m = pcall(function()
 			if IS_ROBLOX then
 				return require(
-						(game:GetService("ReplicatedStorage"):WaitForChild("Airfront") :: any).Assets.CrateArt
+						(game:GetService("ReplicatedStorage"):WaitForChild("DomWorld") :: any).Assets.CrateArt
 					) :: any
 			end
 			return (require :: any)("../../shared/Assets/CrateArt")
@@ -1367,7 +1367,7 @@ function UITheme.icon(icon_name: string): string?
 		if IS_ROBLOX then
 			local ok, m = pcall(function()
 				local rs = game:GetService("ReplicatedStorage")
-				local assets = (rs:WaitForChild("Airfront") :: any):FindFirstChild("Assets")
+				local assets = (rs:WaitForChild("DomWorld") :: any):FindFirstChild("Assets")
 				local mod = assets and assets:FindFirstChild("UiIcons")
 				return if mod then require(mod) :: any else nil
 			end)
@@ -1377,7 +1377,7 @@ function UITheme.icon(icon_name: string): string?
 			-- the Arsenal's glyphs (Assets/ArsenalArt.ui: artillery, mega, star, lock...)
 			local ok2, a = pcall(function()
 				local rs = game:GetService("ReplicatedStorage")
-				local assets = (rs:WaitForChild("Airfront") :: any):FindFirstChild("Assets")
+				local assets = (rs:WaitForChild("DomWorld") :: any):FindFirstChild("Assets")
 				local mod = assets and assets:FindFirstChild("ArsenalArt")
 				return if mod then require(mod) :: any else nil
 			end)
@@ -1393,7 +1393,7 @@ function UITheme.icon(icon_name: string): string?
 			-- shows (2026-10-25)
 			local ok3, s = pcall(function()
 				local rs = game:GetService("ReplicatedStorage")
-				local assets = (rs:WaitForChild("Airfront") :: any):FindFirstChild("Assets")
+				local assets = (rs:WaitForChild("DomWorld") :: any):FindFirstChild("Assets")
 				local mod = assets and assets:FindFirstChild("MapSprites")
 				return if mod then require(mod) :: any else nil
 			end)

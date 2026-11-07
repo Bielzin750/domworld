@@ -6,7 +6,7 @@
 -- idle() is the small views' life: a bob, and every `every` seconds a wiggle with the lid cracking.
 local IS_ROBLOX = typeof(game) == "Instance"
 local Model: any = if IS_ROBLOX
-	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Assets.CrateModel)
+	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Assets.CrateModel)
 	else (require :: any)("../../shared/Assets/CrateModel")
 
 local ChestView = {}

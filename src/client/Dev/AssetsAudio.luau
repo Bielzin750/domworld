@@ -14,7 +14,7 @@ local SoundService = game:GetService("SoundService")
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 
-local Audio = require(ReplicatedStorage:WaitForChild("Airfront"):WaitForChild("Assets"):WaitForChild("Audio"))
+local Audio = require(ReplicatedStorage:WaitForChild("DomWorld"):WaitForChild("Assets"):WaitForChild("Audio"))
 
 local entries = {}
 for k, e in Audio.music do

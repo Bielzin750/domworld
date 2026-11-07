@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Bake the globe's static images from AIRFRONT's world art (re-runnable).
+"""Bake the globe's static images from DOMWORLD's world art (re-runnable).
 
-Sources (never modified): ~/games/airfront/assets/world/{earth_color.jpg, landmask.png, relief.png}
+Sources (never modified): ~/games/domworld/assets/world/{earth_color.jpg, landmask.png, relief.png}
 (4096 x 2048 equirectangular, lon -180..180 left->right, lat 90..-90 top->bottom).
 
 Outputs (assets/globe/, then uploaded with tools/upload.py; manifest src/shared/Assets/Globe.luau):
@@ -35,7 +35,7 @@ from PIL import Image
 from scipy import ndimage
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SRC = os.path.expanduser("~/games/airfront/assets/world")
+SRC = os.path.expanduser("~/games/domworld/assets/world")
 OUT = os.path.join(ROOT, "assets", "globe")
 MANIFEST = os.path.join(ROOT, "src", "shared", "Assets", "Globe.luau")
 sys.path.insert(0, os.path.join(ROOT, "tools"))

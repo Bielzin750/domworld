@@ -24,7 +24,7 @@
 
 local IS_ROBLOX = typeof(game) == "Instance"
 local SettingsMod: any = if IS_ROBLOX
-	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Net.Settings)
+	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Net.Settings)
 	else require("../shared/Net/Settings")
 
 local DsGate = require("./DsGate")

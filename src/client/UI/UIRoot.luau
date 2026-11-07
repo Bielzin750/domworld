@@ -1,10 +1,10 @@
 --!nonstrict
 -- Port of scripts/ui/ui_root.gd (UIRoot)
--- AIRFRONT interface root. Built entirely in code: title screen, spawn banner, HUD (command bar,
+-- DOMWORLD interface root. Built entirely in code: title screen, spawn banner, HUD (command bar,
 -- world-control status, leaderboard, event feed, nuke alert), tooltips, radial menu, help, game
 -- menu and the victory / defeat screen. Wire with setup(session, world, audio) (DESIGN.md §10).
 --
--- Roblox: one ScreenGui "AirfrontUI" (DisplayOrder 10, above the map-label layer at 0; below
+-- Roblox: one ScreenGui "DomWorldUI" (DisplayOrder 10, above the map-label layer at 0; below
 -- Main's top bar at 50) holding a Widgets.Root (the kit's Godot-like node tree, logical px with
 -- one UI scale). One render-step loop (after the camera) runs every per-frame update, then the
 -- kit's tweens / layout (Widgets.step). Main owns M / Home and the top-bar buttons.
@@ -30,7 +30,7 @@ local StarterOffer = require("./StarterOffer")
 local GeneralOffer = require("./GeneralOffer")
 local FlagShop = require("./FlagShop")
 local ArsenalData: any = if typeof(game) == "Instance"
-	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Data.Arsenal)
+	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Data.Arsenal)
 	else (require :: any)("../../shared/Data/Arsenal")
 local CrateOpening = require("./CrateOpening")
 local HelpOverlay = require("./HelpOverlay")
@@ -710,7 +710,7 @@ end
 
 function UIRoot._make_gui(self, parent: Instance?)
 	local sg = Instance.new("ScreenGui")
-	sg.Name = "AirfrontUI"
+	sg.Name = "DomWorldUI"
 	sg.ResetOnSpawn = false
 	sg.IgnoreGuiInset = true
 	sg.ScreenInsets = Enum.ScreenInsets.None
@@ -1233,7 +1233,7 @@ function UIRoot._build(self)
 	self:_hook_buttons(root)
 	if UICtx.IS_ROBLOX then
 		local RunService = game:GetService("RunService")
-		self._step_name = "AirfrontUI_" .. tostring(math.random(1, 1e9))
+		self._step_name = "DomWorldUI_" .. tostring(math.random(1, 1e9))
 		local perf = { frames = 0, process = 0.0, kit = 0.0, max = 0.0 }
 		self._perf = perf
 		-- (Telemetry "slow" says how much of a slow frame the HUD's own work was)

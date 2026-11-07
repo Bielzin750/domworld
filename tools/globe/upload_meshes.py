@@ -201,7 +201,7 @@ def _req(method, url, body=None, headers=None, timeout=120):
 
 def upload_model(path, name):
     boundary = "----DomWorld" + uuid.uuid4().hex
-    meta = {"assetType": "Model", "displayName": name[:50], "description": "AIRFRONT globe mesh",
+    meta = {"assetType": "Model", "displayName": name[:50], "description": "DOMWORLD globe mesh",
             "creationContext": {"creator": {"userId": CREATOR_USER_ID}}}
     data = open(path, "rb").read()
     body = b"".join([

@@ -32,7 +32,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 
-local Shared = ReplicatedStorage:WaitForChild("Airfront")
+local Shared = ReplicatedStorage:WaitForChild("DomWorld")
 local Signal = require(Shared.Core.Signal) :: any
 local Playlist = require(script.Parent:WaitForChild("Playlist")) :: any
 
@@ -433,7 +433,7 @@ function AudioDirector.new(autoplay_theme: string?)
 	self._next = nil :: { mood: string, key: string }?
 
 	local root = Instance.new("Folder")
-	root.Name = "AirfrontAudio"
+	root.Name = "DomWorldAudio"
 	self._root = root
 	self._music_group = self:_group("Music")
 	self._sfx_group = self:_group("SFX")

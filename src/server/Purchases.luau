@@ -50,22 +50,22 @@
 -- Modified for DomWorld, 2026 — see git history for details.
 local IS_ROBLOX = typeof(game) == "Instance"
 local Products: any = if IS_ROBLOX
-	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Data.Products)
+	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Data.Products)
 	else require("../shared/Data/Products")
 local Cosmetics: any = if IS_ROBLOX
-	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Data.Cosmetics)
+	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Data.Cosmetics)
 	else require("../shared/Data/Cosmetics")
 local Arsenal: any = if IS_ROBLOX
-	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Data.Arsenal)
+	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Data.Arsenal)
 	else require("../shared/Data/Arsenal")
 local Starter: any = if IS_ROBLOX
-	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Data.Starter)
+	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Data.Starter)
 	else require("../shared/Data/Starter")
 local Shop: any = if IS_ROBLOX
-	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Data.Shop)
+	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Data.Shop)
 	else require("../shared/Data/Shop")
 local Subscription: any = if IS_ROBLOX
-	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Data.Subscription)
+	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Data.Subscription)
 	else require("../shared/Data/Subscription")
 
 local Purchases = {}

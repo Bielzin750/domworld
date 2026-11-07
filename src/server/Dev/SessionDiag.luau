@@ -9,7 +9,7 @@
 --   fake_drop <name> (disconnect) | timelimit <ticks from now> | stats | mirror | settings |
 --   eliminate (the real player falls to the biggest AI nation: the takeover offer)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Protocol = require(ReplicatedStorage.Airfront.Net.Protocol)
+local Protocol = require(ReplicatedStorage.DomWorld.Net.Protocol)
 
 local Diag = {}
 Diag.fakes = {} :: { [string]: any }
@@ -83,10 +83,10 @@ function Diag.start(ServerMain: any)
 			Diag.fakes[name] = f
 			-- a real client Session wired to the server in-process
 			local ok, SessionMod = pcall(function()
-				return require(game:GetService("StarterPlayer").StarterPlayerScripts.AirfrontClient.Session)
+				return require(game:GetService("StarterPlayer").StarterPlayerScripts.DomWorldClient.Session)
 			end)
 			if ok then
-				local Core = ReplicatedStorage.Airfront.Core
+				local Core = ReplicatedStorage.DomWorld.Core
 				local who = { uid = "fake_" .. name, name = name }
 				local ses = SessionMod.new({
 					now = os.clock,

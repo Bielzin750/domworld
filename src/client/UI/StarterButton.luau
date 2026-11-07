@@ -13,7 +13,7 @@ local StarterOffer = require("./StarterOffer")
 local IS_ROBLOX = typeof(game) == "Instance"
 local function shared(folder: string, name: string): any
 	if IS_ROBLOX then
-		return require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront")[folder][name]) :: any
+		return require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld")[folder][name]) :: any
 	end
 	return (require :: any)("../../shared/" .. folder .. "/" .. name)
 end

@@ -45,7 +45,7 @@ local function measure(label: string): string
 	return ("%-28s PrepareBound %5.2f | script %5.2f | layouts %5.2f | Pass2d %5.2f | z-order %5.2f | Perform %5.2f  (%d frames)"):format(
 		label,
 		per_frame("PrepareBound"),
-		per_frame("Script_AirfrontClient"),
+		per_frame("Script_DomWorldClient"),
 		per_frame("UpdateUILayouts"),
 		per_frame("Pass2d"),
 		per_frame("Rebuild Z-order list"),
@@ -67,7 +67,7 @@ local function objects(gui: Instance?): number
 end
 
 local out = { "ms per rendered frame, main thread" }
-local guis = { "DomWorldMap", "DomWorldMapUnits", "DomWorldMapLabels", "AirfrontUI" }
+local guis = { "DomWorldMap", "DomWorldMapUnits", "DomWorldMapLabels", "DomWorldUI" }
 local counts = {}
 for _, name in guis do
 	table.insert(counts, ("%s %d"):format(name, objects(pg:FindFirstChild(name))))

@@ -101,7 +101,7 @@ function Coach.new(c: any)
 		ScaleType = Enum.ScaleType.Stretch,
 	}, self._arrow)
 	pcall(function()
-		local Shapes = require((game:GetService("ReplicatedStorage"):WaitForChild("Airfront") :: any).Assets.UiShapes)
+		local Shapes = require((game:GetService("ReplicatedStorage"):WaitForChild("DomWorld") :: any).Assets.UiShapes)
 		self._head.Image = Shapes.arrow_head or ""
 	end)
 	self._pulse = UICtx.ring(self._arrow, Vector2.zero, 8, 2, UITheme.AMBER, 1)

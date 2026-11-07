@@ -1506,7 +1506,7 @@ local function shadow_for(radius: number, feather: number)
 		_shadow_manifest_loaded = true
 		local ok, m = pcall(function()
 			local rs = game:GetService("ReplicatedStorage")
-			local assets = (rs:WaitForChild("Airfront") :: any):FindFirstChild("Assets")
+			local assets = (rs:WaitForChild("DomWorld") :: any):FindFirstChild("Assets")
 			local mod = assets and assets:FindFirstChild("UIKit")
 			return if mod then require(mod) :: any else nil
 		end)

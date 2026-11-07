@@ -29,9 +29,9 @@ local ChestView = require("./ChestView")
 local Signal = UITheme.core("Signal")
 
 local IS_ROBLOX = typeof(game) == "Instance"
-local Airfront: any = if IS_ROBLOX then (game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront") else nil
+local DomWorld: any = if IS_ROBLOX then (game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld") else nil
 local Cosmetics: any = if IS_ROBLOX
-	then require(Airfront.Data.Cosmetics)
+	then require(DomWorld.Data.Cosmetics)
 	else (require :: any)("../../shared/Data/Cosmetics")
 local Model: any = ChestView.Model
 local TweenService = if IS_ROBLOX then game:GetService("TweenService") else nil

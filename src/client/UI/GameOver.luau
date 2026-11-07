@@ -645,7 +645,7 @@ local function flag_named(name: string): any
 		local m = {}
 		local ok, Cosmetics = pcall(function()
 			if typeof(game) == "Instance" then
-				return require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Data.Cosmetics)
+				return require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Data.Cosmetics)
 			end
 			return (require :: any)("../../shared/Data/Cosmetics")
 		end)

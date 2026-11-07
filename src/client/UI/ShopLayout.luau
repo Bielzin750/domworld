@@ -4,7 +4,7 @@
 -- (2026-10-24).
 local IS_ROBLOX = typeof(game) == "Instance"
 local Shop: any = if IS_ROBLOX
-	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Data.Shop)
+	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Data.Shop)
 	else (require :: any)("../../shared/Data/Shop")
 
 local ShopLayout = {}

@@ -1,6 +1,6 @@
 #!/bin/bash
 # sim-parity: create the scratch copies of the ORIGINAL used by the lockstep tools (never modifies
-# ~/games/airfront):
+# ~/games/domworld):
 #   PARITY_DIR=<scratch dir> tools/parity/setup_copies.sh
 # $PARITY_DIR/orig  plain copy + tests/parity_lockstep.{gd,tscn} (+ rng/sort reference scenes)
 # $PARITY_DIR/otr   same, with the Sim's RandomNumberGenerator swapped for TraceRng (call-site log)
@@ -10,7 +10,7 @@ T="$(cd "$(dirname "$0")" && pwd)"
 AE="/Users/luke/Library/Application Support/Steam/steamapps/common/Airship Editor/AirshipEditor.app/Contents/MacOS/AirshipEditor"
 mkdir -p "$D"
 for c in orig otr; do
-  rsync -a --delete ~/games/airfront/ "$D/$c/"
+  rsync -a --delete ~/games/domworld/ "$D/$c/"
   cp "$T/lockstep.gd" "$D/$c/tests/parity_lockstep.gd"
   cp "$T/lockstep.tscn" "$D/$c/tests/parity_lockstep.tscn"
   cp "$T/rng_ref.gd" "$D/$c/tests/parity_rng_ref.gd"

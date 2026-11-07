@@ -33,12 +33,12 @@
 -- Modified for DomWorld, 2026 — see git history for details.
 local ContentProvider = game:GetService("ContentProvider")
 local RS = game:GetService("ReplicatedStorage")
-local Airfront = RS:WaitForChild("Airfront")
-local Defs = require(Airfront:WaitForChild("Core"):WaitForChild("Defs")) :: any
-local Rules = require(Airfront:WaitForChild("Core"):WaitForChild("Rules")) :: any
+local DomWorld = RS:WaitForChild("DomWorld")
+local Defs = require(DomWorld:WaitForChild("Core"):WaitForChild("Defs")) :: any
+local Rules = require(DomWorld:WaitForChild("Core"):WaitForChild("Rules")) :: any
 -- Every sprite here is drawn for DomWorld, rows of one atlas (tools/assets/make_map_fx.py; 2026-10-25:
 -- all new art): the explosions, the debris a nuke leaves and the conquest's flag.
-local MapFx = require(Airfront:WaitForChild("Assets"):WaitForChild("MapFx")) :: any
+local MapFx = require(DomWorld:WaitForChild("Assets"):WaitForChild("MapFx")) :: any
 local FrameClock = require(script.Parent:WaitForChild("FrameClock")) :: any
 
 local FxLayer = {}

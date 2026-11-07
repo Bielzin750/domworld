@@ -12,7 +12,7 @@ local function kit_assets(): any
 		_kit = {}
 		pcall(function()
 			local rs = game:GetService("ReplicatedStorage")
-			local assets = (rs:WaitForChild("Airfront") :: any):FindFirstChild("Assets")
+			local assets = (rs:WaitForChild("DomWorld") :: any):FindFirstChild("Assets")
 			local mod = assets and assets:FindFirstChild("UIKit")
 			if mod then
 				_kit = require(mod) :: any

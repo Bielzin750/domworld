@@ -29,8 +29,8 @@
 local AssetService = game:GetService("AssetService")
 local UserInputService = game:GetService("UserInputService")
 local RS = game:GetService("ReplicatedStorage")
-local Airfront = RS:WaitForChild("Airfront")
-local Defs = require(Airfront:WaitForChild("Core"):WaitForChild("Defs")) :: any
+local DomWorld = RS:WaitForChild("DomWorld")
+local Defs = require(DomWorld:WaitForChild("Core"):WaitForChild("Defs")) :: any
 local FrameClock = require(script.Parent:WaitForChild("FrameClock")) :: any
 
 local FalloutGlow = {}

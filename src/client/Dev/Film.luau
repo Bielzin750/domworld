@@ -56,7 +56,7 @@ function Film.start(Main: any, fps: number?)
 		state.alert = alert
 	end
 	workspace:SetAttribute("af_film_done", state.done)
-	RunService:BindToRenderStep("AirfrontFilm", Enum.RenderPriority.First.Value - 1, function()
+	RunService:BindToRenderStep("DomWorldFilm", Enum.RenderPriority.First.Value - 1, function()
 		local s = state
 		if s == nil then
 			return
@@ -84,7 +84,7 @@ function Film.stop()
 		return
 	end
 	pcall(function()
-		RunService:UnbindFromRenderStep("AirfrontFilm")
+		RunService:UnbindFromRenderStep("DomWorldFilm")
 	end)
 	local session = state.main.session
 	if session and session.env and state.old_now then

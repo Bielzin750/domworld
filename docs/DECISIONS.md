@@ -8,5 +8,6 @@
 - Toda arte e áudio do checkout de origem será removida do working tree por não haver autorização comprovada para esta cópia, inclusive itens descritos como próprios pelo autor. IDs Roblox antigos serão zerados até serem enviados pela conta DomWorld.
 - IDs de produtos, assinatura, place e universe do autor serão zerados/substituídos. As ofertas ficam desativadas até o proprietário configurar IDs próprios.
 - Os nomes originais de DataStores serão substituídos por namespaces DomWorld para evitar acesso acidental aos dados da experiência do autor.
+- Os nomes internos de pastas e remotes também foram padronizados para DomWorld; as referências do cliente e do servidor foram alteradas juntas, antes de qualquer publicação da experiência.
 - Endereços e scripts de deploy do serviço de produção original não serão usados. O serviço TypeScript existente será adaptado para implantação controlada pelo proprietário do DomWorld.
 - `.mcp.json` continha apenas um caminho local de Roblox Studio para macOS; foi removido. `.DS_Store` foi removido e passou a ser ignorado.

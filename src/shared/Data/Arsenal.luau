@@ -14,7 +14,7 @@
 -- Sim's (Core/Rules "The Arsenal", Core/SimArsenal); the copy here only describes them.
 local IS_ROBLOX = typeof(game) == "Instance"
 local Defs: any = if IS_ROBLOX
-	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Core.Defs)
+	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Core.Defs)
 	else require("../Core/Defs")
 
 local Arsenal = {}

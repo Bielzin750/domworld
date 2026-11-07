@@ -160,8 +160,8 @@ do
 	if ok and es ~= nil then
 		local algo = (Enum :: any).CompressionAlgorithm.Zstd
 		local probe_ok = pcall(function()
-			local z = es:CompressBuffer(buffer.fromstring("airfront"), algo, 3)
-			assert(buffer.tostring(es:DecompressBuffer(z, algo)) == "airfront", "zstd round trip")
+			local z = es:CompressBuffer(buffer.fromstring("domworld"), algo, 3)
+			assert(buffer.tostring(es:DecompressBuffer(z, algo)) == "domworld", "zstd round trip")
 		end)
 		if probe_ok then
 			codec = {

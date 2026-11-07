@@ -35,7 +35,7 @@ function UIMaps.entries(): { any }
 	if _entries ~= nil then
 		return _entries
 	end
-	local root = RS:FindFirstChild("Airfront")
+	local root = RS:FindFirstChild("DomWorld")
 	local list = find(root and root:FindFirstChild("Data"), "MapList")
 	local thumbs = find(root and root:FindFirstChild("Assets"), "MapThumbs") or {}
 	local tnorm = {}

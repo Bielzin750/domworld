@@ -17,7 +17,7 @@
 local IS_ROBLOX = (game :: any) ~= nil
 local Defs = if IS_ROBLOX
 	then require(
-		game:GetService("ReplicatedStorage"):WaitForChild("Airfront"):WaitForChild("Core"):WaitForChild("Defs")
+		game:GetService("ReplicatedStorage"):WaitForChild("DomWorld"):WaitForChild("Core"):WaitForChild("Defs")
 	) :: any
 	else (require :: any)("../../shared/Core/Defs")
 

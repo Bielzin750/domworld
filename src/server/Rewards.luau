@@ -21,10 +21,10 @@
 -- Modified for DomWorld, 2026 — see git history for details.
 local IS_ROBLOX = typeof(game) == "Instance"
 local Stars: any = if IS_ROBLOX
-	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Data.Stars)
+	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Data.Stars)
 	else require("../shared/Data/Stars")
 local Subscription: any = if IS_ROBLOX
-	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Data.Subscription)
+	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Data.Subscription)
 	else require("../shared/Data/Subscription")
 
 local Rewards = {}

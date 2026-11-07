@@ -465,7 +465,7 @@ function WorldMap._load_data(id: string): { [string]: any }?
 	end
 	local ok, res = pcall(function(): any
 		if RBX_SCRIPT ~= nil then
-			-- Roblox: replicated maps live in ReplicatedStorage.Airfront.Data.Maps.
+			-- Roblox: replicated maps live in ReplicatedStorage.DomWorld.Data.Maps.
 			local data = RBX_SCRIPT.Parent.Parent:FindFirstChild("Data")
 			local maps = if data ~= nil then data:FindFirstChild("Maps") else nil
 			local mod = if maps ~= nil then maps:FindFirstChild(module) else nil

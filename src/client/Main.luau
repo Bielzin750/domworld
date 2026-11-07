@@ -113,7 +113,7 @@ type Hud = { gui: ScreenGui, bar: Frame, buttons: { [string]: any }, tip: TextLa
 local hud: Hud? = nil
 
 local function icon_id(name: string): string?
-	local icons = optional(ReplicatedStorage:FindFirstChild("Airfront"), { "Assets", "UiIcons" })
+	local icons = optional(ReplicatedStorage:FindFirstChild("DomWorld"), { "Assets", "UiIcons" })
 	if type(icons) ~= "table" then
 		return nil
 	end
@@ -329,7 +329,7 @@ end
 
 local function build_hud(player: Player)
 	local gui = Instance.new("ScreenGui")
-	gui.Name = "AirfrontTopbar"
+	gui.Name = "DomWorldTopbar"
 	gui.IgnoreGuiInset = true
 	-- The safe area's coordinates, which are GuiService.TopbarInset's. This was ScreenInsets.None
 	-- (full-screen coordinates) in the belief that TopbarInset is full-screen too. It is not: on an
@@ -452,7 +452,7 @@ local function bind_keys()
 		end
 		return Enum.ContextActionResult.Sink
 	end
-	ContextActionService:BindAction("AirfrontMainKeys", handler, false, Enum.KeyCode.M, Enum.KeyCode.Home)
+	ContextActionService:BindAction("DomWorldMainKeys", handler, false, Enum.KeyCode.M, Enum.KeyCode.Home)
 end
 
 --- In multiplayer the server drops participants who look idle between matches; any real input

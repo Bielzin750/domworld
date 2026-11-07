@@ -26,7 +26,7 @@ local function products(): any
 		products_mod = {}
 		if IS_ROBLOX then
 			local ok, m = pcall(function()
-				return require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Data.Products)
+				return require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Data.Products)
 			end)
 			if ok and type(m) == "table" then
 				products_mod = m

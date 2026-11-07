@@ -1,4 +1,4 @@
--- Airfront client entry. Owned by the Session/Main agent (see PORT.md §Ownership).
+-- DomWorld client entry. Owned by the Session/Main agent (see PORT.md §Ownership).
 -- Dev harness hook: if workspace attribute AF_DEV is set (in a developer's own Studio place),
 -- run src/client/Dev/<AF_DEV>.luau instead of the game. Never set AF_DEV in the shipped place.
 -- Modified for DomWorld, 2026 — see git history for details.

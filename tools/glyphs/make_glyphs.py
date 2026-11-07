@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Map-glyph mask atlases for Roblox (overlays-a; also used by overlays-b).
 
-Source: the original's signed-distance-field atlas ~/games/airfront/assets/icons/map_atlas_sdf.png
+Source: the original's signed-distance-field atlas ~/games/domworld/assets/icons/map_atlas_sdf.png
 (1024x512, 8x4 cells of 128 px; R = whole glyph, G = fill region; spread 16 cell px) plus the glow
 cell of map_atlas.png (alpha-only gaussian). See map_atlas.json.
 
@@ -31,7 +31,7 @@ import numpy as np
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SRC = os.path.expanduser("~/games/airfront/assets/icons")
+SRC = os.path.expanduser("~/games/domworld/assets/icons")
 OUT = os.path.join(ROOT, "tools", "glyphs", "out")
 MANIFEST = os.path.join(ROOT, "src", "shared", "Assets", "MapGlyphs.luau")
 

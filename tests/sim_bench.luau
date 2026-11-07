@@ -1,4 +1,4 @@
--- sim-core: headless Sim benchmark and contract test (port of ~/games/airfront/tests/sim_bench.gd).
+-- sim-core: headless Sim benchmark and contract test (port of ~/games/domworld/tests/sim_bench.gd).
 --
 --   .bin/lune run tests/sim_bench.luau -- --minutes=15 --seed=1 --human=1 --difficulty=1 --tribes=80
 --   options: --map=<id> (a map id, default world)  --player=pro|basic  --mode=solo|mp

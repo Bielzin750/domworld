@@ -26,7 +26,7 @@ local AssetService = if IS_ROBLOX then game:GetService("AssetService") else nil 
 local function core(name: string): any
 	if IS_ROBLOX then
 		return require(
-			game:GetService("ReplicatedStorage"):WaitForChild("Airfront"):WaitForChild("Core"):WaitForChild(name)
+			game:GetService("ReplicatedStorage"):WaitForChild("DomWorld"):WaitForChild("Core"):WaitForChild(name)
 		) :: any
 	end
 	return (require :: any)("../../shared/Core/" .. name)
@@ -34,7 +34,7 @@ end
 local Defs = core("Defs")
 local Rules = core("Rules")
 local Cosmetics: any = if IS_ROBLOX
-	then require(game:GetService("ReplicatedStorage"):WaitForChild("Airfront"):WaitForChild("Data").Cosmetics) :: any
+	then require(game:GetService("ReplicatedStorage"):WaitForChild("DomWorld"):WaitForChild("Data").Cosmetics) :: any
 	else (require :: any)("../../shared/Data/Cosmetics")
 
 local F_FALLOUT: number = Defs.F_FALLOUT

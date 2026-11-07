@@ -14,7 +14,7 @@ local res = process.exec(
 		[[
 from PIL import Image; import os, sys
 for n in ("terrain", "water_body"):
-    sys.stdout.buffer.write(Image.open(os.path.expanduser("~/games/airfront/assets/world/%s.png" % n)).convert("L").tobytes())
+    sys.stdout.buffer.write(Image.open(os.path.expanduser("~/games/domworld/assets/world/%s.png" % n)).convert("L").tobytes())
 ]],
 	}
 )

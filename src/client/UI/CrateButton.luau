@@ -15,7 +15,7 @@ local Signal = UITheme.core("Signal")
 local IS_ROBLOX = typeof(game) == "Instance"
 local function shared(name: string): any
 	if IS_ROBLOX then
-		return require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Data[name]) :: any
+		return require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Data[name]) :: any
 	end
 	return (require :: any)("../../shared/Data/" .. name)
 end

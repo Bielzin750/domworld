@@ -1,6 +1,6 @@
 --!strict
 -- Map data transfer. Terrain of the non-default maps lives on the server only
--- (ServerScriptService.AirfrontServer.MapData, ~19-54 MB for all of them — too much to replicate),
+-- (ServerScriptService.DomWorldServer.MapData, ~19-54 MB for all of them — too much to replicate),
 -- so a client that needs one (solo on another map, a multiplayer match on another map) asks the
 -- server for it by id:
 --
@@ -19,7 +19,7 @@ MapFetch.MAX_CALLS_PER_10S = 60
 MapFetch.REMOTE_NAME = "GetMap"
 
 local function shared_root(): any
-	return (game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront")
+	return (game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld")
 end
 
 local function core(name: string): any
@@ -133,7 +133,7 @@ function MapFetch.fetch(id: string): (boolean, string?)
 	end
 	inflight[id] = {}
 	local ok, err = pcall(function()
-		local folder = (game :: any):GetService("ReplicatedStorage"):WaitForChild("AirfrontNet", 30)
+		local folder = (game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorldNet", 30)
 		local rf = folder and folder:WaitForChild(MapFetch.REMOTE_NAME, 30)
 		if rf == nil then
 			error("map service unavailable")

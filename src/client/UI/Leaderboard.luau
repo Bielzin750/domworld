@@ -20,7 +20,7 @@ local UITheme = require("./UITheme")
 local W = require("./Widgets")
 local GlassPanel = require("./GlassPanel")
 local Cosmetics: any = if typeof(game) == "Instance"
-	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Data.Cosmetics)
+	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Data.Cosmetics)
 	else (require :: any)("../../shared/Data/Cosmetics")
 local Signal = UITheme.core("Signal")
 

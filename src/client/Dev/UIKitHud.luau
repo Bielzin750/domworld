@@ -24,7 +24,7 @@ local AttacksPanel = require(UI:WaitForChild("AttacksPanel"))
 local CommandBar = require(UI:WaitForChild("CommandBar"))
 local AlertBanner = require(UI:WaitForChild("AlertBanner"))
 local Mock = require(script.Parent:WaitForChild("UIKitMock"))
-local Defs = require(game:GetService("ReplicatedStorage").Airfront.Core.Defs)
+local Defs = require(game:GetService("ReplicatedStorage").DomWorld.Core.Defs)
 
 local BACKDROPS = {
 	europe = { "rbxassetid://0", "rbxassetid://0" },

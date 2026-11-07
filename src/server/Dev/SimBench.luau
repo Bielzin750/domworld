@@ -5,7 +5,7 @@
 -- Prints a line per minute plus a final summary; the summary is also stored in
 -- workspace:GetAttribute("SimBenchResult") so tools/studio.py can read it.
 local RS = game:GetService("ReplicatedStorage")
-local Core = RS:WaitForChild("Airfront"):WaitForChild("Core")
+local Core = RS:WaitForChild("DomWorld"):WaitForChild("Core")
 
 local Defs = require(Core:WaitForChild("Defs"))
 local WorldMap = require(Core:WaitForChild("WorldMap"))

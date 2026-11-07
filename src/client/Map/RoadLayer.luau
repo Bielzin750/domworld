@@ -21,9 +21,9 @@
 -- keeps its GUI object while it is drawn.)
 local RS = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
-local Airfront = RS:WaitForChild("Airfront")
-local Rules = require(Airfront:WaitForChild("Core"):WaitForChild("Rules")) :: any
-local RailArt = require(Airfront:WaitForChild("Assets"):WaitForChild("RailArt")) :: any
+local DomWorld = RS:WaitForChild("DomWorld")
+local Rules = require(DomWorld:WaitForChild("Core"):WaitForChild("Rules")) :: any
+local RailArt = require(DomWorld:WaitForChild("Assets"):WaitForChild("RailArt")) :: any
 local MapSurface = require(script.Parent:WaitForChild("MapSurface")) :: any
 
 local RoadLayer = {}

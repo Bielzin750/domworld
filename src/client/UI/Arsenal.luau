@@ -30,7 +30,7 @@ local Signal = UITheme.core("Signal")
 local IS_ROBLOX = typeof(game) == "Instance"
 local function shared(name: string): any
 	if IS_ROBLOX then
-		return require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Data[name]) :: any
+		return require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Data[name]) :: any
 	end
 	return (require :: any)("../../shared/Data/" .. name)
 end
@@ -44,7 +44,7 @@ local TweenService = if IS_ROBLOX then game:GetService("TweenService") else nil
 local Art: any = (function()
 	local ok, m = pcall(function()
 		if IS_ROBLOX then
-			return require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Assets.ArsenalArt)
+			return require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Assets.ArsenalArt)
 		end
 		return (require :: any)("../../shared/Assets/ArsenalArt")
 	end)

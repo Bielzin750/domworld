@@ -819,7 +819,7 @@ function Diag.start(Main: any)
 				o:close()
 				return "closed"
 			end
-			local Cosmetics = require(game:GetService("ReplicatedStorage"):WaitForChild("Airfront").Data.Cosmetics)
+			local Cosmetics = require(game:GetService("ReplicatedStorage"):WaitForChild("DomWorld").Data.Cosmetics)
 			local want = words[2] or "rare"
 			local id = if Cosmetics.item(want) then want else nil
 			if id == nil then
@@ -952,7 +952,7 @@ function Diag.start(Main: any)
 				a:close()
 				return "closed"
 			elseif words[2] == "stars" or words[2] == "robux" then
-				local it = (require(game:GetService("ReplicatedStorage").Airfront.Data.Arsenal) :: any).item(words[3])
+				local it = (require(game:GetService("ReplicatedStorage").DomWorld.Data.Arsenal) :: any).item(words[3])
 				if it == nil then
 					return "no such item"
 				end
@@ -1326,7 +1326,7 @@ function Diag.start(Main: any)
 				return "no ui"
 			end
 			local Defs = require(
-				game:GetService("ReplicatedStorage"):WaitForChild("Airfront"):WaitForChild("Core"):WaitForChild("Defs")
+				game:GetService("ReplicatedStorage"):WaitForChild("DomWorld"):WaitForChild("Core"):WaitForChild("Defs")
 			) :: any
 			ui.ctx:send({ type = "build", kind = Defs.STRUCT_NAMES[kind], tile = tile })
 			if words[4] ~= "nofocus" then
@@ -1518,7 +1518,7 @@ function Diag.start(Main: any)
 			if ui == nil or ui.feed == nil then
 				return "no ui"
 			end
-			local Defs = require(game:GetService("ReplicatedStorage").Airfront.Core.Defs)
+			local Defs = require(game:GetService("ReplicatedStorage").DomWorld.Core.Defs)
 			ui.feed:toast(Defs.MSG_GOOD, "You captured a City from Poland")
 			ui.feed:toast(Defs.MSG_INFO, "Your warship captured a trade ship from Siberia")
 			if words[2] == "ally" and st ~= nil then
@@ -1572,7 +1572,7 @@ function Diag.start(Main: any)
 				ms("first_state")
 			)
 		elseif op == "audio" then
-			local root = game:GetService("SoundService"):FindFirstChild("AirfrontAudio")
+			local root = game:GetService("SoundService"):FindFirstChild("DomWorldAudio")
 			if words[2] == "failtest" and root ~= nil then
 				-- a sound of ours that can't load: the load-failure hook names it 4 s later
 				local s = Instance.new("Sound")

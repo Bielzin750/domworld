@@ -2,7 +2,7 @@ import sys
 from PIL import Image, ImageOps
 import numpy as np
 mine=Image.open(sys.argv[1]).convert('L').resize((1600,900), Image.LANCZOS)
-ref=Image.open('/private/tmp/airfront-ui/hud_desktop.png').convert('L')
+ref=Image.open('/private/tmp/domworld-ui/hud_desktop.png').convert('L')
 box=tuple(int(v) for v in sys.argv[3].split(','))
 k=int(sys.argv[4]) if len(sys.argv)>4 else 3
 a=np.asarray(ref.crop(box)).astype(float); b=np.asarray(mine.crop(box)).astype(float)

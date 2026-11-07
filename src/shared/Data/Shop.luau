@@ -17,7 +17,7 @@
 -- Modified for DomWorld, 2026 — see git history for details.
 local IS_ROBLOX = typeof(game) == "Instance"
 local ShopFlags: any = if IS_ROBLOX
-	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Assets.ShopFlags)
+	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Assets.ShopFlags)
 	else require("../Assets/ShopFlags")
 
 local Shop = {}

@@ -13,8 +13,8 @@
 -- (2026-10-26, phones' slow frames: a poll works in tables kept from one poll to the next, and a label
 -- is written only what changed.)
 local RS = game:GetService("ReplicatedStorage")
-local Airfront = RS:WaitForChild("Airfront")
-local Core = Airfront:WaitForChild("Core")
+local DomWorld = RS:WaitForChild("DomWorld")
+local Core = DomWorld:WaitForChild("Core")
 local Defs = require(Core:WaitForChild("Defs")) :: any
 local Rules = require(Core:WaitForChild("Rules")) :: any
 local NumberFormat = require(Core:WaitForChild("NumberFormat")) :: any

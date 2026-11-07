@@ -1,6 +1,6 @@
 -- sim-core: exact parity with the ORIGINAL on everything that does not depend on the RNG.
 -- tests/sim_matches_orig.json was produced by tools/simcore/simcore_probe.gd run with the Airship
--- Editor in a scratch copy of ~/games/airfront (see tools/simcore/README in build/notes/sim-core.md).
+-- Editor in a scratch copy of ~/games/domworld (see tools/simcore/README in build/notes/sim-core.md).
 -- Run: .bin/lune run tests/sim_matches.luau
 require("./prelude")
 local fs = require("@lune/fs")

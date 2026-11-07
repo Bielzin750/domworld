@@ -20,7 +20,7 @@
 --   Stars.solo_cap(real_minutes)                     the most a solo match of that length may pay
 --   Stars.Tracker.new(sim)                           follows a running Sim for its humans' results
 local IS_ROBLOX = typeof(game) == "Instance"
-local Core: any = if IS_ROBLOX then (game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Core else nil
+local Core: any = if IS_ROBLOX then (game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Core else nil
 local Defs: any = if IS_ROBLOX then require(Core.Defs) else require("../Core/Defs")
 local Ev: any = if IS_ROBLOX then require(Core.Ev) else require("../Core/Ev")
 

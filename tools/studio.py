@@ -11,7 +11,7 @@ Usage:
 
 Environment:
   STUDIO_ID     target studio id (else: the instance whose name contains STUDIO_MATCH, else the first)
-  STUDIO_MATCH  substring of the studio name to pick (default "airfront.rbxl")
+  STUDIO_MATCH  substring of the studio name to pick (default "domworld.rbxl")
 """
 import base64
 import json
@@ -100,7 +100,7 @@ def pick_studio(c):
     except json.JSONDecodeError:
         data = res.get("structuredContent") or {}
     studios = data.get("studios", data) if isinstance(data, dict) else data
-    match = os.environ.get("STUDIO_MATCH", "airfront.rbxl")
+    match = os.environ.get("STUDIO_MATCH", "domworld.rbxl")
     for s in studios:
         name = s.get("name") or ""
         if match and match in name:

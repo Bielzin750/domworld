@@ -3,18 +3,18 @@
   "tree": {
     "$className": "DataModel",
     "ReplicatedStorage": {
-      "Airfront": {
+      "DomWorld": {
         "$path": "src/shared"
       }
     },
     "ServerScriptService": {
-      "AirfrontServer": {
+      "DomWorldServer": {
         "$path": "src/server"
       }
     },
     "StarterPlayer": {
       "StarterPlayerScripts": {
-        "AirfrontClient": {
+        "DomWorldClient": {
           "$path": "src/client"
         }
       }

@@ -25,9 +25,9 @@
 -- written only what changed, read nothing back from Roblox; a structure's own event redraws that
 -- structure alone, where every SAM shot on the map used to redraw every plate.)
 local RS = game:GetService("ReplicatedStorage")
-local Airfront = RS:WaitForChild("Airfront")
-local Rules = require(Airfront:WaitForChild("Core"):WaitForChild("Rules")) :: any
-local Sprites = require(Airfront:WaitForChild("Assets"):WaitForChild("MapSprites")) :: any
+local DomWorld = RS:WaitForChild("DomWorld")
+local Rules = require(DomWorld:WaitForChild("Core"):WaitForChild("Rules")) :: any
+local Sprites = require(DomWorld:WaitForChild("Assets"):WaitForChild("MapSprites")) :: any
 --- Sprites.shapes_one is used once it is known to have loaded (an image still in moderation would leave
 --- every plate invisible).
 local ONE: any = Sprites.shapes_one

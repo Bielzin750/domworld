@@ -15,7 +15,7 @@ Após o inventário, os assets originais foram removidos do working tree, `.mcp.
 
 ## Nomes, IDs, domínios e contatos
 
-- A interface e os metadados Rojo identificavam o produto como RoWorld/Rofront/Airfront. A identidade visível e o nome do projeto foram atualizados para DomWorld; chaves internas `ReplicatedStorage.Airfront` foram mantidas para preservar os `require()` existentes.
+- A interface e os metadados Rojo identificavam o produto como RoWorld/Rofront/Airfront. A identidade visível, as pastas de scripts e os remotes foram padronizados como DomWorld, com referências correspondentes no cliente, servidor e projetos Rojo.
 - A varredura encontrou 274 usos de `rbxassetid://` e 271 IDs únicos em 23 arquivos Luau. Todos eram de titularidade não verificável para DomWorld; foram classificados conservadoramente como categoria (c) e substituídos por `rbxassetid://0`. O inventário por arquivo está em `docs/ASSET_MAP.md`.
 - Havia IDs de place/universe, produtos pagos e assinatura em scripts Roblox e dados do jogo. Os valores antigos foram removidos do código ativo: placeholders/zero agora desativam publicação e compras até a conta DomWorld fornecer os próprios IDs.
 - O código e scripts antigos continham um endpoint público de lobby, um IP direto de fallback e alvos SSH de produção. Esses valores foram removidos do working tree; nenhum destino foi contatado. A URL ativa agora é um placeholder `YOUR_LOBBY_SERVICE_URL`, e as rotas do lobby ficam desabilitadas até configuração própria.

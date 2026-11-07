@@ -13,8 +13,8 @@
 -- again only when what they show changes: not for a missile fired, and while a SAM's range grows
 -- after an upgrade only that ring's radius follows it, a game tick at a time.)
 local RS = game:GetService("ReplicatedStorage")
-local Airfront = RS:WaitForChild("Airfront")
-local Defs = require(Airfront:WaitForChild("Core"):WaitForChild("Defs")) :: any
+local DomWorld = RS:WaitForChild("DomWorld")
+local Defs = require(DomWorld:WaitForChild("Core"):WaitForChild("Defs")) :: any
 
 local RangeLayer = {}
 RangeLayer.__index = RangeLayer

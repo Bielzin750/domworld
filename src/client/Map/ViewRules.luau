@@ -6,7 +6,7 @@
 -- Range metric (must match the Sim): covered <=> (dx * xs)^2 + dy^2 <= r^2 in grid tiles, dx wrapping
 -- at W, xs = max(cos(lat of the target tile's row), 0.08) — Defs.range_d2 == SimState.range_d2.
 local RS = game:GetService("ReplicatedStorage")
-local Core = RS:WaitForChild("Airfront"):WaitForChild("Core")
+local Core = RS:WaitForChild("DomWorld"):WaitForChild("Core")
 local Defs = require(Core:WaitForChild("Defs")) :: any
 local BaseRules = require(Core:WaitForChild("Rules")) :: any
 --- The bound map's scaled rules (GameState.rules = Rules.for_map): ranges are in its tiles.

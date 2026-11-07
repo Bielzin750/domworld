@@ -26,7 +26,7 @@ local function Shapes(): any
 		local ok, m = pcall(function()
 			if UICtx.IS_ROBLOX then
 				local rs = game:GetService("ReplicatedStorage")
-				return require((rs:WaitForChild("Airfront") :: any):WaitForChild("Assets"):WaitForChild("UiShapes"))
+				return require((rs:WaitForChild("DomWorld") :: any):WaitForChild("Assets"):WaitForChild("UiShapes"))
 			end
 			return (require :: any)("../../shared/Assets/UiShapes")
 		end)

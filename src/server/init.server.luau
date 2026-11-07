@@ -1,4 +1,4 @@
--- Airfront server entry. Owned by the Session/Main agent (see PORT.md §Ownership).
+-- DomWorld server entry. Owned by the Session/Main agent (see PORT.md §Ownership).
 -- Dev harness hook: workspace attribute AF_DEV runs src/server/Dev/<AF_DEV>.luau if it exists.
 -- Modified for DomWorld, 2026 — see git history for details.
 local dev = workspace:GetAttribute("AF_DEV")

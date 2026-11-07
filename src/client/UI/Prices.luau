@@ -15,7 +15,7 @@ local Signal = UITheme.core("Signal")
 
 local IS_ROBLOX = typeof(game) == "Instance"
 local Products: any = if IS_ROBLOX
-	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront").Data.Products)
+	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Data.Products)
 	else (require :: any)("../../shared/Data/Products")
 
 local Prices = {}

@@ -19,15 +19,15 @@ local Signal = UITheme.core("Signal")
 
 local IS_ROBLOX = typeof(game) == "Instance"
 local TweenService = if IS_ROBLOX then game:GetService("TweenService") else nil
-local function airfront(folder: string, name: string): any
+local function domworld(folder: string, name: string): any
 	if IS_ROBLOX then
-		return require((game :: any):GetService("ReplicatedStorage"):WaitForChild("Airfront")[folder][name]) :: any
+		return require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld")[folder][name]) :: any
 	end
 	return (require :: any)("../../shared/" .. folder .. "/" .. name)
 end
-local Catalog = airfront("Data", "Arsenal")
+local Catalog = domworld("Data", "Arsenal")
 local Art: any = (function()
-	local ok, m = pcall(airfront, "Assets", "ArsenalArt")
+	local ok, m = pcall(domworld, "Assets", "ArsenalArt")
 	return if ok and type(m) == "table" then m else {}
 end)()
 

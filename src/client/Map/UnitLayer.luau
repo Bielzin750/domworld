@@ -36,10 +36,10 @@
 --   * the pools keep a few spares and destroy the rest (POOL_SPARE): every object in this ScreenGui
 --     is gone over on each frame something moved, shown or not, and the pools had grown to 7,700.
 local RS = game:GetService("ReplicatedStorage")
-local Airfront = RS:WaitForChild("Airfront")
-local Defs = require(Airfront:WaitForChild("Core"):WaitForChild("Defs")) :: any
-local Rules = require(Airfront:WaitForChild("Core"):WaitForChild("Rules")) :: any
-local Sprites = require(Airfront:WaitForChild("Assets"):WaitForChild("MapSprites")) :: any
+local DomWorld = RS:WaitForChild("DomWorld")
+local Defs = require(DomWorld:WaitForChild("Core"):WaitForChild("Defs")) :: any
+local Rules = require(DomWorld:WaitForChild("Core"):WaitForChild("Rules")) :: any
+local Sprites = require(DomWorld:WaitForChild("Assets"):WaitForChild("MapSprites")) :: any
 local WakeRoute = require(script.Parent:WaitForChild("WakeRoute")) :: any
 local TrailBudget = require(script.Parent:WaitForChild("TrailBudget")) :: any
 local FrameClock = require(script.Parent:WaitForChild("FrameClock")) :: any

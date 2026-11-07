@@ -39,7 +39,7 @@ function UILayoutProbe.safe_insets(self): any
 			return { x = 0, y = 0, z = 0, w = 0 }
 		end
 		local sg = Instance.new("ScreenGui")
-		sg.Name = "AirfrontSafeAreaProbe"
+		sg.Name = "DomWorldSafeAreaProbe"
 		sg.ResetOnSpawn = false
 		sg.IgnoreGuiInset = true
 		sg.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets

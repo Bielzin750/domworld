@@ -217,7 +217,7 @@ function Probe.run(Main: any, words: { string }): string
 		return "coach reset"
 	elseif op == "sfxlog" then
 		-- IsLoaded of every SFX voice at the moment it starts playing (P2-7)
-		local root = game:GetService("SoundService"):FindFirstChild("AirfrontAudio")
+		local root = game:GetService("SoundService"):FindFirstChild("DomWorldAudio")
 		if words[3] == "arm" then
 			Probe._sfx = {}
 			for _, s in root:GetDescendants() do

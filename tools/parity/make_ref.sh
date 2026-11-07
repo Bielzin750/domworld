@@ -1,8 +1,8 @@
 #!/bin/bash
 # sim-parity: (re)generate the ORIGINAL's lockstep reference traces used by tests/parity_lockstep.luau.
-#   PARITY_COPY=<scratch copy of ~/games/airfront with tests/parity_lockstep.{gd,tscn}> tools/parity/make_ref.sh
-# Make the copy with: rsync -a ~/games/airfront/ <copy>/ ; cp tools/parity/lockstep.gd <copy>/tests/parity_lockstep.gd ;
-# cp tools/parity/lockstep.tscn <copy>/tests/parity_lockstep.tscn   (never touch ~/games/airfront itself).
+#   PARITY_COPY=<scratch copy of ~/games/domworld with tests/parity_lockstep.{gd,tscn}> tools/parity/make_ref.sh
+# Make the copy with: rsync -a ~/games/domworld/ <copy>/ ; cp tools/parity/lockstep.gd <copy>/tests/parity_lockstep.gd ;
+# cp tools/parity/lockstep.tscn <copy>/tests/parity_lockstep.tscn   (never touch ~/games/domworld itself).
 # Each reference keeps the header lines and every 10th tick.
 set -e
 C=${PARITY_COPY:?set PARITY_COPY}
