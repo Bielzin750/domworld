@@ -1,0 +1,4 @@
+# Codex-specific invocation policy for the release skill.
+# Explicit-only: the skill runs only when the user names it (e.g. "$release").
+policy:
+  allow_implicit_invocation: false
