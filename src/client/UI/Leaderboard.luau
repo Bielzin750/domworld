@@ -427,14 +427,14 @@ function Leaderboard.apply_layout(self, top: number)
 			self.expanded = false
 		end
 	end
-	local right = 12.0 + ctx.insets.z
+	local left = math.max(12.0 + ctx.insets.x, ctx.reserved_top_left.Max.X + 8.0)
 	local w = if ctx.compact then 250.0 else 300.0
 	for _, c in ipairs({ self.panel, self._pill }) do
-		c.anchor_left, c.anchor_right, c.anchor_top, c.anchor_bottom = 1.0, 1.0, 0.0, 0.0
-		c.grow_horizontal = W.GROW_BEGIN
+		c.anchor_left, c.anchor_right, c.anchor_top, c.anchor_bottom = 0.0, 0.0, 0.0, 0.0
+		c.grow_horizontal = W.GROW_END
 		c.grow_vertical = W.GROW_END
-		c.offset_left = -right
-		c.offset_right = -right
+		c.offset_left = left
+		c.offset_right = left
 		c.offset_top = top
 		c.offset_bottom = top
 	end

@@ -281,7 +281,7 @@ function BuildButton.hint_spec(self): { [string]: any }
 		rows = rows,
 	}
 	if self._av.arsenal ~= nil then
-		spec.hint = "Locked: " .. (if self.ctx.touch then "tap" else "click") .. " to unlock it in the Arsenal"
+		spec.hint = "Bloqueado: " .. (if self.ctx.touch then "toque" else "clique") .. " para liberar no Depósito"
 		spec.hint_color = UITheme.GOLD
 		spec.hint_icon = "lock"
 	elseif self._av.ok then

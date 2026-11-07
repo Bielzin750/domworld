@@ -110,7 +110,7 @@ function Locker.new(c: any)
 	self._panel:add_child(v)
 	-- head: title, owned count, close
 	local head = UITheme.hbox(12)
-	local title = UITheme.label("LOCKER", 20, 800, UITheme.TEXT, 3)
+	local title = UITheme.label("INVENTÁRIO", 20, 800, UITheme.TEXT, 2)
 	title.size_flags_vertical = W.SHRINK_CENTER
 	head:add_child(title)
 	self._count = UITheme.label("", 13, 600, UITheme.TEXT_2)
@@ -247,10 +247,11 @@ function Locker._build_crate(self, parent: any)
 	self._art:set_mouse_filter(W.MOUSE_IGNORE)
 	self._art.size_flags_horizontal = W.SHRINK_CENTER
 	v:add_child(self._art)
-	self._crate_title = UITheme.label("COSMETIC CRATE", 16, 800, UITheme.TEXT, 2)
+	self._crate_title = UITheme.label("SUPRIMENTOS COSMÉTICOS", 14, 800, UITheme.TEXT, 1)
 	self._crate_title:set_alignment(W.ALIGN_CENTER)
 	v:add_child(self._crate_title)
-	self._crate_sub = UITheme.label("A territory skin or a flag you don't own yet", 12, 500, UITheme.TEXT_2)
+	self._crate_sub =
+		UITheme.label("Uma skin de território ou bandeira que você ainda não tem", 12, 500, UITheme.TEXT_2)
 	self._crate_sub:set_alignment(W.ALIGN_CENTER)
 	self._crate_sub:set_autowrap(true)
 	self._crate_sub:set_min_size(Vector2.new(Locker.CRATE_W - 32, 0))
@@ -375,11 +376,13 @@ function Locker._refresh_crate(self)
 	local save10 = if packs then self:_pack_saving(total - owned, "crate10") else nil
 	self._buy3:set_visible(save ~= nil and (self._tight or 0) < 2)
 	if save ~= nil then
-		self._buy3:set_text(string.format("%d  ·  %d CRATES", Prices.robux("crate3"), Products.crate3.count or 3))
+		self._buy3:set_text(string.format("%d  ·  %d SUPRIMENTOS", Prices.robux("crate3"), Products.crate3.count or 3))
 	end
 	self._buy10:set_visible(save10 ~= nil and (self._tight or 0) < 3)
 	if save10 ~= nil then
-		self._buy10:set_text(string.format("%d  ·  %d CRATES", Prices.robux("crate10"), Products.crate10.count or 10))
+		self._buy10:set_text(
+			string.format("%d  ·  %d SUPRIMENTOS", Prices.robux("crate10"), Products.crate10.count or 10)
+		)
 	end
 	-- (the note names the bigger saving)
 	local pack_n = if save10 ~= nil then Products.crate10.count or 10 else Products.crate3.count or 3
@@ -395,9 +398,9 @@ function Locker._refresh_crate(self)
 		self._buy:set_text(tostring(self:_price()))
 	end
 	if not allowed then
-		self._note:set_text("Crates aren't available in your country. What you own stays yours.")
+		self._note:set_text("Suprimentos não estão disponíveis em seu país. O que você já possui continua seu.")
 	elseif all_owned then
-		self._note:set_text("You own every skin and flag.")
+		self._note:set_text("Você já possui todas as skins e bandeiras.")
 	elseif waiting <= 0 and prod == Products.crate_first then
 		self._note:set_text(string.format("Your first crate: %d instead of %d", self:_price(), Prices.robux("crate")))
 	elseif save ~= nil then
@@ -408,7 +411,7 @@ function Locker._refresh_crate(self)
 				else string.format("%d crates save %d  ·  Never a duplicate", pack_n, save)
 		)
 	else
-		self._note:set_text("Never a duplicate")
+		self._note:set_text("Sem itens repetidos")
 	end
 end
 

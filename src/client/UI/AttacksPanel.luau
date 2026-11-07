@@ -229,13 +229,13 @@ end
 function AttacksPanel.apply_layout(self, top: number, bottom_limit: number?)
 	local ctx = self.ctx
 	self._bottom_limit = bottom_limit or -1.0
-	local right = 12.0 + ctx.insets.z
+	local left = 12.0 + ctx.insets.x
 	local p = self.panel
-	p.anchor_left, p.anchor_right, p.anchor_top, p.anchor_bottom = 1.0, 1.0, 0.0, 0.0
-	p.grow_horizontal = W.GROW_BEGIN
+	p.anchor_left, p.anchor_right, p.anchor_top, p.anchor_bottom = 0.0, 0.0, 0.0, 0.0
+	p.grow_horizontal = W.GROW_END
 	p.grow_vertical = W.GROW_END
-	p.offset_left = -right
-	p.offset_right = -right
+	p.offset_left = left
+	p.offset_right = left
 	p.offset_top = top
 	p.offset_bottom = top
 	self._head_btn:set_min_height(if ctx.touch then 44 else 24)

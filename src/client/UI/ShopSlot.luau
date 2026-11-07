@@ -175,7 +175,7 @@ function ShopSlot._build(self)
 	self._cap = new("TextLabel", {
 		Name = "Caption",
 		BackgroundTransparency = 1,
-		Text = "SHOP",
+		Text = "DEPÓSITO",
 		FontFace = FONT_H,
 		TextColor3 = INK,
 		AnchorPoint = Vector2.new(0.5, 1),

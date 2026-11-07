@@ -118,7 +118,7 @@ function ShopButton._build(self)
 	new("UIStroke", { Color = WHITE, Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, self._flag)
 	self._flag_scale = new("UIScale", {}, self._flag)
 	text(card, {
-		Text = "FLAG SHOP",
+		Text = "ATELIÊ",
 		TextSize = 17,
 		Position = UDim2.fromOffset(84, 8),
 		Size = UDim2.fromOffset(144, 20),

@@ -140,7 +140,7 @@ function FlagShop.new(c: any)
 	self._v = v
 	self._panel:add_child(v)
 	local head = UITheme.hbox(12)
-	local title = UITheme.label("FLAG SHOP", 20, 800, UITheme.TEXT, 3)
+	local title = UITheme.label("ATELIÊ DE BANDEIRAS", 16, 800, UITheme.TEXT, 2)
 	title.size_flags_vertical = W.SHRINK_CENTER
 	head:add_child(title)
 	self._sub = UITheme.label("New flags every day", 13, 600, UITheme.TEXT_2)

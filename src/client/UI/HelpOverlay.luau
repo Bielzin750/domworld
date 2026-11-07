@@ -262,6 +262,7 @@ HelpOverlay.LEGAL = {
 	"O software é fornecido sem garantia. Consulte LICENSE e NOTICE.md no código-fonte.",
 	"DomWorld não é afiliado nem endossado por RoWorld ou OpenFront.",
 	"A arte original do DomWorld é licenciada sob Creative Commons BY-SA 4.0.",
+	"Os ícones Material Icons Outlined são de Google e licenciados sob Apache License 2.0; DomWorld não é afiliado ao Google.",
 }
 HelpOverlay.SOURCE_REPO = GameInfo.SOURCE_URL
 --- The card that pops up over the repo name when it's pressed (2026-10-25), and how long it stays.
@@ -382,14 +383,14 @@ function HelpOverlay._build(self)
 	local tv = UITheme.vbox(2)
 	tv.size_flags_horizontal = W.EXPAND_FILL
 	tv.size_flags_vertical = W.SHRINK_CENTER
-	local title = if self.mode == "about" then "ABOUT / LICENSE" else "HOW TO PLAY"
+	local title = if self.mode == "about" then "SOBRE / LICENÇA" else "COMO JOGAR"
 	tv:add_child(UITheme.label(title, if not compact then 24 else 18, 800, UITheme.TEXT, 3))
 	local paused = ctx:mode() == UICtx.MODE_SOLO and ctx:in_match()
 	tv:add_child(
 		UITheme.label(
 			if self.mode == "about"
 				then "Código-fonte, licença, créditos e avisos do DomWorld."
-				else "Conquer the real world in seven ideas." .. (if paused then "  ·  Game paused" else ""),
+				else "Mapeie, decida e domine em sete passos." .. (if paused then "  ·  Partida pausada" else ""),
 			13,
 			500,
 			UITheme.TEXT_2

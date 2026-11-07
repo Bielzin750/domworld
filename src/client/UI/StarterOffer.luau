@@ -222,7 +222,7 @@ function StarterOffer._build(self)
 		ZIndex = 64,
 	})
 	local title = text(win, {
-		Text = "STARTER PACK",
+		Text = "KIT INICIAL",
 		FontFace = FONT_H,
 		TextSize = 40,
 		Position = UDim2.fromOffset(22, 44),
@@ -232,7 +232,7 @@ function StarterOffer._build(self)
 	new("UIGradient", { Color = ColorSequence.new(WHITE, GOLD_LIGHT), Rotation = 90 }, title)
 	new("UIStroke", { Color = Color3.fromRGB(40, 12, 4), Thickness = 2, Transparency = 0.35 }, title)
 	self._sub = text(win, {
-		Text = "Three Arsenal unlocks, yours for good.",
+		Text = "Três itens do Depósito, seus para sempre.",
 		FontFace = FONT_M,
 		TextSize = 14,
 		TextColor3 = MUTED,
@@ -769,7 +769,7 @@ function StarterOffer._on_inventory(self)
 		self.bought_at = os.clock()
 		self.ctx:sfx("unlock")
 		if self.ui_notice ~= nil then
-			self.ui_notice("Starter Pack unlocked! Mega Nuke, Scattershot and 2x Stars are yours.")
+			self.ui_notice("Kit Inicial liberado! Mega Nuke, Scattershot e 2x Stars são seus.")
 		end
 		self:close()
 		return
@@ -814,7 +814,7 @@ function StarterOffer._process(self, dt: number)
 	if p ~= nil and p.phase == "granting" and os.clock() - p.since > StarterOffer.WAIT_S then
 		self._pending = nil
 		if self.ui_notice ~= nil then
-			self.ui_notice("Your Starter Pack is saved and will unlock in a moment.")
+			self.ui_notice("Seu Kit Inicial foi salvo e será liberado em instantes.")
 		end
 		self:close()
 	end

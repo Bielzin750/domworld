@@ -36,7 +36,7 @@ function GlassPanel.new(pad_h: number?, pad_v: number?, r: number?, frost: boole
 	local self = setmetatable({}, GlassPanel.__mt)
 	W.Control._init(self)
 	W.Panel._init_panel(self)
-	self.radius = r or UITheme.R_LG
+	self.radius = math.clamp(r or UITheme.R_LG, 0, UITheme.tokens.Radii.large)
 	self.tint = UITheme.GLASS
 	self.border_color = UITheme.LINE
 	--- Optional accent stripe on the left edge (alliance cards, alerts...). Alpha 0 = none.
@@ -156,10 +156,10 @@ function GlassPanel.restyle(self)
 	self._bg.BackgroundColor3 = t.color
 	self:_part(self._bg, "BackgroundTransparency", a)
 	self:set_border(self.border_color)
-	local sheen_on = self.sheen and self._frost
+	local sheen_on = self.sheen and self._frost and UITheme.GLASS_SHEEN > 0.001
 	self._sheen.Visible = sheen_on
 	self:_part(self._sheen, "BackgroundTransparency", UITheme.GLASS_SHEEN)
-	self._line.Visible = self.sheen
+	self._line.Visible = self.sheen and UITheme.GLASS_SHEEN > 0.001
 	self:_part(self._line, "BackgroundTransparency", 0.2)
 	local acc = UITheme.to_rgba(self.accent)
 	self._accent.Visible = acc.alpha > 0

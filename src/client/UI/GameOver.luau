@@ -403,7 +403,7 @@ function GameOver._stars_spec(self): { [string]: any }
 	end
 	return {
 		title = "Stars earned",
-		body = "Stars unlock new weapons in the Arsenal.",
+		body = "Estrelas liberam novas armas no Depósito.",
 		rows = rows,
 		hint = string.format("You have %s Stars", UICtx.commas(a.balance or 0)),
 		hint_color = UITheme.GOLD,

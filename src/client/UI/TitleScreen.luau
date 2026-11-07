@@ -50,13 +50,13 @@ function GradientText.new(text: string, px: number, weight: number?)
 	self.px = px
 	self.weight = weight or 900
 	self.spacing = 0
-	self.top_color = Color3.new(1, 1, 1)
-	self.bottom_color = Color3.new(1.0, 0.8, 0.52)
+	self.top_color = UITheme.tokens.Colors.text
+	self.bottom_color = UITheme.tokens.Colors.text
 	self.y0 = 0.0 -- gradient start (logical px from the top of the line)
 	self.span = 100.0
 	self.sweep = -10000.0 -- shine centre x (logical px), off by default
 	self.shine = 0.4
-	self.shadow = { color = Color3.new(0.0, 0.02, 0.08), alpha = 0.55, offset_y = 6, outline = 14 }
+	self.shadow = { color = UITheme.tokens.Colors.canvas, alpha = 0.16, offset_y = 1, outline = 0 }
 	local canvas = UICtx.canvas(self.gui, "Word")
 	canvas.ZIndex = 1
 	self._canvas = canvas
@@ -291,38 +291,6 @@ TitleScreen.DIFF_BLURB = {
 	"Aggressive AI that grows fast and hunts you early.",
 }
 
-local INK = Color3.new(0.01, 0.015, 0.05)
-
---- Full-rect image node (radial gradient textures), alpha follows modulate.
-local function image_node(image: string, color: Color3?, alpha: number?)
-	local g = Instance.new("ImageLabel")
-	g.BackgroundTransparency = 1
-	g.BorderSizePixel = 0
-	g.ScaleType = Enum.ScaleType.Stretch
-	g.Image = image or ""
-	g.ImageColor3 = color or Color3.new(1, 1, 1)
-	local n = W.wrap(g)
-	n:set_mouse_filter(W.MOUSE_IGNORE)
-	n:_part(g, "ImageTransparency", alpha or 1.0)
-	return n
-end
-
---- Full-rect vertical gradient node: colour c, alpha keypoints {t, a}.
-local function vgrad_node(c: Color3, keys: { { number } })
-	local g = Instance.new("Frame")
-	g.BorderSizePixel = 0
-	g.BackgroundColor3 = c
-	local seq = {}
-	for _, kpt in ipairs(keys) do
-		table.insert(seq, NumberSequenceKeypoint.new(kpt[1], 1 - kpt[2]))
-	end
-	UICtx.make("UIGradient", { Rotation = 90, Transparency = NumberSequence.new(seq) }, g)
-	local n = W.wrap(g)
-	n:set_mouse_filter(W.MOUSE_IGNORE)
-	n:_part(g, "BackgroundTransparency", 1.0)
-	return n
-end
-
 --- Horizontal amber hairline fading to one side (tag lines).
 local function tag_line(flip: boolean)
 	local g = Instance.new("Frame")
@@ -367,6 +335,7 @@ function TitleScreen.new(c: any)
 	self.open_shop = Signal.new()
 	--- DomWorld General's button (Data/Subscription): UIRoot opens its window
 	self.open_general = Signal.new()
+	self.open_settings = Signal.new()
 	--- (action, user_id?) the party panel (Session.party_action)
 	self.party_action = Signal.new()
 	self.difficulty =
@@ -397,6 +366,8 @@ function TitleScreen.new(c: any)
 	self:_build_dock()
 	self:_build_queue()
 	self:_build_solo_menu()
+	self:_build_navigation()
+	self:_build_profile()
 	-- The visible footer keeps the required notice and opens the About / License page.
 	self._credits = UITheme.button(TitleScreen.CREDITS, "GhostButton", "", 28.0)
 	self._credits:set_font_size(11)
@@ -457,17 +428,16 @@ function TitleScreen.set_party(self, st: any)
 end
 
 function TitleScreen._build_backdrop(self)
-	local S = UICtx.shapes()
-	self._vignette = image_node(S.title_vignette, INK, 1.0)
+	self._vignette = W.ColorRect.new(UITheme.c(UITheme.tokens.Colors.canvas, 0.22))
 	self._vignette:set_anchors_and_offsets_preset(W.PRESET_FULL_RECT)
 	self:add_child(self._vignette)
-	self._bottom_shade = vgrad_node(INK, { { 0, 0.0 }, { 1, 0.8 } })
+	self._bottom_shade = W.ColorRect.new(UITheme.CLEAR)
 	self._bottom_shade:set_anchors(0, 0.5, 1, 1)
 	self:add_child(self._bottom_shade)
-	self._top_shade = vgrad_node(Color3.new(0.005, 0.01, 0.035), { { 0, 0.92 }, { 0.55, 0.6 }, { 1, 0.0 } })
+	self._top_shade = W.ColorRect.new(UITheme.CLEAR)
 	self._top_shade:set_anchors(0, 0, 1, 0.5)
 	self:add_child(self._top_shade)
-	self._fade = W.ColorRect.new(UITheme.rgba(0.005, 0.008, 0.03, 0.72))
+	self._fade = W.ColorRect.new(UITheme.c(UITheme.tokens.Colors.canvas, 0.72))
 	self._fade:set_mouse_filter(W.MOUSE_IGNORE)
 	self._fade:set_anchors_and_offsets_preset(W.PRESET_FULL_RECT)
 	self._fade:set_modulate_a(0.0)
@@ -475,22 +445,21 @@ function TitleScreen._build_backdrop(self)
 end
 
 function TitleScreen._build_head(self)
-	local S = UICtx.shapes()
 	self._head = UITheme.vbox(0)
 	self._head:set_alignment(W.ALIGN_CENTER)
 	self:add_child(self._head)
-	self._emblem = UITheme.icon_rect("app_icon", 64.0, Color3.new(1, 1, 1))
+	self._emblem = UITheme.icon_rect("app_icon", 64.0, UITheme.tokens.Colors.primary)
 	self._emblem.size_flags_horizontal = W.SHRINK_CENTER
 	self._head:add_child(self._emblem)
-	-- Warm glow behind the wordmark (placed after the shades, before the fade).
-	self._glow = image_node(S.title_glow, Color3.new(1, 1, 1), 1.0)
+	-- Kept as a transparent layout node so old title sizing logic remains stable.
+	self._glow = W.ColorRect.new(UITheme.CLEAR)
 	self:add_child(self._glow)
 	self:move_child(self._glow, 3)
 
 	local word = GradientText.new(GameInfo.NAME, 120, 900)
-	word.spacing = 14
-	word.shadow = { color = Color3.new(0.0, 0.02, 0.08), alpha = 0.55, offset_y = 6, outline = 14 }
-	word:set_colors(Color3.new(1, 1, 1), Color3.new(1.0, 0.8, 0.52))
+	word.spacing = 3
+	word.shadow = { color = UITheme.tokens.Colors.canvas, alpha = 0.22, offset_y = 1, outline = 0 }
+	word:set_colors(UITheme.tokens.Colors.text, UITheme.tokens.Colors.text)
 	word.size_flags_horizontal = W.SHRINK_CENTER
 	self._word = word
 	self._head:add_child(word)
@@ -499,7 +468,7 @@ function TitleScreen._build_head(self)
 	self._tag_row:set_alignment(W.ALIGN_CENTER)
 	self._tag_l = tag_line(false)
 	self._tag_r = tag_line(true)
-	self._tag = UITheme.label("CONQUER THE REAL WORLD", 15, 600, Color3.new(0.86, 0.89, 0.97), 6)
+	self._tag = UITheme.label("MAPEIE. DECIDA. DOMINE.", 12, 600, UITheme.tokens.Colors.textMuted, 3)
 	self._tag_row:add_child(self._tag_l)
 	self._tag_row:add_child(self._tag)
 	self._tag_row:add_child(self._tag_r)
@@ -516,7 +485,7 @@ function TitleScreen._build_dock(self)
 	self._greet = UITheme.label("", 13, 500, UITheme.TEXT_2)
 	self._greet:set_alignment(W.ALIGN_CENTER)
 
-	self._solo = UITheme.button("PLAY SOLO", "PrimaryButton", "play", 58.0)
+	self._solo = UITheme.button("JOGAR SOLO", "PrimaryButton", "play", 58.0)
 	self._solo:add_theme_constant_override("icon_max_width", 18)
 	self._solo:set_font_size(19)
 	self._solo.pressed:Connect(function()
@@ -567,7 +536,7 @@ function TitleScreen._build_dock(self)
 	l1.size_flags_horizontal = W.EXPAND_FILL
 	l1.size_flags_vertical = W.SHRINK_CENTER
 	sec:add_child(l1)
-	local cap = UITheme.caption("Public matches", 11, UITheme.CYAN)
+	local cap = UITheme.caption("Partidas públicas", 11, UITheme.CYAN)
 	cap.size_flags_vertical = W.SHRINK_CENTER
 	sec:add_child(cap)
 	local l2 = UITheme.hdivider()
@@ -600,7 +569,7 @@ function TitleScreen._build_dock(self)
 	self._mp3:set_visible(false)
 	row:add_child(mp)
 
-	self._help = UITheme.button("HOW TO PLAY", "GlassButton", "help", 62.0)
+	self._help = UITheme.button("AJUDA", "GlassButton", "help", 62.0)
 	self._help:set_font_size(13)
 	self._help.pressed:Connect(function()
 		self.show_help:Fire()
@@ -793,6 +762,129 @@ function TitleScreen._build_queue(self)
 	self._queue:set_visible(false)
 end
 
+function TitleScreen._build_navigation(self)
+	local panel = GlassPanel.new(8.0, 8.0, 6, true, 30)
+	panel.name = "LobbyNavigation"
+	self._nav_panel = panel
+	self:add_child(panel)
+	local list = UITheme.vbox(5)
+	self._nav_list = list
+	panel:add_child(list)
+	local row = UITheme.hbox(4)
+	row:set_visible(false)
+	self._nav_row = row
+	panel:add_child(row)
+	self._nav_compact = nil
+	self._nav_buttons = {}
+	local entries = {
+		{
+			"Jogar",
+			"play",
+			function()
+				self:open_solo_menu()
+			end,
+		},
+		{
+			"Partidas",
+			"matches",
+			function()
+				self.join_public:Fire("ffa")
+			end,
+		},
+		{
+			"Loja",
+			"shop",
+			function()
+				self.open_shop:Fire()
+			end,
+		},
+		{
+			"Inventário",
+			"inventory",
+			function()
+				self.open_locker:Fire()
+			end,
+		},
+		{
+			"Perfil",
+			"profile",
+			function()
+				self:_show_profile()
+			end,
+		},
+		{
+			"Configurações",
+			"settings",
+			function()
+				self.open_settings:Fire()
+			end,
+		},
+	}
+	for index, entry in ipairs(entries) do
+		local button = UITheme.button(entry[1], if index == 1 then "PrimaryButton" else "GlassButton", entry[2], 44)
+		button.name = "LobbyNav" .. entry[1]
+		button.alignment = W.ALIGN_LEFT
+		button:set_font_size(12)
+		button.toggle_mode = true
+		button:set_pressed_no_signal(index == 1)
+		button.pressed:Connect(function()
+			for i, other in ipairs(self._nav_buttons) do
+				other:set_pressed_no_signal(i == index)
+			end
+			entry[3]()
+		end)
+		self._nav_buttons[index] = button
+		list:add_child(button)
+	end
+end
+
+function TitleScreen._build_profile(self)
+	local panel = GlassPanel.new(14.0, 12.0, 6, true, 30)
+	panel.name = "LocalProfile"
+	panel:set_visible(false)
+	self._profile_panel = panel
+	self:add_child(panel)
+	local content = UITheme.vbox(10)
+	panel:add_child(content)
+	local header = UITheme.hbox(8)
+	content:add_child(header)
+	local title = UITheme.caption("Perfil local", 12, UITheme.tokens.Colors.primary)
+	title.size_flags_horizontal = W.EXPAND_FILL
+	header:add_child(title)
+	local close = UITheme.button("Fechar", "GhostButton", "close", 44)
+	close:set_font_size(11)
+	close.pressed:Connect(function()
+		self._profile_panel:set_visible(false)
+	end)
+	header:add_child(close)
+	self._profile_name = UITheme.label("Jogador", 22, 700, UITheme.TEXT)
+	content:add_child(self._profile_name)
+	self._profile_id = UITheme.label("Conectado pelo Roblox", 12, 500, UITheme.TEXT_2)
+	content:add_child(self._profile_id)
+	content:add_child(UITheme.hdivider())
+	local summary = UITheme.label("Suas bandeiras, skins e Suprimentos ficam no Inventário.", 13, 500, UITheme.TEXT_2)
+	summary:set_autowrap(true)
+	summary:set_min_size(Vector2.new(260, 0))
+	content:add_child(summary)
+end
+
+function TitleScreen._show_profile(self)
+	local player = nil
+	if UICtx.IS_ROBLOX then
+		pcall(function()
+			player = game:GetService("Players").LocalPlayer
+		end)
+	end
+	if player ~= nil then
+		self._profile_name:set_text(player.DisplayName)
+		self._profile_id:set_text("@" .. player.Name .. "  ·  ID " .. tostring(player.UserId))
+	else
+		self._profile_name:set_text("Jogador local")
+		self._profile_id:set_text("Perfil de teste")
+	end
+	self._profile_panel:set_visible(true)
+end
+
 -- ---------------------------------------------------------------------------------------------
 -- Layout & state
 -- ---------------------------------------------------------------------------------------------
@@ -945,6 +1037,111 @@ function TitleScreen.apply_layout(self)
 	self._credits:set_offsets(0, -(cb + ctx.insets.w + 14.0), 0, -(cb + ctx.insets.w))
 	self:_place_crate_button(compact, head_top)
 	self._party:apply_layout()
+	self:_apply_atlas_layout()
+end
+
+function TitleScreen._apply_atlas_layout(self)
+	local ctx = self.ctx
+	local vp = ctx.vp
+	local compact = ctx.compact
+	local left = ctx.insets.x + (if compact then 8.0 else 16.0)
+	local safe_top = ctx.insets.y + (if compact then 8.0 else 24.0)
+	local rail_w = if compact then math.max(44.0, vp.X - ctx.insets.x - ctx.insets.z - 16.0) else 184.0
+	local nav_h = if compact then 54.0 else 320.0
+	local nav = self._nav_panel
+	if self._nav_compact ~= compact then
+		local from = if self._nav_compact == true then self._nav_row else self._nav_list
+		local to = if compact then self._nav_row else self._nav_list
+		for _, button in ipairs(self._nav_buttons) do
+			if button:get_parent() ~= nil then
+				button:get_parent():remove_child(button)
+			end
+			to:add_child(button)
+		end
+		if from ~= nil then
+			from:set_visible(false)
+		end
+		to:set_visible(true)
+		self._nav_compact = compact
+	end
+	nav:set_min_size(Vector2.new(rail_w, nav_h))
+	nav.anchor_left, nav.anchor_right, nav.anchor_top, nav.anchor_bottom = 0, 0, 0, 0
+	nav.grow_horizontal, nav.grow_vertical = W.GROW_END, W.GROW_END
+	nav.offset_left, nav.offset_right = left, left + rail_w
+	nav.offset_top, nav.offset_bottom = safe_top, safe_top + nav_h
+	nav:reset_size()
+	for i, button in ipairs(self._nav_buttons) do
+		button:set_min_size(Vector2.new(if compact then math.max(44.0, (rail_w - 36.0) / 6) else rail_w - 20.0, 44.0))
+		button:set_font_size(if compact then 9 else 12)
+		button:set_text(
+			if compact
+				then ({ "Jogar", "Partidas", "Loja", "Itens", "Perfil", "Ajustes" })[i]
+				else ({ "Jogar", "Partidas", "Loja", "Inventário", "Perfil", "Configurações" })[i]
+		)
+		button:add_theme_constant_override("icon_max_width", if compact then 12 else 18)
+	end
+	self._nav_row:set_separation(2)
+	self._nav_list:set_separation(5)
+
+	local content_left = if compact then left else left + rail_w + 24.0
+	local content_top = if compact then safe_top + nav_h + 14.0 else safe_top + 8.0
+	local content_right = vp.X - ctx.insets.z - 16.0
+	local content_w = math.max(260.0, content_right - content_left)
+	local word_px = if compact then math.clamp(vp.X * 0.09, 34.0, 48.0) else math.clamp(vp.X * 0.052, 48.0, 72.0)
+	self._head:set_alignment(W.ALIGN_LEFT)
+	self._emblem:set_visible(not compact)
+	self._emblem:set_min_size(Vector2.new(if compact then 0 else 34, if compact then 0 else 34))
+	self:_size_word(word_px)
+	self._word.spacing = 2
+	self._word.shadow = { color = UITheme.tokens.Colors.canvas, alpha = 0.16, offset_y = 1, outline = 0 }
+	self._word:set_colors(UITheme.tokens.Colors.text, UITheme.tokens.Colors.text)
+	self._tag:set_text("MAPEIE. DECIDA. DOMINE.")
+	self._tag:set_font_size(if compact then 9 else 11)
+	self._tag_l:set_visible(false)
+	self._tag_r:set_visible(false)
+	local head = self._head
+	head.anchor_left, head.anchor_right, head.anchor_top, head.anchor_bottom = 0, 0, 0, 0
+	head.grow_horizontal, head.grow_vertical = W.GROW_END, W.GROW_END
+	head.offset_left, head.offset_right = content_left, content_left + content_w
+	head.offset_top, head.offset_bottom = content_top, content_top
+	head:reset_size()
+	self._glow:set_visible(false)
+	local head_h = head:get_combined_minimum_size().Y
+	local dock_top = content_top + head_h + (if compact then 12.0 else 18.0)
+	local dock_bottom = ctx.insets.w + (if compact then 250.0 else 48.0)
+	local dock = self._dock
+	dock:set_min_size(Vector2.new(math.min(content_w, if compact then content_w else 620.0), 0))
+	dock:set_padding(
+		if compact then 8.0 else 14.0,
+		if compact then 8.0 else 14.0,
+		if compact then 8.0 else 14.0,
+		if compact then 8.0 else 14.0
+	)
+	dock.anchor_left, dock.anchor_right, dock.anchor_top, dock.anchor_bottom = 0, 1, 0, 1
+	dock.grow_horizontal, dock.grow_vertical = W.GROW_BOTH, W.GROW_BOTH
+	dock.offset_left, dock.offset_right = content_left, -ctx.insets.z - 16.0
+	dock.offset_top, dock.offset_bottom = dock_top, -dock_bottom
+	dock:reset_size()
+	self._solo:set_min_size(Vector2.new(content_w, if compact then 48.0 else 54.0))
+	self._solo:set_text("JOGAR SOLO")
+	self._solo:set_font_size(if compact then 14 else 16)
+	for _, button in ipairs({ self._mp, self._mp2, self._mp3 }) do
+		button:set_min_size(Vector2.new(content_w, if compact then 54.0 else 66.0))
+	end
+	self._help:set_min_size(Vector2.new(content_w, 44.0))
+	self._dock_div:set_visible(true)
+	for _, button in ipairs({ self._crate_btn, self._arsenal_btn, self._shop_btn, self._starter_btn, self._general_btn }) do
+		button:set_visible(false)
+	end
+	self._credits:set_visible(true)
+	self._credits:set_text(if compact then TitleScreen.CREDITS_SHORT else TitleScreen.CREDITS)
+	self._profile_panel:set_min_size(Vector2.new(if compact then math.max(280.0, content_w - 20.0) else 400.0, 0))
+	self._profile_panel.anchor_left, self._profile_panel.anchor_right = 0.5, 0.5
+	self._profile_panel.anchor_top, self._profile_panel.anchor_bottom = 0.5, 0.5
+	self._profile_panel.grow_horizontal, self._profile_panel.grow_vertical = W.GROW_BOTH, W.GROW_BOTH
+	self._profile_panel.offset_left, self._profile_panel.offset_right = 0, 0
+	self._profile_panel.offset_top, self._profile_panel.offset_bottom = 0, 0
+	self._profile_panel:reset_size()
 end
 
 --- The crate button, top right: level with the wordmark's top on desktop; on phones up in the
@@ -1074,74 +1271,14 @@ function TitleScreen._reflow_dock(self, compact: boolean)
 	end
 	local v = self._dock_v
 	self._dock_variant = variant
-	if compact and variant ~= "stack" then
-		v:set_separation(6)
-		self._mp.size_flags_horizontal = W.EXPAND_FILL
-		self._mp2.size_flags_horizontal = W.EXPAND_FILL
-		self._mp3.size_flags_horizontal = W.EXPAND_FILL
-		self._solo.size_flags_vertical = W.FILL
-		if variant == "row" then
-			-- [PLAY SOLO | match | match | match]
-			local line = UITheme.hbox(8)
-			self._solo.size_flags_horizontal = W.FILL
-			line:add_child(self._solo)
-			line:add_child(self._mp)
-			line:add_child(self._mp2)
-			line:add_child(self._mp3)
-			v:add_child(line)
-		else
-			-- two rows: [PLAY SOLO] and [match | match | match]
-			local top = UITheme.hbox(8)
-			self._solo.size_flags_horizontal = W.EXPAND_FILL
-			top:add_child(self._solo)
-			local bottom = UITheme.hbox(8)
-			bottom:add_child(self._mp)
-			bottom:add_child(self._mp2)
-			bottom:add_child(self._mp3)
-			if variant == "grid2" then
-				v:add_child(bottom)
-				v:add_child(top)
-			else
-				v:add_child(top)
-				v:add_child(bottom)
-			end
-		end
-	elseif compact then
-		-- [PLAY SOLO | ? | the public matches, stacked (the widest)]
-		v:set_separation(6)
-		local line = UITheme.hbox(8)
-		line:add_child(self._solo)
-		line:add_child(self._help)
-		self._solo.size_flags_horizontal = W.FILL
-		local col = self._mp_col
-		col.size_flags_horizontal = W.EXPAND_FILL
-		col:add_child(self._mp)
-		col:add_child(self._mp2)
-		col:add_child(self._mp3)
-		self._mp.size_flags_horizontal = W.EXPAND_FILL
-		self._mp2.size_flags_horizontal = W.EXPAND_FILL
-		self._mp3.size_flags_horizontal = W.EXPAND_FILL
-		line:add_child(col)
-		for _, b in { self._solo, self._help } do
-			b.size_flags_vertical = W.SHRINK_CENTER
-		end
-		v:add_child(line)
-	else
-		v:set_separation(12)
-		-- [PLAY SOLO | ?], then the public matches (2026-10-19: the "?" button moved from beside the
-		-- public match to beside PLAY SOLO)
-		self._solo.size_flags_horizontal = W.EXPAND_FILL
-		for _, b in { self._solo, self._help } do
-			b.size_flags_vertical = W.FILL
-		end
-		for _, c2 in ipairs({ self._greet, self._mp_row, self._dock_div }) do
-			v:add_child(c2)
-		end
-		self._mp_row:add_child(self._solo)
-		self._mp_row:add_child(self._help)
-		v:add_child(self._mp)
-		v:add_child(self._mp2)
-		v:add_child(self._mp3)
+	v:set_separation(if compact then 6 else 8)
+	self._solo.size_flags_horizontal = W.EXPAND_FILL
+	self._solo.size_flags_vertical = W.FILL
+	self._mp.size_flags_horizontal = W.EXPAND_FILL
+	self._mp2.size_flags_horizontal = W.EXPAND_FILL
+	self._mp3.size_flags_horizontal = W.EXPAND_FILL
+	for _, node in { self._greet, self._solo, self._dock_div, self._mp, self._mp2, self._mp3, self._help } do
+		v:add_child(node)
 	end
 end
 
@@ -1159,7 +1296,7 @@ function TitleScreen._build_solo_menu(self)
 	local ic = T.icon_rect("play", 18.0, T.AMBER)
 	ic.size_flags_vertical = W.SHRINK_CENTER
 	head:add_child(ic)
-	local title = T.label("PLAY SOLO", 17, 800, T.TEXT, 2)
+	local title = T.label("JOGAR SOLO", 17, 800, T.TEXT, 2)
 	title.size_flags_horizontal = W.EXPAND_FILL
 	title.size_flags_vertical = W.SHRINK_CENTER
 	head:add_child(title)

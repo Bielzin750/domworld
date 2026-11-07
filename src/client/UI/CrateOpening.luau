@@ -424,7 +424,7 @@ function CrateOpening._build(self)
 	self._hint_text = new("TextLabel", {
 		BackgroundTransparency = 1,
 		Size = UDim2.fromScale(1, 1),
-		Text = "TAP TO OPEN",
+		Text = "TOQUE PARA ABRIR",
 		FontFace = FONT_B,
 		TextColor3 = Color3.new(1, 1, 1),
 		TextTransparency = 1,
@@ -462,21 +462,21 @@ function CrateOpening._build(self)
 	local row = UITheme.hbox(10)
 	row:set_alignment(W.ALIGN_CENTER)
 	self._row = row
-	self._wear_b = UITheme.button("WEAR IT", "PrimaryButton", "check", 48.0)
+	self._wear_b = UITheme.button("EQUIPAR", "PrimaryButton", "check", 48.0)
 	self._wear_b.pressed:Connect(function()
 		if self._item then
 			self.wear:Fire(self._item)
 		end
 	end)
 	row:add_child(self._wear_b)
-	self._again_b = UITheme.button("OPEN ANOTHER", "GlassButton", "robux", 48.0)
+	self._again_b = UITheme.button("ABRIR OUTRO", "GlassButton", "robux", 48.0)
 	self._again_b.pressed:Connect(function()
 		if self._phase == "choose" then
 			self.again:Fire()
 		end
 	end)
 	row:add_child(self._again_b)
-	self._done_b = UITheme.button("DONE", "GlassButton", "", 48.0)
+	self._done_b = UITheme.button("FECHAR", "GlassButton", "", 48.0)
 	self._done_b.pressed:Connect(function()
 		self:close()
 	end)
@@ -819,8 +819,8 @@ end
 
 function CrateOpening._title_in(self, gen: number)
 	local S = self._S
-	self._title.Text = "CRATE"
-	self._subtitle.Text = "A SKIN OR FLAG · NEVER A DUPLICATE"
+	self._title.Text = "SUPRIMENTO"
+	self._subtitle.Text = "UMA SKIN OU BANDEIRA · SEM REPETIÇÕES"
 	self._title_scale.Scale = 1.8
 	tween(self._title_scale, 0.3, { Scale = 1 }, Enum.EasingStyle.Back)
 	tween(self._title, 0.12, { TextTransparency = 0 })

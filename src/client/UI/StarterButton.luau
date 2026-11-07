@@ -172,7 +172,7 @@ function StarterButton._build(self)
 	}, self._art)
 	new("UICorner", { CornerRadius = UDim.new(0.5, 0) }, flame)
 	text(card, {
-		Text = "STARTER PACK",
+		Text = "KIT INICIAL",
 		TextSize = 17,
 		Position = UDim2.fromOffset(78, 7),
 		Size = UDim2.fromOffset(150, 20),

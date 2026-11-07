@@ -85,7 +85,7 @@ function TopStatus.new(c: any)
 	local head = T.hbox(6)
 	self._head = head
 	head:add_child(T.icon_rect("globe", 12.0, T.TEXT_3))
-	head:add_child(T.caption("World control"))
+	head:add_child(T.caption("Domínio do mapa"))
 	head:add_child(spacer())
 	self._goal = T.caption("Goal 80%", 11, T.GOLD)
 	head:add_child(self._goal)
@@ -112,6 +112,7 @@ function TopStatus.new(c: any)
 	sb:add_child(who)
 	row:add_child(sb)
 	self:_build_mini()
+	self:_build_dial()
 	return self
 end
 
@@ -162,13 +163,95 @@ function TopStatus._build_mini(self)
 	end)
 end
 
+function TopStatus._build_dial(self)
+	local T = UITheme
+	self.panel:set_padding(0, 0, 0, 0)
+	self.panel:set_tint(T.CLEAR)
+	self.panel:set_border(T.CLEAR)
+	self.panel:set_sheen(false)
+	self.panel._shadow_size = 0
+	self.panel._shadow:set(T.empty_box())
+	self.panel:restyle()
+	self._full:set_visible(false)
+	self._mini:set_visible(false)
+	local dial = W.Control.new("Frame")
+	dial.name = "DomainMeter"
+	dial.gui.BackgroundColor3 = T.tokens.Colors.surface
+	dial.gui.BackgroundTransparency = 0
+	dial.gui.BorderSizePixel = 0
+	dial.gui.Active = false
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(1, 0)
+	corner.Parent = dial.gui
+	local outline = Instance.new("UIStroke")
+	outline.Color = T.tokens.Colors.primary
+	outline.Thickness = 1
+	outline.Transparency = 0.12
+	outline.Parent = dial.gui
+	self._dial_ticks = {}
+	for index = 1, 12 do
+		local angle = (index - 1) * math.pi / 6 - math.pi / 2
+		local tick = Instance.new("Frame")
+		tick.Name = "ProgressTick"
+		tick.AnchorPoint = Vector2.new(0.5, 0.5)
+		tick.Position = UDim2.fromScale(0.5 + math.cos(angle) * 0.42, 0.5 + math.sin(angle) * 0.42)
+		tick.Size = UDim2.fromScale(0.035, 0.08)
+		tick.Rotation = math.deg(angle) + 90
+		tick.BorderSizePixel = 0
+		tick.BackgroundColor3 = T.tokens.Colors.line
+		tick.Parent = dial.gui
+		table.insert(self._dial_ticks, tick)
+	end
+	local content = T.vbox(1)
+	content:set_alignment(W.ALIGN_CENTER)
+	content.anchor_left, content.anchor_right = 0.5, 0.5
+	content.anchor_top, content.anchor_bottom = 0.5, 0.5
+	content.grow_horizontal, content.grow_vertical = W.GROW_BOTH, W.GROW_BOTH
+	content.offset_left, content.offset_right = 0, 0
+	content.offset_top, content.offset_bottom = 0, 0
+	local caption = T.caption("Domínio", 8, T.TEXT_2)
+	caption:set_alignment(W.ALIGN_CENTER)
+	content:add_child(caption)
+	self._dial_clock = T.label("0:00", 18, 700, T.TEXT)
+	self._dial_clock:set_alignment(W.ALIGN_CENTER)
+	self._dial_clock.rolling = true
+	content:add_child(self._dial_clock)
+	self._dial_share = T.label("0%", 9, 600, T.tokens.Colors.primary)
+	self._dial_share:set_alignment(W.ALIGN_CENTER)
+	content:add_child(self._dial_share)
+	dial:add_child(content)
+	self._dial = dial
+	self.panel:add_child(dial)
+	self._dial_progress = 0
+end
+
+function TopStatus._refresh_dial(self)
+	if self._dial == nil then
+		return
+	end
+	self._dial_clock:set_text(self._clock.text)
+	local share = string.match(self._you.text, "%d+%.?%d*%%")
+		or (if string.find(self._you.text, "Spectating", 1, true) then "OBS" else "0%")
+	self._dial_share:set_text(share)
+	local target = math.clamp(tonumber(self._bar.target) or 0, 0, 1)
+	local progress = math.floor(target * #self._dial_ticks + 0.5)
+	if progress ~= self._dial_progress then
+		self._dial_progress = progress
+		for index, tick in ipairs(self._dial_ticks) do
+			tick.BackgroundColor3 = if index <= progress
+				then UITheme.tokens.Colors.primary
+				else UITheme.tokens.Colors.line
+		end
+	end
+end
+
 --- The mini pill is ~30 px tall; its tap area is a full 44 px.
 function TopStatus._fit_hit(self)
 	if self._hit == nil then
 		return
 	end
 	local ctx = self.ctx
-	local on = ctx.compact and ctx.touch and self.panel.visible
+	local on = ctx.touch and self.panel.visible
 	self._hit:set_mouse_filter(if on then W.MOUSE_STOP else W.MOUSE_IGNORE)
 	self._hit:set_visible(on)
 	if on then
@@ -181,59 +264,30 @@ end
 
 function TopStatus.apply_layout(self)
 	local ctx = self.ctx
-	local T = UITheme
 	local p = self.panel
-	local top = 12.0 + ctx.insets.y
-	-- Phones drop the "WORLD CONTROL · GOAL 80%" header: the bar and its gold goal line say it.
-	self._head:set_visible(not ctx.compact)
-	self._full:set_visible(not ctx.compact)
-	self._mini:set_visible(ctx.compact)
-	-- Very narrow phones drop the leaderboard hint icon (the pill still opens the board).
-	self._m_chev:set_visible(ctx.vp.X >= 800.0)
-	-- On touch the pill swallows taps (and on phones opens the leaderboard).
+	local size = if ctx.compact then 96.0 else 112.0
+	self._head:set_visible(false)
+	self._full:set_visible(false)
+	self._mini:set_visible(false)
+	self._dial:set_visible(true)
 	p:set_mouse_filter(if ctx.touch then W.MOUSE_STOP else W.MOUSE_IGNORE)
-	if ctx.compact then
-		-- Phones: tuck into the top-right corner, clear of the top-left bar.
-		p.anchor_left = 1.0
-		p.anchor_right = 1.0
-		p.grow_horizontal = W.GROW_BEGIN
-		p.offset_left = -(8.0 + ctx.insets.z)
-		p.offset_right = -(8.0 + ctx.insets.z)
-		top = 8.0 + ctx.insets.y
-		self._bar:set_min_size(Vector2.new(200, 10))
-		self._clock:set_font_size(16)
-		p:set_padding(12.0, 5.0, 10.0, 5.0)
-	else
-		p.anchor_left = 0.5
-		p.anchor_right = 0.5
-		p.grow_horizontal = W.GROW_BOTH
-		p.offset_left = 0.0
-		p.offset_right = 0.0
-		self._bar:set_min_size(Vector2.new(if ctx.vp.X >= 1200.0 then 340 else 260, 12))
-		self._clock:set_font_size(20)
-		p:set_padding(18.0, 10.0, 18.0, 10.0)
-	end
-	self:_fix_widths()
 	p.anchor_top = 0.0
 	p.anchor_bottom = 0.0
+	p.anchor_left = 1.0
+	p.anchor_right = 1.0
+	p.grow_horizontal = W.GROW_BEGIN
 	p.grow_vertical = W.GROW_END
-	local w = p:get_combined_minimum_size().X
-	if ctx.compact then
-		-- Right-aligned; drop below the top-left bar row when the phone is too narrow for both.
-		if ctx.vp.X - ctx.insets.z - 8.0 - w < ctx.reserved_top_left.Max.X + 8.0 then
-			top = ctx.reserved_top_left.Max.Y + 4.0
-		end
-	else
-		local dx, y = ctx:place_top(w, top)
-		p.offset_left = dx
-		p.offset_right = dx
-		top = y
-	end
-	p.offset_top = top
-	p.offset_bottom = top
+	p:set_min_size(Vector2.new(size, size))
+	p:set_padding(0, 0, 0, 0)
+	p.offset_left = -(size + 12.0 + ctx.insets.z)
+	p.offset_right = -(12.0 + ctx.insets.z)
+	p.offset_top = 12.0 + ctx.insets.y
+	p.offset_bottom = p.offset_top
+	self._dial:set_min_size(Vector2.new(size, size))
+	self._dial:set_offsets(0, 0, size, size)
+	self._dial_clock:set_font_size(if ctx.compact then 15 else 18)
 	p:reset_size()
 	self:_fit_hit()
-	local _ = T
 end
 
 --- Fixed boxes for every changing text (tabular digits) so the pill never resizes or jitters.
@@ -413,6 +467,7 @@ function TopStatus.refresh(self)
 			self._m_grace_l:set_text(T.fmt_time(math.ceil(gl)))
 		end
 	end
+	self:_refresh_dial()
 end
 
 --- A team game (Core/Teams): the bar is the player's team's land together (it wins at the same share),

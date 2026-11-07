@@ -40,14 +40,14 @@ end
 
 local CommandBar = W.class(W.Control)
 
-CommandBar.Flow = { WIDE = 0, STACKED = 1, COMPACT = 2 }
+CommandBar.Flow = { WIDE = 0, STACKED = 1, COMPACT = 2, ATLAS = 3 }
 --- Phone tray: a slot is never narrower than this (then the tray takes a second row).
 CommandBar.TRAY_SLOT_MIN = TrayFit.SLOT_MIN
 --- The SHOP slot outside the phone tray, with nothing locked to show.
 CommandBar.SHOP_W = 58.0
 --- Phones: the width of one stop of the Attack bar (a finger's target; the strip is 44 tall).
 CommandBar.STOP_TOUCH_W = 38.0
-local WIDE, STACKED, COMPACT = 0, 1, 2
+local WIDE, COMPACT, ATLAS = 0, 2, 3
 
 local function spacer()
 	local sp = W.Control.new()
@@ -75,6 +75,8 @@ function CommandBar.new(c: any)
 	self.buttons = {} -- kind -> BuildButton
 	self._flow = -1
 	self._root_box = nil
+	self._action_grid = nil
+	self._atlas_dock = false
 	self._tray_open = false
 	self._placing = ""
 	self._rate = 0.0
@@ -295,6 +297,13 @@ function CommandBar._build_sections(self)
 	self.tray = GlassPanel.new(10.0, 8.0, T.R_LG, true, 18)
 	self.tray:set_visible(false)
 	self:add_child(self.tray)
+	self.action_dock = GlassPanel.new(8.0, 8.0, 6, true, 10)
+	self.action_dock.name = "ActionDock"
+	self.action_dock:set_visible(false)
+	self:add_child(self.action_dock)
+	self._action_content = T.vbox(6)
+	self.action_dock:add_child(self._action_content)
+	self._action_content:add_child(T.caption("Ações", 10, T.tokens.Colors.primary))
 	local tb = W.Button.new("BUILD", "GlassButton")
 	tb.toggle_mode = true
 	tb:set_icon("city")
@@ -335,18 +344,33 @@ end
 
 function CommandBar.apply_layout(self)
 	local ctx = self.ctx
-	local flow = WIDE
-	if ctx.compact then
-		flow = COMPACT
-	elseif not ctx.wide then
-		flow = STACKED
-	end
+	local flow = if ctx.compact then COMPACT else ATLAS
 	if flow ~= self._flow then
 		self._flow = flow
 		self:_reflow()
 	end
 	local bottom = if not ctx.compact then 12.0 + ctx.insets.w else math.max(6.0, ctx.insets.w)
 	self:_anchor_bottom_center(self.panel, bottom)
+	if flow == ATLAS then
+		local dock_width = 206.0
+		local stats_center = (ctx.insets.x + ctx.vp.X - ctx.insets.z - dock_width - 24.0) * 0.5
+		self.panel.offset_left = stats_center - ctx.vp.X * 0.5
+		self.panel.offset_right = self.panel.offset_left
+		self.panel:reset_size()
+		local edge = self:top_edge()
+		local dock_bottom = ctx.vp.Y - edge + 8.0
+		local dock_top = ctx.insets.y + 132.0
+		local dock = self.action_dock
+		dock:set_padding(8.0, 8.0, 8.0, 8.0)
+		dock:set_min_size(Vector2.new(dock_width, math.max(260.0, ctx.vp.Y - dock_top - dock_bottom)))
+		dock.anchor_left, dock.anchor_right, dock.anchor_top, dock.anchor_bottom = 1, 1, 0, 1
+		dock.grow_horizontal, dock.grow_vertical = W.GROW_BEGIN, W.GROW_BOTH
+		dock.offset_left, dock.offset_right = -(dock_width + 12.0 + ctx.insets.z), -(12.0 + ctx.insets.z)
+		dock.offset_top, dock.offset_bottom = dock_top, -dock_bottom
+		dock:reset_size()
+	else
+		self.action_dock:set_visible(false)
+	end
 	-- Tray and placement chip sit just above the bar.
 	local above = bottom + self.panel:get_combined_minimum_size().Y + 8.0
 	self:_anchor_bottom_center(self.tray, above)
@@ -537,6 +561,59 @@ end
 --- Nuke slots live either at the end of the build row or on their own second row. The unlocked
 --- Arsenal kinds follow them, and the SHOP slot closes whichever row they are in.
 function CommandBar._arrange_slots(self, two_rows: boolean)
+	if self._atlas_dock then
+		local T = UITheme
+		local rules = UIRules()
+		for _, kind in ipairs(rules.ACTIONS) do
+			self:_detach(self.buttons[kind])
+		end
+		self:_detach(self._nuke_wrap)
+		self:_detach(self._arsenal_wrap)
+		for _, kind in ipairs(rules.ARSENAL) do
+			self:_detach(self.buttons[kind])
+		end
+		local unlocked = self:_unlocked_arsenal()
+		self._arsenal_sig = table.concat(unlocked, ",")
+		if self._action_grid ~= nil and self._action_grid:get_parent() ~= nil then
+			self._action_grid:get_parent():remove_child(self._action_grid)
+			self._action_grid:queue_free()
+		end
+		local slots = {}
+		for _, kind in ipairs(rules.ACTIONS) do
+			if kind == "atom" then
+				table.insert(slots, self._nuke_wrap)
+			end
+			table.insert(slots, self.buttons[kind])
+		end
+		for _, kind in ipairs(rules.ARSENAL) do
+			if table.find(unlocked, kind) ~= nil then
+				table.insert(slots, self.buttons[kind])
+			end
+		end
+		local grid = T.vbox(5)
+		grid.name = "ActionGrid"
+		grid:set_alignment(W.ALIGN_CENTER)
+		local row = nil
+		local in_row = 3
+		for _, slot in ipairs(slots) do
+			if in_row >= 3 then
+				row = T.hbox(5)
+				row:set_alignment(W.ALIGN_CENTER)
+				grid:add_child(row)
+				in_row = 0
+			end
+			slot:set_min_size(Vector2.new(54, 54))
+			row:add_child(slot)
+			in_row += 1
+		end
+		local shop_row = T.hbox(5)
+		shop_row:set_alignment(W.ALIGN_CENTER)
+		shop_row:add_child(self._arsenal_wrap)
+		grid:add_child(shop_row)
+		self._action_grid = grid
+		self._action_content:add_child(grid)
+		return
+	end
 	local nukes = { self.buttons["atom"], self.buttons["hydrogen"], self.buttons["mirv"] }
 	for _, n in ipairs(nukes) do
 		self:_detach(n)
@@ -592,6 +669,7 @@ function CommandBar._reflow(self)
 	local strip_host = if self._flow == COMPACT then self._m_ratio else self._ratio_line
 	strip_host:add_child(self._slider)
 	strip_host:add_child(self._ratio_inline_box)
+	self._atlas_dock = self._flow == ATLAS
 	self:_arrange_slots(false)
 	self._shop:refresh()
 	local shop_want = TrayFit.shop_width(#self._shop:locked())
@@ -601,8 +679,9 @@ function CommandBar._reflow(self)
 		self._root_box = nil
 	end
 	local compact = self._flow == COMPACT
+	local compact_actions = compact or self._flow == ATLAS
 	for _, b in pairs(self.buttons) do
-		b:set_compact(compact, ctx.touch)
+		b:set_compact(compact_actions, ctx.touch)
 	end
 	self._builds:set_separation(if ctx.touch then 8 else 4)
 	self._troops:set_font_size(if compact then 17 else 20)
@@ -662,7 +741,18 @@ function CommandBar._reflow(self)
 	-- (gold last, next to the slots it buys; 2026-10-13: gold and the attack panel swapped places in
 	-- the bottom bar, so gold sits next to what it buys, which is more intuitive)
 	local stats_order = { self._nation, self._troops_box, self._ratio_box, self._gold_box }
-	if self._flow == WIDE then
+	if self._flow == ATLAS then
+		local stats = T.hbox(10)
+		self._root_box = stats
+		for index, control in ipairs(stats_order) do
+			stats:add_child(control)
+			control.size_flags_vertical = W.SHRINK_CENTER
+			if index < #stats_order then
+				stats:add_child(T.vdivider(34.0))
+			end
+		end
+		self.action_dock:set_visible(true)
+	elseif self._flow == WIDE then
 		local row = T.hbox(16)
 		row:set_alignment(W.ALIGN_CENTER)
 		self._root_box = row
@@ -730,10 +820,17 @@ function CommandBar._reflow(self)
 	end
 	if not compact then
 		self:set_tray(false)
-		for _, b in pairs(self.buttons) do
-			b:set_slot_width(nil)
+		if self._flow == ATLAS then
+			for _, b in pairs(self.buttons) do
+				b:set_slot_width(54.0)
+			end
+			self._shop:set_block(174.0, 48.0)
+		else
+			for _, b in pairs(self.buttons) do
+				b:set_slot_width(nil)
+			end
+			self._shop:set_block(math.max(CommandBar.SHOP_W, shop_want), if ctx.touch then 62.0 else 60.0)
 		end
-		self._shop:set_block(math.max(CommandBar.SHOP_W, shop_want), if ctx.touch then 62.0 else 60.0)
 	end
 	self._root_box:set_mouse_filter(W.MOUSE_IGNORE)
 	self.panel:add_child(self._root_box)

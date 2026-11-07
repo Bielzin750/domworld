@@ -30,7 +30,7 @@ EventFeed.PHONE_ALERT_SECONDS = 5.0
 --- made a toast half a small phone's width and an alliance row a seventh of its height.
 EventFeed.PHONE_MAX_W = 260.0
 EventFeed.PHONE_FONT = 11
-EventFeed.PHONE_BUTTON = 32.0
+EventFeed.PHONE_BUTTON = 44.0
 
 local function msec(): number
 	return os.clock() * 1000.0
@@ -81,29 +81,12 @@ function EventFeed.apply_layout(self, bottom_y: number)
 	local ctx = self.ctx
 	local st = self._stack
 	self._bottom = bottom_y
-	if ctx.compact then
-		-- Phones: a narrow column under the top bar (top-left), clear of the globe's centre and of
-		-- the bottom-left thumb area where target / inspect cards appear.
-		local lx = 8.0 + ctx.insets.x
-		local cw = 0.0 -- cards and toasts size to their content
-		local ty = ctx.airship_bar.Max.Y + 2.0
-		st.anchor_left, st.anchor_right, st.anchor_top, st.anchor_bottom = 0.0, 0.0, 0.0, 0.0
-		st.grow_vertical = W.GROW_END
-		st.grow_horizontal = W.GROW_END
-		st:set_alignment(W.ALIGN_BEGIN)
-		st.offset_left = lx
-		st.offset_right = lx + cw
-		st.offset_top = ty
-		st.offset_bottom = ty
-		st:set_min_size(Vector2.new(cw, 0))
-		self._top_limit = ty
-		st:queue_layout()
-		self:_trim()
-		return
-	end
 	st:set_alignment(W.ALIGN_END)
-	local left = if not ctx.compact then 16.0 + ctx.insets.x else 8.0 + ctx.insets.x
-	local w = if not ctx.compact then 340.0 else 290.0
+	local left = (if not ctx.compact then 16.0 else 8.0) + ctx.insets.x
+	local w = math.min(
+		if not ctx.compact then 340.0 else EventFeed.PHONE_MAX_W,
+		ctx.vp.X - ctx.insets.x - ctx.insets.z - 20.0
+	)
 	st.anchor_left, st.anchor_right, st.anchor_top, st.anchor_bottom = 0.0, 0.0, 1.0, 1.0
 	st.grow_vertical = W.GROW_BEGIN
 	st.grow_horizontal = W.GROW_END
@@ -112,9 +95,7 @@ function EventFeed.apply_layout(self, bottom_y: number)
 	st.offset_bottom = -(ctx.vp.Y - bottom_y)
 	st.offset_top = st.offset_bottom
 	st:set_min_size(Vector2.new(w, 0))
-	-- Never grow into the reserved top-left area (Roblox top bar / chat).
-	local reserved = if not ctx.compact then ctx.reserved_top_left.Max.Y else 64.0
-	self._top_limit = reserved + 12.0 + ctx.insets.y
+	self._top_limit = math.max(ctx.reserved_top_left.Max.Y, ctx.insets.y) + 12.0
 	st:queue_layout()
 	self:_trim()
 end

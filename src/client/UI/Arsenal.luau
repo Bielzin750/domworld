@@ -61,7 +61,7 @@ Arsenal.GROUPS = {
 }
 Arsenal.KIND_TAGS = { structure = "BUILDING", nuke = "NUKE", call = "ORDER", boost = "BOOST" }
 --- Under the title.
-Arsenal.SUBTITLE = "Unlock once, keep it forever. Earn Stars by playing matches."
+Arsenal.SUBTITLE = "Libere uma vez, mantenha para sempre. Ganhe estrelas jogando."
 --- Logical px: the list's width, a row's height, the item's width and its preview's height (desktop);
 --- phones put the preview beside the words.
 Arsenal.LIST_W = 236
@@ -215,7 +215,7 @@ function Arsenal.new(c: any)
 	local tv = UITheme.vbox(0)
 	tv.size_flags_horizontal = W.EXPAND_FILL
 	tv.size_flags_vertical = W.SHRINK_CENTER
-	local title = UITheme.label("ARSENAL", 20, 800, UITheme.TEXT, 3)
+	local title = UITheme.label("DEPÓSITO", 20, 800, UITheme.TEXT, 3)
 	tv:add_child(title)
 	self._sub = UITheme.label(Arsenal.SUBTITLE, 12, 500, UITheme.TEXT_2)
 	tv:add_child(self._sub)
@@ -1039,7 +1039,7 @@ function Arsenal._build_cta(self)
 		local fs = if compact then 11 else 12
 		new("TextLabel", {
 			BackgroundTransparency = 1,
-			Text = "Or earn it by playing:",
+			Text = "Ou ganhe jogando:",
 			FontFace = FONT_M,
 			TextSize = math.floor(fs * u),
 			TextColor3 = MUTED,

@@ -556,7 +556,7 @@ function UIRules.availability(self: any, kind: string): { [string]: any }
 	-- an Arsenal kind the player hasn't unlocked: `arsenal` names the item to offer
 	if self:arsenal_locked(kind) then
 		local it = UIRules.arsenal_item(kind)
-		out.reason = "Unlock " .. it.title .. " in the Arsenal"
+		out.reason = "Libere " .. it.title .. " no Depósito"
 		out.locked = true
 		out.arsenal = it.key
 		return out

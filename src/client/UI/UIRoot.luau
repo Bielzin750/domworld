@@ -194,7 +194,7 @@ function UIRoot.setup(self, session: any, world: any, audio: any)
 			if self.arsenal ~= nil and not self.arsenal.is_open and not pack then
 				local it = ArsenalData.item(key)
 				ctx:sfx("unlock")
-				self:_on_notice((if it ~= nil then it.title else "Arsenal item") .. " unlocked!", 0)
+				self:_on_notice((if it ~= nil then it.title else "Item do Depósito") .. " liberado!", 0)
 			end
 		end)
 		self:_sig(session, "inventory_changed", function()
@@ -1004,6 +1004,9 @@ function UIRoot._build(self)
 	end)
 	title.open_general:Connect(function()
 		self:open_general("title")
+	end)
+	title.open_settings:Connect(function()
+		self:open_settings()
 	end)
 	title.open_arsenal:Connect(function()
 		ctx:sfx("confirm")
@@ -2228,10 +2231,10 @@ function UIRoot._layout(self)
 	self.top:apply_layout()
 	self.spawn:apply_layout()
 	self.bar:apply_layout()
-	-- Leaderboard: top-right, dropping below the status pill / spawn banner when they would touch.
-	local board_top = 12.0 + ctx.insets.y
+	-- The thin scoreboard lives top-left below Roblox's reserved chat / top-bar area.
+	local board_top = math.max(12.0 + ctx.insets.y, ctx.reserved_top_left.Max.Y + 8.0)
 	local board_w = if ctx.compact then 250.0 else 300.0
-	local board_left = vp.X - 12.0 - ctx.insets.z - board_w
+	local board_left = math.max(12.0 + ctx.insets.x, ctx.reserved_top_left.Max.X + 8.0)
 	local blockers = {}
 	if self.top.visible then
 		table.insert(blockers, self.top.panel)
@@ -2241,28 +2244,19 @@ function UIRoot._layout(self)
 	end
 	for _, b in ipairs(blockers) do
 		local r = b:get_global_rect()
-		if r.Max.X + 12.0 > board_left then
+		if r.Min.X < board_left + board_w and r.Max.X > board_left then
 			board_top = math.max(board_top, r.Max.Y + 10.0)
 		end
 	end
 	local board = self.board
 	board:apply_layout(board_top)
-	-- Phones: when the status pill had to drop below the top bar, the rank pill sits beside it.
-	if ctx.compact and self.top.visible and not board.expanded and board._pill ~= nil then
-		local tr = self.top.panel:get_global_rect()
-		local pill_w = board._pill:get_combined_minimum_size().X
-		local min_x = if tr.Min.Y >= ctx.reserved_top_left.Max.Y
-			then ctx.insets.x + 8.0
-			else ctx.reserved_top_left.Max.X + 8.0
-		if tr.Min.X - 8.0 - pill_w >= min_x then
-			board:place_pill_left_of(tr)
-		end
-	end
 	local bar = self.bar
-	local attacks_top = math.max(board:bottom_edge(), if self.top.visible then self.top:bottom_edge() else 0.0) + 10.0
-	attacks_top = attacks_top
+	local bar_top = if bar.visible then bar:top_edge() else vp.Y - ctx.insets.w
 	self.attacks.tray_open = bar.tray ~= nil and bar.tray.visible
-	self.attacks:apply_layout(attacks_top, (if bar.visible then bar:top_edge() else vp.Y - ctx.insets.w) - 8.0)
+	local attacks_bottom = bar_top - 8.0
+	local attacks_h = self.attacks.panel:get_combined_minimum_size().Y
+	local attacks_top = math.max(board:bottom_edge() + 8.0, attacks_bottom - attacks_h)
+	self.attacks:apply_layout(attacks_top, attacks_bottom)
 	self.attacks:refresh()
 	self.notices:apply_layout_top(
 		if self._screen ~= "title" then ctx.insets.y + (if ctx.compact then 70.0 else 96.0) else ctx.insets.y + 12.0
@@ -2271,12 +2265,11 @@ function UIRoot._layout(self)
 	self.tutorial:apply_layout()
 	-- the territory notice sits top-left under the top bar, below panels reaching that corner
 	self.globe_notice:apply_layout({ self.top.panel, self.spawn.panel, self.title._head })
-	local bar_top = if bar.visible then bar:top_edge() else vp.Y - ctx.insets.w
 	local sp = self.spectate_pill
 	if sp.visible then
 		bar_top = math.min(bar_top, vp.Y - ctx.insets.w - 12.0 - sp:get_combined_minimum_size().Y)
 	end
-	self.feed:apply_layout(bar_top - 12.0)
+	self.feed:apply_layout(attacks_top - 8.0)
 	self:_layout_alert()
 	local sb = 14.0 + ctx.insets.w
 	sp.anchor_left, sp.anchor_right, sp.anchor_top, sp.anchor_bottom = 0.5, 0.5, 1.0, 1.0
