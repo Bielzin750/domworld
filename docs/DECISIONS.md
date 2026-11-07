@@ -47,3 +47,9 @@ sem achados.
 - Reset de conta e inventário não foram adicionados: não há fluxo de snapshot/undo seguro para cobrir todos os campos de compras e recibos. A reinicialização de partida, fim forçado e alteração do relógio também ficaram fora até existir uma operação de motor com semântica de encerramento segura.
 - Auditoria persistente em DataStore ficou fora; o log tem até 100 ações por sessão e cada tentativa é enviada ao Output do servidor. Isso evita criar retenção de dados de administrador sem necessidade operacional definida.
 - O aviso de diagnóstico da renderização territorial deixou de consultar cargo de grupo no cliente. Ele usa o atributo `AF_Admin` que o servidor só define a partir de `AdminConfig`.
+
+## Revisão da fixture de doação sem tropas (2026-11-07)
+
+O teste original de `tests/gameplayfixer_ui.luau` dizia “No troops of my own”, mas carregava 100.000 tropas para o jogador e forçava diretamente `ctx.ratio = 0.0`. No histórico anterior à correção de porcentagem (`git show 06ede42^:src/client/UI/UICtx.luau`), `troops_for_ratio` multiplicava o total por `order_ratio`, então esse estado inválido produzia zero e a UI recusava a doação. A regra nova aceita porcentagens inteiras de 1 a 100, não tem stop de 0% (`UICtx.RATIO_STOPS` começa em 10%) e exige no mínimo 1 tropa quando o total é positivo; por isso 0% não é um envio válido a preservar.
+
+O commit `76d24f5` ajustou a fixture para que o jogador realmente tenha zero tropas. Isso mantém a intenção descrita pelo teste: sem tropas próprias, a doação é recusada com “No troops to spare”. O caso positivo de 1 tropa e 10% resulta em 1; 100% envia o total. `tests/troop_math.luau` cobre esses limites e `tests/gameplayfixer_ui.luau` confirma a recusa com zero tropas. A doação continua calculando a prévia com a função compartilhada e limitando o total à capacidade livre do aliado; o remote continua recebendo uma quantidade absoluta, validada pela simulação, não uma porcentagem.
