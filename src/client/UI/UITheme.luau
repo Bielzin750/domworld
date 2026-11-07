@@ -19,6 +19,14 @@ local UITheme = {}
 
 UITheme.IS_ROBLOX = IS_ROBLOX
 
+-- Atlas Tático is the single source for the visual tokens used by the client UI.
+local ThemeTokens: any = if IS_ROBLOX
+	then require(
+		(game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld"):WaitForChild("UI"):WaitForChild("Theme")
+	)
+	else (require :: any)("../../shared/UI/Theme")
+UITheme.tokens = ThemeTokens
+
 --- Shared Core module by name (ReplicatedStorage.DomWorld.Core in Roblox, src/shared/Core in Lune),
 --- required once and kept. A require later in a session can fail: in some live sessions every require
 --- after some moment errors "Cannot require a RobloxScript module from a non RobloxScript context"
@@ -143,54 +151,51 @@ function UITheme.equal(a: any, b: any): boolean
 		and math.abs(UITheme.alpha(a) - UITheme.alpha(b)) < 1e-4
 end
 
--- --- colour tokens (same as ui_theme.gd) ------------------------------------------------------
-UITheme.GLASS = UITheme.rgba(0.051, 0.075, 0.149, 0.84) -- #0d1326 @ 84 %
-UITheme.GLASS_SOLID = UITheme.rgba(0.043, 0.062, 0.125, 0.96)
-UITheme.GLASS_RAISED = UITheme.rgba(0.1, 0.13, 0.24, 0.94)
-UITheme.LINE = UITheme.rgba(1.0, 1.0, 1.0, 0.1)
-UITheme.LINE_2 = UITheme.rgba(1.0, 1.0, 1.0, 0.18)
-UITheme.FILL = UITheme.rgba(1.0, 1.0, 1.0, 0.06)
-UITheme.FILL_2 = UITheme.rgba(1.0, 1.0, 1.0, 0.11)
-UITheme.TEXT = Color3.new(0.94, 0.955, 1.0)
-UITheme.TEXT_2 = Color3.new(0.68, 0.73, 0.86)
-UITheme.TEXT_3 = Color3.new(0.48, 0.53, 0.67)
-UITheme.AMBER = Color3.new(1.0, 0.71, 0.278) -- #ffb547 primary actions
-UITheme.AMBER_HI = Color3.new(1.0, 0.8, 0.47)
-UITheme.AMBER_LO = Color3.new(0.8, 0.49, 0.13)
-UITheme.CYAN = Color3.new(0.31, 0.82, 1.0) -- info
-UITheme.GREEN = Color3.new(0.37, 0.89, 0.6)
-UITheme.RED = Color3.new(1.0, 0.33, 0.39)
+-- Existing semantic names remain stable; their colours now come from Theme.
+local C = ThemeTokens.Colors
+UITheme.GLASS = UITheme.c(C.surface, 0.96)
+UITheme.GLASS_SOLID = UITheme.c(C.canvas, 0.99)
+UITheme.GLASS_RAISED = UITheme.c(C.surfaceRaised, 0.99)
+UITheme.LINE = UITheme.c(C.line, 0.92)
+UITheme.LINE_2 = UITheme.c(C.lineStrong, 0.96)
+UITheme.FILL = UITheme.c(C.surfaceRaised, 0.46)
+UITheme.FILL_2 = UITheme.c(C.surfaceRaised, 0.78)
+UITheme.TEXT = C.text
+UITheme.TEXT_2 = C.textMuted
+UITheme.TEXT_3 = C.textDim
+UITheme.AMBER = C.primary
+UITheme.AMBER_HI = C.primaryBright
+UITheme.AMBER_LO = C.primaryDeep
+UITheme.CYAN = C.primary
+UITheme.GREEN = C.positive
+UITheme.RED = C.coral
 --- the solid SurrenderButton's fill, hover and lip
-UITheme.SURRENDER_RED = Color3.fromRGB(222, 48, 60)
-UITheme.SURRENDER_RED_HI = Color3.fromRGB(240, 72, 82)
-UITheme.SURRENDER_RED_LO = Color3.fromRGB(140, 20, 32)
-UITheme.ORANGE = Color3.new(1.0, 0.58, 0.36)
-UITheme.VIOLET = Color3.new(0.72, 0.62, 1.0)
-UITheme.GOLD = Color3.new(1.0, 0.84, 0.4)
-UITheme.INK = Color3.new(0.1, 0.066, 0.02) -- text on amber
-UITheme.WHITE = Color3.new(1, 1, 1)
-UITheme.BLACK = Color3.new(0, 0, 0)
+UITheme.SURRENDER_RED = C.coral
+UITheme.SURRENDER_RED_HI = C.coral
+UITheme.SURRENDER_RED_LO = C.coralDeep
+UITheme.ORANGE = C.coral
+UITheme.VIOLET = C.primaryBright
+UITheme.GOLD = C.primaryBright
+UITheme.WARNING = C.warning
+UITheme.INK = C.canvas
+UITheme.WHITE = C.white
+UITheme.BLACK = C.black
 UITheme.CLEAR = UITheme.rgba(0, 0, 0, 0)
 
 -- --- spacing / radii (8 px scale with a 4 px half step) -----------------------------------------
-UITheme.S1 = 4
-UITheme.S2 = 8
-UITheme.S3 = 12
-UITheme.S4 = 16
-UITheme.S5 = 24
-UITheme.S6 = 32
-UITheme.S7 = 48
-UITheme.R_SM = 6
-UITheme.R_MD = 10
-UITheme.R_LG = 14
+UITheme.S1, UITheme.S2, UITheme.S3, UITheme.S4 = table.unpack(ThemeTokens.Spacing, 1, 4)
+UITheme.S5, UITheme.S6, UITheme.S7 = ThemeTokens.Spacing[6], ThemeTokens.Spacing[7], ThemeTokens.Spacing[9]
+UITheme.R_SM = ThemeTokens.Radii.small
+UITheme.R_MD = ThemeTokens.Radii.medium
+UITheme.R_LG = ThemeTokens.Radii.large
 
 --- No backdrop blur in Roblox: glass panels take the GDScript no-frost path (tint alpha + 0.08,
 --- "a slightly more opaque tint reads just as well" -- what the original used on phones) plus the
 --- frost path's top sheen. Without the blur a lower alpha lets map icons / roads show through
 --- sharply; 0.08 keeps the territory colour tinting the glass while hiding that detail.
-UITheme.GLASS_BOOST = 0.08
+UITheme.GLASS_BOOST = 0
 --- Top sheen of the frosted glass (frost shader `sheen`, 0.045 when on).
-UITheme.GLASS_SHEEN = 0.045
+UITheme.GLASS_SHEEN = 0
 
 --- Frosted (screen-sampling) glass is unavailable in Roblox (kept for API parity).
 UITheme.frost_enabled = false
@@ -211,17 +216,19 @@ UITheme.ASCENT_EM = 0.935
 
 local WEIGHT_ENUM: { [number]: any } = {}
 if IS_ROBLOX then
+	local fonts = ThemeTokens.Fonts
 	WEIGHT_ENUM = {
-		[100] = Enum.Font.Gotham,
-		[200] = Enum.Font.Gotham,
-		[300] = Enum.Font.Gotham,
-		[400] = Enum.Font.Gotham,
-		[500] = Enum.Font.GothamMedium,
-		[600] = Enum.Font.GothamMedium,
-		[700] = Enum.Font.GothamBold,
-		[800] = Enum.Font.GothamBlack,
-		[900] = Enum.Font.GothamBlack,
+		[100] = Enum.Font[fonts.regular],
+		[200] = Enum.Font[fonts.regular],
+		[300] = Enum.Font[fonts.regular],
+		[400] = Enum.Font[fonts.regular],
+		[500] = Enum.Font[fonts.medium],
+		[600] = Enum.Font[fonts.medium],
+		[700] = Enum.Font[fonts.bold],
+		[800] = Enum.Font[fonts.heavy],
+		[900] = Enum.Font[fonts.heavy],
 	}
+	UITheme.NUMERIC_FONT = Enum.Font[fonts.numeric]
 end
 
 local function snap_weight(w: number?): number
@@ -1369,7 +1376,7 @@ function UITheme.flat(bg: any, radius: number?, border: any?, bw: number?, mh: n
 	return {
 		kind = "flat",
 		bg = UITheme.to_rgba(bg),
-		radius = radius or UITheme.R_MD,
+		radius = math.clamp(radius or UITheme.R_MD, 0, ThemeTokens.Radii.large),
 		border = if border ~= nil then UITheme.to_rgba(border) else UITheme.CLEAR,
 		bw = bw or 0,
 		mh = mh or 0,
@@ -1394,8 +1401,12 @@ end
 function UITheme.shadow_box(radius: number, size: number?, alpha: number?, offset_y: number?): Style
 	local s = UITheme.empty_box()
 	s.kind = "flat"
-	s.radius = radius
-	s.shadow = { size = size or 18, alpha = alpha or 0.45, offset_y = offset_y or 6.0 }
+	s.radius = math.clamp(radius, 0, ThemeTokens.Radii.large)
+	s.shadow = {
+		size = math.min(size or 8, 10),
+		alpha = math.min(alpha or 0.16, 0.18),
+		offset_y = math.min(offset_y or 2.0, 3.0),
+	}
 	return s
 end
 
@@ -1565,10 +1576,10 @@ function UITheme.theme(): any
 	chip.colors.font_hover_pressed_color = UITheme.AMBER_HI
 	chip.font_size = 13
 
-	-- Primary: warm amber with a darker lip.
+	-- Primary: solid turquoise, with a single thin border.
 	local pn = UITheme.flat(UITheme.AMBER, UITheme.R_MD, UITheme.CLEAR, 0, 22.0, 10.0)
-	pn.bw_bottom = 3
-	pn.border = UITheme.to_rgba(UITheme.AMBER_LO)
+	pn.bw_bottom = 0
+	pn.border = UITheme.to_rgba(UITheme.LINE)
 	local ph = UITheme.dup(pn)
 	ph.bg = UITheme.to_rgba(UITheme.AMBER_HI)
 	local pp =

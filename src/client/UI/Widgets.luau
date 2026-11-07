@@ -26,6 +26,11 @@ local UserInputService = if (game :: any) ~= nil then game:GetService("UserInput
 local GuiService = if (game :: any) ~= nil then game:GetService("GuiService") else nil :: any
 
 local UITheme = require("./UITheme")
+local Icons: any = if UITheme.IS_ROBLOX
+	then require(
+		(game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld"):WaitForChild("UI"):WaitForChild("Icons")
+	)
+	else (require :: any)("../../shared/UI/Icons")
 local Signal = UITheme.core("Signal")
 
 local W = {}
@@ -1958,34 +1963,24 @@ function Icon.new(icon_name: string?)
 	g.BackgroundTransparency = 1
 	g.BorderSizePixel = 0
 	g.Active = false
-	local plate = Instance.new("Frame")
-	plate.Name = "Plate"
-	plate.AnchorPoint = Vector2.new(0.5, 0.5)
-	plate.Position = UDim2.fromScale(0.5, 0.5)
-	plate.Size = UDim2.fromScale(0.92, 0.92)
-	plate.BackgroundColor3 = Color3.fromRGB(15, 24, 45)
-	plate.BackgroundTransparency = 0.82
-	plate.BorderSizePixel = 0
-	plate.ZIndex = 1
-	plate.Parent = g
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0.28, 0)
-	corner.Parent = plate
-	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = 1
-	stroke.Transparency = 0.2
-	stroke.Parent = plate
-	local gradient = Instance.new("UIGradient")
-	gradient.Rotation = 35
-	gradient.Color = ColorSequence.new(Color3.fromRGB(255, 200, 105), Color3.fromRGB(77, 191, 229))
-	gradient.Parent = plate
+	local image = Instance.new("ImageLabel")
+	image.Name = "AtlasIcon"
+	image.AnchorPoint = Vector2.new(0.5, 0.5)
+	image.Position = UDim2.fromScale(0.5, 0.5)
+	image.Size = UDim2.fromScale(0.82, 0.82)
+	image.BackgroundTransparency = 1
+	image.Image = ""
+	image.ScaleType = Enum.ScaleType.Fit
+	image.Visible = false
+	image.ZIndex = 1
+	image.Parent = g
 	local glyph = Instance.new("TextLabel")
 	glyph.Name = "Glyph"
 	glyph.BackgroundTransparency = 1
 	glyph.AnchorPoint = Vector2.new(0.5, 0.5)
 	glyph.Position = UDim2.fromScale(0.5, 0.48)
 	glyph.Size = UDim2.fromScale(0.82, 0.82)
-	glyph.Font = Enum.Font.GothamBold
+	glyph.Font = Enum.Font[UITheme.tokens.Fonts.bold]
 	glyph.TextScaled = true
 	glyph.TextWrapped = false
 	glyph.Text = ""
@@ -1998,15 +1993,16 @@ function Icon.new(icon_name: string?)
 	brand.AnchorPoint = Vector2.new(0.5, 0.5)
 	brand.Position = UDim2.fromScale(0.5, 0.5)
 	brand.Size = UDim2.fromScale(0.86, 0.65)
-	brand.Font = Enum.Font.GothamBlack
+	brand.Font = Enum.Font[UITheme.tokens.Fonts.heavy]
 	brand.Text = "DW"
 	brand.TextScaled = true
-	brand.TextColor3 = Color3.fromRGB(255, 211, 128)
+	brand.TextColor3 = UITheme.tokens.Colors.primary
 	brand.Visible = false
 	brand.ZIndex = 3
 	brand.Parent = g
-	self._plate = plate
-	self._stroke = stroke
+	self._image = image
+	self._logo = nil
+	self._logo_shapes = {}
 	self._glyph = glyph
 	self._brand = brand
 	self:set_mouse_filter(W.MOUSE_IGNORE)
@@ -2014,6 +2010,43 @@ function Icon.new(icon_name: string?)
 	self:set_icon(icon_name or "")
 	self:set_color(UITheme.TEXT)
 	return self
+end
+
+function Icon._build_logo(self)
+	if self._logo ~= nil then
+		return
+	end
+	local logo = Instance.new("Frame")
+	logo.Name = "DWGeometry"
+	logo.AnchorPoint = Vector2.new(0.5, 0.5)
+	logo.Position = UDim2.fromScale(0.5, 0.5)
+	logo.Size = UDim2.fromScale(0.9, 0.74)
+	logo.BackgroundTransparency = 1
+	logo.ZIndex = 2
+	logo.Parent = self.gui
+	local function logo_bar(name: string, x: number, y: number, w: number, h: number, rotation: number)
+		local bar = Instance.new("Frame")
+		bar.Name = name
+		bar.AnchorPoint = Vector2.new(0.5, 0.5)
+		bar.Position = UDim2.fromScale(x, y)
+		bar.Size = UDim2.fromScale(w, h)
+		bar.Rotation = rotation
+		bar.BorderSizePixel = 0
+		bar.BackgroundColor3 = UITheme.tokens.Colors.primary
+		bar.ZIndex = 2
+		bar.Parent = logo
+		table.insert(self._logo_shapes, bar)
+	end
+	-- D is a four-stroke frame; W is four angled bars. The mark is built entirely from UI Frames.
+	logo_bar("DTop", 0.21, 0.18, 0.30, 0.075, 0)
+	logo_bar("DBottom", 0.21, 0.82, 0.30, 0.075, 0)
+	logo_bar("DLeft", 0.06, 0.5, 0.075, 0.64, 0)
+	logo_bar("DRight", 0.36, 0.5, 0.075, 0.64, 0)
+	logo_bar("W1", 0.51, 0.5, 0.065, 0.58, 7)
+	logo_bar("W2", 0.62, 0.5, 0.065, 0.49, 172)
+	logo_bar("W3", 0.73, 0.5, 0.065, 0.49, 8)
+	logo_bar("W4", 0.84, 0.5, 0.065, 0.58, 173)
+	self._logo = logo
 end
 
 local ICON_GLYPHS = {
@@ -2075,9 +2108,21 @@ function Icon.set_icon(self, icon_name: string)
 	end
 	self.icon_name = icon_name
 	local is_brand = icon_name == "app_icon"
-	self._brand.Visible = is_brand
-	self._glyph.Visible = not is_brand and icon_name ~= ""
-	self._plate.Visible = icon_name ~= ""
+	local sprite = Icons.get(icon_name)
+	if is_brand then
+		Icon._build_logo(self)
+	end
+	self._brand.Visible = false
+	if self._logo ~= nil then
+		self._logo.Visible = is_brand
+	end
+	self._image.Visible = not is_brand and sprite ~= nil
+	self._glyph.Visible = not is_brand and sprite == nil and icon_name ~= ""
+	if sprite ~= nil then
+		self._image.Image = sprite.Image
+		self._image.ImageRectOffset = sprite.ImageRectOffset
+		self._image.ImageRectSize = sprite.ImageRectSize
+	end
 	self._glyph.Text = ICON_GLYPHS[icon_name] or string.upper(string.sub(icon_name, 1, 1))
 	self._glyph.TextSize = if string.len(self._glyph.Text) > 1 then 20 else 26
 end
@@ -2089,12 +2134,14 @@ function Icon.set_color(self, col)
 	local color = UITheme.color3(col)
 	local alpha = UITheme.alpha(col)
 	self._glyph.TextColor3 = color
-	self._stroke.Color = color
+	self._image.ImageColor3 = color
 	self._brand.TextColor3 = color
+	for _, bar in ipairs(self._logo_shapes) do
+		bar.BackgroundColor3 = color
+	end
 	self:_part(self._glyph, "TextTransparency", alpha)
+	self:_part(self._image, "ImageTransparency", alpha)
 	self:_part(self._brand, "TextTransparency", alpha)
-	self:_part(self._plate, "BackgroundTransparency", 0.18 * alpha)
-	self:_part(self._stroke, "Transparency", 0.8 * alpha)
 end
 Icon.set_self_modulate = Icon.set_color
 

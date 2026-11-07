@@ -12,6 +12,10 @@ Este projeto foi modificado em relação ao original: renomeado para DomWorld, a
 
 Data da primeira modificação: 2026-11-06. O histórico completo está no git.
 
+## Componentes de terceiros
+
+Material Icons Outlined, por Google, é distribuído sob Apache License 2.0. Os SVGs e a atribuição estão em `assets/domworld/icons/svg/`, `LICENSES/Apache-2.0-Material-Design-Icons.txt` e `docs/THIRD_PARTY_LICENSES.md`. O DomWorld não é afiliado nem endossado pelo Google.
+
 ## Código-fonte
 
 https://github.com/Bielzin750/domworld

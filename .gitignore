@@ -2,6 +2,7 @@
 .bin/
 .secrets/
 build/
+tools/icons/node_modules/
 *.rbxl.lock
 __pycache__/
 .claude/worktrees/

@@ -68,7 +68,7 @@ local st = T.flat(T.GLASS, T.R_LG, T.LINE, 1, 16, 12)
 local l1, t1, r1, b1 = T.margins(st)
 assert(l1 == 16 and t1 == 12 and r1 == 16 and b1 == 12, "margins")
 local th = T.theme()
-assert(th.PrimaryButton.styles.normal.bw_bottom == 3, "primary lip")
+assert(th.PrimaryButton.styles.normal.bw_bottom == 0, "flat primary button")
 assert(th.ChipButton.font_size == 13, "chip font size")
 
 print("uikit_theme ok")
