@@ -235,7 +235,7 @@ function GameState.new(world: any?)
 	self._req_last = {} :: { [number]: number }
 	--- owner id → { skin = id?, flag = id? } (Data/Cosmetics): outside the Sim — the match server
 	--- sends it (OP.COSMETICS), a solo match sets the player's own
-	self.cosmetics = {} :: { [number]: { skin: string?, flag: string?, face: number? } }
+	self.cosmetics = {} :: { [number]: { skin: string?, flag: string?, face: number?, bot: boolean? } }
 	return self
 end
 
@@ -254,14 +254,15 @@ function GameState.set_cosmetics(self: any, map: { [any]: any }, full: boolean?)
 		local skin = if type(v) == "table" and type(v.skin) == "string" then v.skin else nil
 		local flag = if type(v) == "table" and type(v.flag) == "string" then v.flag else nil
 		local face = if type(v) == "table" and type(v.face) == "number" and v.face > 0 then v.face else nil
+		local bot = if type(v) == "table" and v.bot == true then true else nil
 		local old = self.cosmetics[id]
-		if skin == nil and flag == nil and face == nil then
+		if skin == nil and flag == nil and face == nil and bot == nil then
 			if old ~= nil then
 				self.cosmetics[id] = nil
 				table.insert(changed, id)
 			end
-		elseif old == nil or old.skin ~= skin or old.flag ~= flag or old.face ~= face then
-			self.cosmetics[id] = { skin = skin, flag = flag, face = face }
+		elseif old == nil or old.skin ~= skin or old.flag ~= flag or old.face ~= face or old.bot ~= bot then
+			self.cosmetics[id] = { skin = skin, flag = flag, face = face, bot = bot }
 			table.insert(changed, id)
 		end
 	end

@@ -186,6 +186,7 @@ end
 -- the last FILL_REVEAL_S: the bot players that fill the match show up in the waiting room one by one,
 -- and the match starts with those names
 do
+	math.randomseed(7)
 	local opts = { fill = true }
 	local server, run = make(30, opts)
 	local a, w = peer("A"), peer("Watcher")

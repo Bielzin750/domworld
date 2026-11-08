@@ -20,6 +20,7 @@ local UITheme = require("./UITheme")
 local FlagVisual = require("./FlagVisual")
 local W = require("./Widgets")
 local GlassPanel = require("./GlassPanel")
+local AvatarView = require("./AvatarView")
 local Cosmetics: any = if typeof(game) == "Instance"
 	then require((game :: any):GetService("ReplicatedStorage"):WaitForChild("DomWorld").Data.Cosmetics)
 	else (require :: any)("../../shared/Data/Cosmetics")
@@ -83,13 +84,16 @@ function Row.new(c: any)
 	self.flag:set_visible(false)
 	self._flag_id = ""
 	h:add_child(self.flag)
-	-- a procedural initial mark beside each name; no profile image request is needed.
+	-- Roblox head shot for real players; the generated initial remains visible as a fallback.
 	local himg = Instance.new("Frame")
 	himg.BackgroundColor3 = Color3.fromRGB(40, 52, 82)
 	himg.BorderSizePixel = 0
 	local hc = Instance.new("UICorner")
 	hc.CornerRadius = UDim.new(0.5, 0)
 	hc.Parent = himg
+	local hstroke = Instance.new("UIStroke")
+	hstroke.Thickness = 1
+	hstroke.Parent = himg
 	local hmark = Instance.new("TextLabel")
 	hmark.Name = "Initial"
 	hmark.BackgroundTransparency = 1
@@ -99,8 +103,22 @@ function Row.new(c: any)
 	hmark.TextScaled = true
 	hmark.ZIndex = 2
 	hmark.Parent = himg
+	local avatar_image = Instance.new("ImageLabel")
+	avatar_image.Name = "HeadShot"
+	avatar_image.BackgroundTransparency = 1
+	avatar_image.Size = UDim2.fromScale(1, 1)
+	avatar_image.ScaleType = Enum.ScaleType.Crop
+	avatar_image.ZIndex = 3
+	avatar_image.Visible = false
+	local avatar_corner = Instance.new("UICorner")
+	avatar_corner.CornerRadius = UDim.new(0.5, 0)
+	avatar_corner.Parent = avatar_image
+	avatar_image.Parent = himg
 	self._face_img = himg
 	self._face_mark = hmark
+	self._face_stroke = hstroke
+	self._avatar_image = avatar_image
+	self._avatar_key = ""
 	self.face = W.wrap(himg)
 	self.face:set_min_size(Vector2.new(18, 18))
 	self.face.size_flags_vertical = W.SHRINK_CENTER
@@ -165,12 +183,16 @@ function Row.set_row(self, o: any, r: number)
 	T.set_swatch_color(self.sw, o.color)
 	local cz = s.cosmetics and s.cosmetics[o.id]
 	local face = if cz ~= nil and cz.face ~= nil then cz.face else 0
-	if face ~= self._face_id then
+	local name = tostring(o.name or "?")
+	local is_bot = cz ~= nil and cz.bot == true
+	local avatar_key = AvatarView.key(face, is_bot, name)
+	if avatar_key ~= self._avatar_key then
+		self._avatar_key = avatar_key
 		self._face_id = face
-		self.face:set_visible(face > 0)
+		self.face:set_visible(face > 0 or is_bot)
+		AvatarView.bind(self._avatar_image, self._face_mark, face, is_bot, name, T.tokens.Colors, T.color3(o.color))
+		self._face_stroke.Color = T.color3(o.color)
 	end
-	self._face_img.BackgroundColor3 = T.color3(o.color)
-	self._face_mark.Text = string.upper(string.sub(tostring(o.name or "?"), 1, 1))
 	local fid = if cz ~= nil and cz.flag ~= nil then cz.flag else ""
 	if fid ~= self._flag_id then
 		self._flag_id = fid

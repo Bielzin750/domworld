@@ -12,6 +12,7 @@ local UITheme = require("./UITheme")
 local W = require("./Widgets")
 local GlassPanel = require("./GlassPanel")
 local UICtx = require("./UICtx")
+local AvatarView = require("./AvatarView")
 local Defs = UICtx.core("Defs")
 
 local _Rules = nil
@@ -258,7 +259,8 @@ function SpawnOverlay._refresh_players(self)
 		return
 	end
 	self._count:set_text(string.format("%d / %d placed", placed, #humans))
-	-- the player initials (the cosmetics map's `face`, as in the leaderboard and on the map): those who
+	-- head shots from the cosmetics map, with generated initials for bots and a loading fallback:
+	-- those who
 	-- have placed first
 	table.sort(humans, function(a, b)
 		if a.spawned ~= b.spawned then
@@ -271,9 +273,14 @@ function SpawnOverlay._refresh_players(self)
 	local key = ""
 	for _, h in ipairs(humans) do
 		local cz = cosmetics[h.id]
-		if cz ~= nil and cz.face ~= nil then
+		if cz ~= nil and (cz.face ~= nil or cz.bot == true) then
 			table.insert(shown, h)
-			key ..= string.format("%d:%d:%d;", h.id, if h.spawned then 1 else 0, cz.face)
+			key ..= string.format(
+				"%d:%d:%s;",
+				h.id,
+				if h.spawned then 1 else 0,
+				AvatarView.key(cz.face or 0, cz.bot == true, tostring(h.name or "?"))
+			)
 			if #shown >= SpawnOverlay.HEADS then
 				break
 			end
@@ -288,15 +295,19 @@ function SpawnOverlay._refresh_players(self)
 	end
 	self._heads:set_visible(#shown > 0)
 	for _, h in ipairs(shown) do
+		local name = tostring(h.name or "?")
+		local cz = cosmetics[h.id]
+		local face_id = if cz ~= nil and cz.face ~= nil then cz.face else 0
+		local is_bot = cz ~= nil and cz.bot == true
 		local img = Instance.new("Frame")
-		img.BackgroundColor3 = Color3.fromRGB(40, 52, 82)
+		img.BackgroundColor3 = AvatarView.generated_color(name, UITheme.tokens.Colors)
 		img.BackgroundTransparency = if h.spawned then 0 else 0.55
 		img.BorderSizePixel = 0
 		local initial = Instance.new("TextLabel")
 		initial.BackgroundTransparency = 1
 		initial.Size = UDim2.fromScale(1, 1)
 		initial.FontFace = Font.fromEnum(Enum.Font.GothamBold)
-		initial.Text = string.upper(string.sub(tostring(h.name or "?"), 1, 1))
+		initial.Text = string.upper(string.sub(name, 1, 1))
 		initial.TextColor3 = Color3.new(1, 1, 1)
 		initial.TextScaled = true
 		initial.TextTransparency = if h.spawned then 0 else 0.55
@@ -305,11 +316,33 @@ function SpawnOverlay._refresh_players(self)
 		local corner = Instance.new("UICorner")
 		corner.CornerRadius = UDim.new(0.5, 0)
 		corner.Parent = img
+		local face = Instance.new("ImageLabel")
+		face.Name = "HeadShot"
+		face.BackgroundTransparency = 1
+		face.Size = UDim2.fromScale(1, 1)
+		face.ScaleType = Enum.ScaleType.Crop
+		face.ImageTransparency = if h.spawned then 0 else 0.55
+		face.ZIndex = 3
+		face.Visible = false
+		local face_corner = Instance.new("UICorner")
+		face_corner.CornerRadius = UDim.new(0.5, 0)
+		face_corner.Parent = face
+		face.Parent = img
 		-- (a rim of the panel's colour parts it from the head under it; green once they have placed)
 		local rim = Instance.new("UIStroke")
 		rim.Thickness = 1.5
 		rim.Color = UITheme.color3(if h.spawned then UITheme.GREEN else Color3.fromRGB(16, 22, 40))
 		rim.Parent = img
+		AvatarView.bind(
+			face,
+			initial,
+			face_id,
+			is_bot,
+			name,
+			UITheme.tokens.Colors,
+			UITheme.color3(s:owner_color(h.id)),
+			true
+		)
 		local head = W.wrap(img)
 		head:set_min_size(Vector2.new(SpawnOverlay.HEAD_PX, SpawnOverlay.HEAD_PX))
 		head.size_flags_vertical = W.SHRINK_CENTER

@@ -36,7 +36,6 @@ local LobbyHttp = require(script.Parent.Lobbies.LobbyHttp) :: any
 local SecretModule = script.Parent.Lobbies:FindFirstChild("Secret")
 local LobbySecret = if SecretModule then require(SecretModule :: ModuleScript) :: any else nil
 local BotNames = require(Shared.Data.BotNames) :: any
-local BotFaces = require(script.Parent.BotFaces) :: any
 local FreshServers = require(script.Parent.FreshServers) :: any
 local TutorialData = require(Shared.Data.Tutorial) :: any
 local Staging = require(Shared.Data.Staging) :: any
@@ -526,8 +525,7 @@ function ServerMain.start()
 
 	local server = MatchServer.new({
 		lobby = if is_match_server then lobby_hooks() else nil,
-		-- the head shots bot players wear beside their names (Roblox user ids; server only)
-		bot_faces = BotFaces,
+		-- Cosmetics for human portraits; bots are marked for procedural client portraits.
 		-- what a player wears in a match (Data/Cosmetics; the match server sends it to everyone)
 		cosmetics_of = function(peer: any): any
 			return if typeof(peer) == "Instance" then Purchases.equipped(peer) else nil

@@ -2,6 +2,7 @@
 --!strict
 -- Wire protocol for the multiplayer match: compact `buffer` encodings of Sim deltas, snapshots and
 -- intents. Replaces session.gd's `var_to_bytes()` + zstd transport (DESIGN.md §9, PORT.md §9).
+-- Modified for DomWorld, 2026 — see git history for details.
 --
 -- Every encoded message starts with an envelope byte:
 --   0  raw        → body follows
@@ -102,7 +103,7 @@ Protocol.OP = {
 	INVENTORY = 32, -- ({ owned = { id }, equipped = { skin?, flag? }, crates_bought, crates_allowed, stars,
 	-- unlocks = { key }, starter = false | { state = "ready" } | { state = "active", left = s } })
 	CRATE_RESULT = 33, -- (ok: boolean, item_id_or_reason: string) an OPEN_CRATE's answer
-	COSMETICS = 34, -- ({ [owner_id] = { skin?, flag?, face? } }) the match's equipped cosmetics, whole map
+	COSMETICS = 34, -- equipped cosmetics; face is a real participant's UserId, bot=true means generated portrait
 	STARS = 35, -- ({ lines = { {key, amount} }, total, balance, double }) Stars paid for a match
 	UNLOCK_RESULT = 36, -- (key: string, ok: boolean, reason: string?) a BUY_UNLOCK's answer
 	HOP_RESULT = 37, -- (going: boolean) a SOLO_HOP's answer: true = the teleport is on its way, false =

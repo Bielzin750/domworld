@@ -23,6 +23,8 @@ local NumberFormat = require(Core:WaitForChild("NumberFormat")) :: any
 local Cosmetics = require(RS:WaitForChild("DomWorld"):WaitForChild("Data"):WaitForChild("Cosmetics")) :: any
 local Coop = require(RS:WaitForChild("DomWorld"):WaitForChild("Net"):WaitForChild("Coop")) :: any
 local FlagVisual = require(script.Parent.Parent:WaitForChild("UI"):WaitForChild("FlagVisual")) :: any
+local AvatarView = require(script.Parent.Parent:WaitForChild("UI"):WaitForChild("AvatarView")) :: any
+local Theme = require(RS:WaitForChild("DomWorld"):WaitForChild("UI"):WaitForChild("Theme")) :: any
 local FrameClock = require(script.Parent:WaitForChild("FrameClock")) :: any
 
 local readi32 = buffer.readi32
@@ -70,6 +72,9 @@ type Plate = {
 	troops: TextLabel,
 	face: Frame,
 	face_mark: TextLabel,
+	face_image: ImageLabel,
+	face_stroke: UIStroke,
+	avatar_key: string,
 	flag: ImageLabel,
 	flag_id: string,
 	name_stroke: UIStroke,
@@ -504,6 +509,17 @@ function NameLayer._plate(self: any, id: number): Plate
 	face_mark.TextScaled = true
 	face_mark.ZIndex = 22
 	face_mark.Parent = face
+	local face_image = Instance.new("ImageLabel")
+	face_image.Name = "HeadShot"
+	face_image.BackgroundTransparency = 1
+	face_image.Size = UDim2.fromScale(1, 1)
+	face_image.ScaleType = Enum.ScaleType.Crop
+	face_image.ZIndex = 23
+	face_image.Visible = false
+	local image_corner = Instance.new("UICorner")
+	image_corner.CornerRadius = UDim.new(0.5, 0)
+	image_corner.Parent = face_image
+	face_image.Parent = face
 	face.Parent = line
 	local flag = Instance.new("ImageLabel")
 	flag.Name = "Flag"
@@ -525,6 +541,9 @@ function NameLayer._plate(self: any, id: number): Plate
 		troops = troops,
 		face = face,
 		face_mark = face_mark,
+		face_image = face_image,
+		face_stroke = fs,
+		avatar_key = "",
 		flag = flag,
 		flag_id = "",
 		face_id = 0,
@@ -652,15 +671,20 @@ function NameLayer.tick(self: any, dt: number)
 			local col = st:owner_color(id)
 			p.name_stroke.Color = col
 			p.troop_stroke.Color = col
-			p.face.BackgroundColor3 = col
+			p.face.BackgroundColor3 = AvatarView.generated_color(text, Theme.Colors)
 			p.face_mark.Text = string.upper(string.sub(text, 1, 1))
 		end
 		-- the player's initial and optional procedural flag, left of the name
 		local cz = st.cosmetics and st.cosmetics[id]
 		local face_id = if cz ~= nil and cz.face ~= nil then cz.face else 0
-		if face_id ~= p.face_id then
+		local is_bot = cz ~= nil and cz.bot == true
+		local avatar_key = AvatarView.key(face_id, is_bot, text)
+		if avatar_key ~= p.avatar_key then
+			p.avatar_key = avatar_key
 			p.face_id = face_id
-			p.face.Visible = face_id > 0
+			p.face.Visible = face_id > 0 or is_bot
+			AvatarView.bind(p.face_image, p.face_mark, face_id, is_bot, text, Theme.Colors, st:owner_color(id))
+			p.face_stroke.Color = st:owner_color(id)
 			p.px = -1 -- size the head with the name
 			p.size_dirty = 3
 		end

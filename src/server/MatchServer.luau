@@ -28,7 +28,6 @@
 --       on_closed = function()?,                  --   everyone left mid-match: it is gone
 --       on_vote_start = function(seconds)?,       --   the waiting players voted to start early
 --     },
---     bot_faces = {number}?,                      -- Roblox user ids: the head shots bot players wear
 --   }
 
 -- Roblox: ReplicatedStorage.DomWorld.Net; Lune: the source tree.
@@ -1024,24 +1023,11 @@ function MatchServer._continue_start(self: any)
 	self:_log(string.format("[Session] match started with %d commanders", humans))
 end
 
---- Cosmetics for bot players (they look like players: some wear a flag or a skin, like people do, and
---- each has a head shot beside its name like every person: a different one each of deps.bot_faces,
---- Roblox user ids of accounts picked at random: real avatars, 2026-10-04).
+--- Optional cosmetic flags and skins for bot players. Their portrait is generated on the client.
 function MatchServer._dress_bots(self: any, ids: any)
 	self._bot_cosmetics = {}
 	if type(ids) ~= "table" then
 		return
-	end
-	local pool = if type(self.deps.bot_faces) == "table" then table.clone(self.deps.bot_faces) else {}
-	local function face(): number?
-		if #pool == 0 then
-			return nil
-		end
-		local i = math.random(1, #pool)
-		local v = pool[i]
-		pool[i] = pool[#pool]
-		pool[#pool] = nil
-		return if type(v) == "number" and v > 0 then v else nil
 	end
 	local flags, skins = {}, {}
 	for _, it in Cosmetics.all() do
@@ -1059,16 +1045,16 @@ function MatchServer._dress_bots(self: any, ids: any)
 		if #skins > 0 and math.random() < MatchServer.BOT_SKIN_SHARE then
 			c.skin = skins[math.random(1, #skins)]
 		end
-		c.face = face()
-		if c.flag or c.skin or c.face then
+		-- Bots are procedurally represented in the client; never borrow a real player's image.
+		c.bot = true
+		if c.flag or c.skin or c.bot then
 			self._bot_cosmetics[id] = c
 		end
 	end
 end
 
---- The match's equipped cosmetics: owner id → { skin?, flag?, face? } (people's from
---- deps.cosmetics_of, bot players' from _dress_bots). `face` is a Roblox user id whose head shot goes
---- beside the name: a person's own, a bot player's dealt from deps.bot_faces.
+--- The match's equipped cosmetics: owner id → { skin?, flag?, face?, bot? }. Real players use their own
+--- UserId for the Roblox head shot; bots receive generated initials and theme colors on the client.
 function MatchServer.cosmetics_map(self: any): { [number]: any }
 	local map = table.clone(self._bot_cosmetics or {})
 	local of = self.deps.cosmetics_of
@@ -1083,7 +1069,7 @@ function MatchServer.cosmetics_map(self: any): { [number]: any }
 			local face = if uid ~= nil and uid > 0 then uid else nil
 			local skin, flag = if c ~= nil then c.skin else nil, if c ~= nil then c.flag else nil
 			if skin ~= nil or flag ~= nil or face ~= nil then
-				map[part.owner] = { skin = skin, flag = flag, face = face }
+				map[part.owner] = { skin = skin, flag = flag, face = face, bot = false }
 			end
 		end
 	end

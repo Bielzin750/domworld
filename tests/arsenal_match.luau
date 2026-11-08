@@ -74,27 +74,19 @@ mirror:set_cosmetics({ [a] = { face = 12345 }, [b] = { face = -2 }, [9] = { flag
 expect(mirror.cosmetics[a] ~= nil and mirror.cosmetics[a].face == 12345, "the client keeps a face on its own")
 expect(mirror.cosmetics[b] == nil, "and drops one that is no user id")
 expect(mirror.cosmetics[9] ~= nil and mirror.cosmetics[9].face == nil, "a bad face leaves the flag")
--- bot players wear a head shot too, each a different one of the server's pool
-server.deps.bot_faces = { 101, 102, 103, 104, 105 }
+-- Bots never borrow Roblox UserIds; the client generates a themed initial instead.
 server:_dress_bots({ 40, 41, 42, 43 })
 local bz = server:cosmetics_map()
-local seen_faces, distinct = {}, 0
 for _, id in { 40, 41, 42, 43 } do
-	local f = bz[id] and bz[id].face
-	if type(f) == "number" and f >= 101 and f <= 105 and not seen_faces[f] then
-		seen_faces[f] = true
-		distinct += 1
-	end
+	expect(bz[id] ~= nil and bz[id].bot == true and bz[id].face == nil, "bot identity requests a generated avatar only")
 end
-expect(distinct == 4, "every bot player has a head shot of its own from the pool")
-expect(#server.deps.bot_faces == 5, "the pool itself is left whole")
 server:_dress_bots({ 40, 41, 42, 43, 44, 45, 46 })
-local short = 0
 for _, id in { 40, 41, 42, 43, 44, 45, 46 } do
-	short += if server._bot_cosmetics[id] ~= nil and server._bot_cosmetics[id].face ~= nil then 1 else 0
+	expect(
+		server._bot_cosmetics[id] ~= nil and server._bot_cosmetics[id].face == nil,
+		"bot count never causes real faces to be dealt"
+	)
 end
-expect(short == 5, "a pool smaller than the bots runs out rather than repeating")
-server.deps.bot_faces = nil
 server:_dress_bots({})
 expect(
 	sim.o_unlock[a] == Defs.UNLOCK.mega and sim.o_unlock[b] == 0,
