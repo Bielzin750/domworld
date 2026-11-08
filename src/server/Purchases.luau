@@ -128,6 +128,8 @@ local busy: { [number]: number } = {}
 --- user id -> a write failed since the record was last read or written: what this server holds may
 --- not be what is stored (Purchases.use keeps a spend before it is stored)
 local doubt: { [number]: boolean } = {}
+--- Studio-only profiles may fall back to this server's memory when API access is unavailable.
+local session_only = false
 
 local function copy_data(value: any): any
 	if type(value) ~= "table" then
@@ -160,6 +162,13 @@ function Purchases.configure(d: { [string]: any })
 	for k, v in d do
 		deps[k] = v
 	end
+	if d.datastore_available == false then
+		session_only = true
+	end
+end
+
+function Purchases.persistence_available(): boolean
+	return not session_only and deps.datastore_available ~= false
 end
 
 --- Tests: forget everyone.
@@ -170,6 +179,7 @@ function Purchases.reset()
 	table.clear(records)
 	table.clear(busy)
 	table.clear(doubt)
+	session_only = deps.datastore_available == false
 	Purchases.lost.payouts = 0
 	Purchases.lost.stars = 0
 end
@@ -649,6 +659,16 @@ function Purchases.load(player: any)
 			end
 			return
 		end
+		if deps.studio == true then
+			session_only = true
+			remember(player, clean(nil, player.UserId))
+			log("Studio DataStore unavailable; this player's purchase data is in memory for this session")
+			if deps.warn then
+				pcall(deps.warn, "[Purchases] Sem acesso ao DataStore: alteração válida só nesta sessão")
+			end
+			notify(player)
+			return
+		end
 		local last = not wait or tries >= Purchases.LOAD_ATTEMPTS + Purchases.LOAD_RETRIES
 		if tries == Purchases.LOAD_ATTEMPTS or (last and tries < Purchases.LOAD_ATTEMPTS) then
 			cache[player] = cache[player] or {}
@@ -1001,6 +1021,22 @@ function Purchases.admin_stars(player: any, mode: string, amount: number): (bool
 	if records[player] == nil or loading[player] ~= nil or busy[user_id] ~= nil then
 		return false, "player profile is not ready"
 	end
+	local function apply_memory(): number
+		local rec = copy_data(records[player]) :: Record
+		if mode == "add" then
+			rec.stars = math.min(rec.stars + amount, Purchases.MAX_STARS)
+		elseif mode == "remove" then
+			rec.stars = math.max(rec.stars - amount, 0)
+		else
+			rec.stars = amount
+		end
+		remember(player, rec)
+		notify(player)
+		return rec.stars
+	end
+	if session_only and deps.studio == true then
+		return true, apply_memory(), true
+	end
 	local stored: Record? = nil
 	local ok, err = pcall(function()
 		update(user_id, function(old: any): any
@@ -1017,11 +1053,18 @@ function Purchases.admin_stars(player: any, mode: string, amount: number): (bool
 		end)
 	end)
 	if not ok or stored == nil then
+		if deps.studio == true then
+			session_only = true
+			if deps.warn then
+				pcall(deps.warn, "[Purchases] Sem acesso ao DataStore: alteração válida só nesta sessão")
+			end
+			return true, apply_memory(), true
+		end
 		return false, "store unavailable: " .. tostring(err)
 	end
 	remember(player, stored :: Record)
 	notify(player)
-	return true, (stored :: Record).stars
+	return true, (stored :: Record).stars, false
 end
 
 --- Admin-only view of persistent account data. Receipt ids stay server-side; only their count is exposed.

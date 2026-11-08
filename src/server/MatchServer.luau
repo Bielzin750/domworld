@@ -256,9 +256,18 @@ function MatchServer.admin_state(self: any): any
 	local sim = self._mp_sim
 	local owners = {}
 	if sim ~= nil then
+		local participants = self._participants or {}
 		for id = 1, sim.owner_total do
+			local user_id = nil
+			for _, participant in participants do
+				if participant.owner == id then
+					user_id = tonumber(participant.uid)
+					break
+				end
+			end
 			table.insert(owners, {
 				id = id,
+				user_id = user_id,
 				name = string.sub(tostring(sim.o_name[id] or ""), 1, 32),
 				alive = sim.o_alive[id] == 1,
 				bot = sim.o_bot ~= nil and sim.o_bot[id] == 1,
@@ -307,7 +316,8 @@ function MatchServer.admin_action(self: any, action: string, args: any): (boolea
 		end
 		return true, "Owner camera target confirmed"
 	end
-	if action == "set_troops" or action == "set_gold" then
+	local gold_balance: number? = nil
+	if action == "set_troops" or action == "set_gold" or action == "gold" then
 		local id, amount = args.owner_id, args.amount
 		if type(id) ~= "number" or id < 1 or id > sim.owner_total or sim.o_alive[id] ~= 1 then
 			return false, "owner is not active"
@@ -318,7 +328,15 @@ function MatchServer.admin_action(self: any, action: string, args: any): (boolea
 		if action == "set_troops" then
 			sim.o_troops[id] = amount
 		else
-			sim.o_gold[id] = amount
+			local mode = if action == "set_gold" then "set" else args.mode
+			if mode ~= "add" and mode ~= "remove" and mode ~= "set" then
+				return false, "invalid gold operation"
+			end
+			local current = math.clamp(math.floor(tonumber(sim.o_gold[id]) or 0), 0, 1000000000)
+			gold_balance = if mode == "add"
+				then math.min(current + amount, 1000000000)
+				else if mode == "remove" then math.max(current - amount, 0) else amount
+			sim.o_gold[id] = gold_balance
 		end
 	elseif action == "set_tile_owner" then
 		local tile, id = args.tile, args.owner_id
@@ -379,7 +397,7 @@ function MatchServer.admin_action(self: any, action: string, args: any): (boolea
 		return false, "action is not available"
 	end
 	self:_resync_everyone()
-	return true, "Match updated"
+	return true, if gold_balance ~= nil then tostring(gold_balance) else "Match updated"
 end
 
 -- =============================================================================================

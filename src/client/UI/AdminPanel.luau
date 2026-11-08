@@ -441,6 +441,9 @@ function AdminPanel._render_account(self: any)
 		"Moedas persistentes: Stars. Ouro existe apenas durante uma partida; gemas, nível e XP não têm campos persistidos neste projeto.",
 		42
 	)
+	if self.state.persistence_available == false then
+		self:_label("Sem acesso ao DataStore: alteração válida só nesta sessão", 34, C.warning)
+	end
 	local amount = self:_input("Stars · inteiro de 0 a 1.000.000.000", "1000")
 	local currency_row = self:_row()
 	for _, mode in { "add", "remove", "set" } do
@@ -475,6 +478,59 @@ function AdminPanel._render_account(self: any)
 		self:_row_button(shortcut_row, shortcut.label, function()
 			self:_invoke({ action = "stars", user_id = selected.user_id, mode = "add", amount = shortcut.amount })
 		end, 80)
+	end
+	if account.match_owner_id ~= nil then
+		self:_label(string.format("OURO NA PARTIDA · %d", account.match_gold or 0), 26, C.warning)
+		local gold_amount = self:_input("Ouro · inteiro de 0 a 1.000.000.000", "1000")
+		local gold_row = self:_row()
+		for _, mode in { "add", "remove", "set" } do
+			local label = if mode == "add" then "+ ADICIONAR" elseif mode == "remove" then "− REMOVER" else "DEFINIR"
+			self:_row_button(gold_row, label, function()
+				local n = tonumber(gold_amount.Text)
+				if n == nil or n ~= n or n % 1 ~= 0 or n < 0 or n > 1000000000 or n == math.huge then
+					self.status.Text = "Informe Ouro como inteiro de 0 a 1.000.000.000."
+					return
+				end
+				if mode ~= "add" then
+					local key = string.format("account_gold:%d:%s:%d", account.match_owner_id, mode, n)
+					if self.confirm ~= key or os.clock() - self.confirm_at >= 10 then
+						self.confirm = key
+						self.confirm_at = os.clock()
+						self.status.Text = "Ajuste destrutivo: clique novamente em até 10 segundos para confirmar."
+						return
+					end
+					self.confirm = nil
+				end
+				self:_invoke({
+					action = "gold",
+					mode = mode,
+					owner_id = account.match_owner_id,
+					amount = n,
+				})
+			end, 142)
+		end
+		local gold_shortcuts = self:_row()
+		for _, shortcut in
+			{
+				{ label = "+1K", amount = 1000 },
+				{ label = "+1M", amount = 1000000 },
+				{ label = "+1B", amount = 1000000000 },
+			}
+		do
+			self:_row_button(gold_shortcuts, shortcut.label, function()
+				self:_invoke({
+					action = "gold",
+					mode = "add",
+					owner_id = account.match_owner_id,
+					amount = shortcut.amount,
+				})
+			end, 80)
+		end
+	else
+		self:_label(
+			"Ouro de partida: disponível para edição enquanto a conta participa de uma partida multiplayer ativa.",
+			34
+		)
 	end
 	self:_label("CATÁLOGO · pesquise e conceda ou revogue itens salvos", 22, C.primary)
 	local category_row = self:_row()
@@ -689,14 +745,46 @@ function AdminPanel._render_map(self: any)
 		return
 	end
 	self:_label("ALVO · #" .. tostring(selected.id) .. " " .. tostring(selected.name), 24, C.text)
-	local amount = self:_input("Quantidade de tropas ou ouro · máximo 1.000.000.000")
+	local amount = self:_input("Quantidade de tropas · máximo 1.000.000.000")
 	local row = self:_row()
 	self:_row_button(row, "DEFINIR TROPAS", function()
 		self:_invoke({ action = "set_troops", owner_id = selected.id, amount = tonumber(amount.Text) })
 	end, 146)
-	self:_row_button(row, "DEFINIR OURO", function()
-		self:_invoke({ action = "set_gold", owner_id = selected.id, amount = tonumber(amount.Text) })
-	end, 136)
+	local gold_amount = self:_input("Ouro · inteiro de 0 a 1.000.000.000")
+	local gold_row = self:_row()
+	for _, mode in { "add", "remove", "set" } do
+		local label = if mode == "add" then "ADICIONAR" elseif mode == "remove" then "REMOVER" else "DEFINIR"
+		self:_row_button(gold_row, label, function()
+			local n = tonumber(gold_amount.Text)
+			if n == nil or n ~= n or n % 1 ~= 0 or n < 0 or n > 1000000000 or n == math.huge then
+				self.status.Text = "Informe Ouro como inteiro de 0 a 1.000.000.000."
+				return
+			end
+			if mode ~= "add" then
+				local key = string.format("gold:%d:%s:%d", selected.id, mode, n)
+				if self.confirm ~= key or os.clock() - self.confirm_at >= 10 then
+					self.confirm = key
+					self.confirm_at = os.clock()
+					self.status.Text = "Ajuste destrutivo: clique novamente em até 10 segundos para confirmar."
+					return
+				end
+				self.confirm = nil
+			end
+			self:_invoke({ action = "gold", mode = mode, owner_id = selected.id, amount = n })
+		end, 116)
+	end
+	local gold_shortcuts = self:_row()
+	for _, shortcut in
+		{
+			{ label = "+1K", amount = 1000 },
+			{ label = "+1M", amount = 1000000 },
+			{ label = "+1B", amount = 1000000000 },
+		}
+	do
+		self:_row_button(gold_shortcuts, shortcut.label, function()
+			self:_invoke({ action = "gold", mode = "add", owner_id = selected.id, amount = shortcut.amount })
+		end, 80)
+	end
 	local tile = self:_input("ID de território / tile")
 	local row2 = self:_row()
 	self:_row_button(row2, "ATRIBUIR AO ALVO", function()

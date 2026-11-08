@@ -159,7 +159,16 @@ function AdminService.get_state(self: any, player: any, requested_user_id: any?)
 		account_catalog = self.deps.purchases.admin_catalog(target)
 	end
 	local match_state = self.deps.match.admin_state()
-	return {
+	if account ~= nil and type(match_state.owners) == "table" then
+		for _, owner in match_state.owners do
+			if owner.user_id == account.user_id then
+				account.match_owner_id = owner.id
+				account.match_gold = owner.gold
+				break
+			end
+		end
+	end
+	local state = {
 		ok = true,
 		role = role,
 		shortcut_key = self.deps.auth.shortcut_key or "F10",
@@ -168,6 +177,9 @@ function AdminService.get_state(self: any, player: any, requested_user_id: any?)
 		account_catalog = account_catalog,
 		match = match_state,
 		logs = table.clone(self._logs),
+		persistence_available = if self.deps.purchases.persistence_available ~= nil
+			then self.deps.purchases.persistence_available()
+			else true,
 	}
 	if role == "owner" and self.deps.roster ~= nil then
 		state.roster = self.deps.roster:list()
@@ -222,7 +234,7 @@ function AdminService.execute(self: any, player: any, request: any): any
 		if mode ~= "set" and amount > AdminService.MAX_STARS_CHANGE then
 			return self:_reject(player, action, tostring(user_id), tostring(amount), "adjustment exceeds 1,000,000,000")
 		end
-		local ok, balance_or_reason = self.deps.purchases.admin_stars(selected, mode, amount)
+		local ok, balance_or_reason, session_only = self.deps.purchases.admin_stars(selected, mode, amount)
 		if not ok then
 			return self:_reject(player, action, tostring(user_id), tostring(amount), tostring(balance_or_reason))
 		end
@@ -414,15 +426,32 @@ function AdminService.execute(self: any, player: any, request: any): any
 		target = string.format("%s (%d)", selected.Name, user_id)
 		value = "progression reset; snapshot stored"
 		result = { ok = true, message = message }
-	elseif action == "set_troops" or action == "set_gold" then
+	elseif action == "set_troops" or action == "set_gold" or action == "gold" then
 		local owner_id = request.owner_id
-		local cap = if action == "set_troops" then AdminService.MAX_TROOPS else AdminService.MAX_GOLD
+		local is_gold = action ~= "set_troops"
+		local cap = if is_gold then AdminService.MAX_GOLD else AdminService.MAX_TROOPS
 		if not finite_integer(owner_id, 1, 1023) or not finite_integer(request.amount, 0, cap) then
 			return self:_reject(player, action, tostring(owner_id), tostring(request.amount), "invalid owner or amount")
 		end
-		local ok, message = match.admin_action(action, { owner_id = owner_id, amount = request.amount })
-		target, value = "owner " .. tostring(owner_id), tostring(request.amount)
-		result = if ok then { ok = true, message = message or "Match updated" } else nil
+		local mode = if action == "set_gold" then "set" elseif is_gold then request.mode else "set"
+		if is_gold and mode ~= "add" and mode ~= "remove" and mode ~= "set" then
+			return self:_reject(player, action, tostring(owner_id), tostring(request.amount), "invalid gold operation")
+		end
+		local ok, message = match.admin_action(if is_gold then "gold" else action, {
+			owner_id = owner_id,
+			mode = mode,
+			amount = request.amount,
+		})
+		target, value = "owner " .. tostring(owner_id), tostring(mode) .. " " .. tostring(request.amount)
+		result = if ok
+			then {
+				ok = true,
+				message = if is_gold and tonumber(message) ~= nil
+					then "Ouro atualizado: " .. tostring(message)
+					else if is_gold then "Ouro atualizado." else message or "Tropas atualizadas.",
+				balance = if is_gold then tonumber(message) else nil,
+			}
+			else nil
 		if not ok then
 			return self:_reject(player, action, target, value, tostring(message or "match unavailable"))
 		end

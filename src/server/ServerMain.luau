@@ -1358,6 +1358,7 @@ function ServerMain.start()
 	end
 	Purchases.configure({
 		datastore = purchase_store,
+		datastore_available = got_store,
 		players = Players,
 		notify = function(player: Player, credits: any)
 			send(player, OP.CREDITS, credits)

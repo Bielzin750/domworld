@@ -1,5 +1,62 @@
 # Decisões técnicas
 
+## Avatares, equipe administrativa e moedas (2026-11-07)
+
+### Avatares
+
+`git grep` no pai de `d4c19e8` encontrou `Cosmetics.face_image` em `NameLayer`, `Leaderboard` e
+`SpawnOverlay`; o commit `d4c19e8` retirou esses head shots junto dos IDs não verificados. O mapa e o
+placar passaram a mostrar só iniciais; a faixa de entrada também perdeu a imagem. Os bots ainda recebiam
+UserIds de terceiros por `BotFaces.luau`. A correção monta a URL oficial `rbxthumb` com o UserId do
+próprio participante, mantém a inicial durante e após falhas de carregamento, e gera avatares de bots
+com cor de Theme e iniciais. `tests/avatar_view.luau` e `tests/arsenal_match.luau` cobrem a escolha e a
+ausência de IDs reais nos bots.
+
+### Equipe e painel
+
+A reprodução no Studio mostrou o botão visível `ADMIN F10`; o cliente já esperava confirmação por
+`Admin.GetState`, mas o painel criava o botão e incluía o texto no título. A decisão é manter a criação
+somente após `state.ok == true`, remover todos os controles/textos chamativos e abrir pelo atalho
+configurado que o servidor devolve. A autorização é dividida entre Owner, admins estáticos, roster
+persistido e testers locais do Studio; o roster dinâmico é alterável só pelo Owner e limitado a 20.
+O ID `33980672` já constava na configuração anterior; permanece em `OwnerUserIds` como candidato até o
+proprietário confirmar que é a conta correta.
+
+### Moedas
+
+Reprodução no Studio, place não publicado: a chamada `stars/add/1000` terminou com sucesso e o painel
+mostrou saldo `1000 Stars`; o Output dizia `[Purchases] no DataStore here (an unpublished place):
+purchases are kept for this session only`. A interface dizia `Balance updated` e não avisava que o
+saldo seria perdido. A causa raiz foi o fallback em memória de `ServerMain` parecer uma escrita
+persistente para `Purchases.admin_stars` e a resposta de `AdminService` não transportar o estado de
+persistência. Agora o carregamento detecta falha de API no Studio, usa a mesma sessão em memória,
+devolve `session_only`, atualiza `OP.INVENTORY` e expõe a mensagem “Sem acesso ao DataStore: alteração
+válida só nesta sessão”. Em produção, falha de escrita continua sendo erro explícito.
+
+O código anterior também oferecia apenas `set_gold`; não havia add/remove nem atalhos e o saldo não era
+devolvido na resposta. A causa é a ação limitada a set nos três pontos do caminho (UI, `AdminService` e
+`MatchServer`). Agora add/remove/set têm limite, retorno do saldo e resync de snapshot, então o HUD e a
+loja recebem o novo estado da partida. `tests/admin_currency.luau` cobre a rota de moedas; `tests/admin_match.luau`
+cobre o caminho autoritativo e o resync do MatchServer.
+
+### Ícones
+
+A busca na UI encontrou 50 nomes de fallback em `ICON_GLYPHS`, os aliases e nomes legados do módulo e
+as ações que chegam dinamicamente de `UIRules`, `Defs` e `Arsenal`. O inventário registra 75 IDs visuais
+únicos, incluindo o ícone separado da experiência Roblox. A decisão é manter um slot estável por ID e
+retornar `nil` quando o mapa gerado marca um arquivo ausente; isso conserva o fallback de texto/forma e
+evita uma requisição quebrada. O PNG do atlas é produzido com biblioteca padrão e o CairoSVG é opcional
+somente para entrada SVG. A imagem quadrada da experiência é gerada em arquivo separado, pois não é
+consumida pelo runtime do jogo. Nenhum ícone foi baixado, enviado ou creditado nesta revisão.
+
+A primeira execução dos testes Luau encontrou `script.Parent` indisponível no carregador Lune (`attempt to
+index nil with 'Parent'`). `Icons` agora carrega o mesmo mapa via ModuleScript no Roblox e por caminho
+relativo no Lune; `tests/icons.luau` verifica que a ausência do atlas mantém o fallback sem erro.
+
+Ao remover um membro da equipe por UserId, a listagem persistida já fornece o nome e dispensa uma
+consulta externa ao Roblox; a consulta de nome para UserId continua obrigatória quando o dono adiciona
+uma pessoa pelo ID e a resolução inversa continua protegida por `pcall`.
+
 ## 2026-11-07 — Porcentagem de tropas
 
 A fórmula antiga limitava a porcentagem escolhida pela reserva de tropas dos primeiros jogos:
@@ -38,9 +95,9 @@ classificado como atribuição genérica de segredo (`SECR...ef\"`). O fixture f
 placeholder nesse commit e não é carregado pelo serviço de produção. A allowlist exige a justificativa,
 o caminho, a linha, a regra, a forma mascarada e o hash exatos; o scan atual da árvore de trabalho segue
 sem achados.
-# Painel de administração (2026-11-07)
+# Painel de administração — histórico anterior às alterações atuais (2026-11-07)
 
-- A autorização antiga aceitava o dono da experiência e cargos altos no grupo. O painel novo usa apenas uma allowlist explícita de UserIds em `src/server/AdminConfig.luau`, vazia por padrão; o Studio libera o tester local. Isso evita que uma mudança no dono/grupo conceda poderes automaticamente.
+- A autorização antiga aceitava o dono da experiência e cargos altos no grupo. A revisão de 2026-11-07 substituiu a allowlist plana pelos papéis `OwnerUserIds`, `AdminUserIds` e roster em `AdminRoster`; a regra de tester do Studio ficou configurável.
 - Os dois remotes `DomWorldNet.Admin.GetState` e `DomWorldNet.Admin.Action` passam primeiro por `AdminAuth` no servidor. Ações usam limite compartilhado de 20 chamadas por 10 segundos por jogador, validações tipadas e de estado, limites de valores e log em memória + Output.
 - A conta Admin agora consulta o perfil persistido e altera Stars, itens de `Cosmetics`, desbloqueios de `Arsenal` e créditos consumíveis de `Products`. As escritas usam `UpdateAsync`, exigem perfil carregado e os limites documentados em `docs/ADMIN.md`.
 - O motor suporta mutações multiplayer de tropas, ouro, posse de tile, eliminação, bots na fase de entrada, pausa e velocidade. A simulação solo roda no cliente, por isso não se expõe ao servidor administrativo.
