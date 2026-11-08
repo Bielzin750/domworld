@@ -545,7 +545,12 @@ local function start_admin_panel(client: Instance)
 		local ok, state = pcall(function()
 			return (get_state :: RemoteFunction):InvokeServer()
 		end)
-		if not ok or type(state) ~= "table" or state.ok ~= true then
+		if not ok or type(state) ~= "table" then
+			return
+		end
+		local core = ReplicatedStorage:WaitForChild("DomWorld"):WaitForChild("Core")
+		local access = require(core:WaitForChild("AdminAccess"))
+		if not access.confirmed(state) then
 			return
 		end
 		local panel = optional(client, { "UI", "AdminPanel" })

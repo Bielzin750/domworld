@@ -80,19 +80,34 @@ function AdminService._audit(self: any, player: any, action: string, target: str
 	end
 end
 
-function AdminService._is_admin(self: any, player: any): boolean
+function AdminService._role(self: any, player: any): string?
 	local auth = self.deps.auth
-	local ok, yes = pcall(auth.is_admin, auth, player)
-	if ok and yes == true then
-		return true
+	if type(auth.role) == "function" then
+		local ok, role = pcall(auth.role, auth, player)
+		if ok and (role == "owner" or role == "admin") then
+			return role
+		end
+	else
+		local ok, yes = pcall(auth.is_admin, auth, player)
+		if ok and yes == true then
+			return "admin"
+		end
 	end
 	local now = (self.deps.clock or os.clock)()
 	local last = self._denied_at[player] or -math.huge
 	if now - last >= 1 then
 		self._denied_at[player] = now
-		self:_audit(player, "authorization_denied", "", "", if ok then "not_admin" else "auth_error")
+		self:_audit(player, "authorization_denied", "", "", "not_admin")
 	end
-	return false
+	return nil
+end
+
+function AdminService._is_admin(self: any, player: any): boolean
+	return self:_role(player) ~= nil
+end
+
+function AdminService._is_owner(self: any, player: any): boolean
+	return self:_role(player) == "owner"
 end
 
 function AdminService._rate_limited(self: any, player: any): boolean
@@ -107,7 +122,8 @@ function AdminService._rate_limited(self: any, player: any): boolean
 end
 
 function AdminService.get_state(self: any, player: any, requested_user_id: any?): any
-	if not self:_is_admin(player) then
+	local role = self:_role(player)
+	if role == nil then
 		return { ok = false }
 	end
 	if self:_rate_limited(player) then
@@ -145,12 +161,19 @@ function AdminService.get_state(self: any, player: any, requested_user_id: any?)
 	local match_state = self.deps.match.admin_state()
 	return {
 		ok = true,
+		role = role,
+		shortcut_key = self.deps.auth.shortcut_key or "F10",
 		players = target_rows,
 		account = account,
 		account_catalog = account_catalog,
 		match = match_state,
 		logs = table.clone(self._logs),
 	}
+	if role == "owner" and self.deps.roster ~= nil then
+		state.roster = self.deps.roster:list()
+		state.roster_available = self.deps.roster:is_available()
+	end
+	return state
 end
 
 function AdminService._reject(
@@ -205,7 +228,94 @@ function AdminService.execute(self: any, player: any, request: any): any
 		end
 		target = string.format("%s (%d)", selected.Name, user_id)
 		value = string.format("%s %d => %d Stars", mode, amount, balance_or_reason)
-		result = { ok = true, message = "Balance updated", balance = balance_or_reason }
+		result = {
+			ok = true,
+			message = if session_only
+				then "Stars atualizadas; saldo válido só nesta sessão."
+				else "Stars atualizadas.",
+			balance = balance_or_reason,
+			session_only = session_only == true,
+		}
+	elseif action == "team_add" or action == "team_remove" then
+		if not self:_is_owner(player) then
+			return self:_reject(player, action, "team", "", "owner access required")
+		end
+		local raw_id = request.user_id
+		local username = request.username
+		if raw_id == nil and short_string(username, 32) then
+			local resolver = self.deps.user_id_from_name
+			local ok, resolved = false, nil
+			if resolver ~= nil then
+				ok, resolved = pcall(resolver, username)
+			end
+			if not ok then
+				return self:_reject(player, action, tostring(username), "", "username not found")
+			end
+			raw_id = resolved
+		end
+		local user_id = tonumber(raw_id)
+		if not finite_integer(user_id, 1, 9007199254740991) then
+			return self:_reject(player, action, tostring(raw_id), "", "invalid UserId")
+		end
+		local roster = self.deps.roster
+		if action == "team_remove" and roster ~= nil and roster:is_owner(user_id) then
+			return self:_reject(player, action, tostring(user_id), "", "O dono não pode ser removido")
+		end
+		local resolved_name = tostring(user_id)
+		if action == "team_add" then
+			local name_resolver = self.deps.name_from_user_id
+			local name_ok, name = false, nil
+			if name_resolver ~= nil then
+				name_ok, name = pcall(name_resolver, user_id)
+			end
+			if not name_ok or not short_string(name, 32) then
+				return self:_reject(player, action, tostring(user_id), "", "Roblox username not found")
+			end
+			resolved_name = tostring(name)
+		elseif roster ~= nil then
+			for _, entry in roster:list() do
+				if entry.user_id == user_id then
+					resolved_name = entry.username
+					break
+				end
+			end
+		end
+		if roster == nil then
+			return self:_reject(player, action, tostring(user_id), "", "Lista da equipe indisponível")
+		end
+		local ok, message
+		if action == "team_add" then
+			ok, message = roster:add({
+				user_id = user_id,
+				username = resolved_name,
+				added_at = (self.deps.now or os.time)(),
+				added_by_user_id = tonumber(player.UserId) or 0,
+				added_by_name = tostring(player.Name or "Owner"),
+			})
+		else
+			ok, message = roster:remove(user_id)
+		end
+		if not ok then
+			return self:_reject(
+				player,
+				action,
+				resolved_name .. " (" .. tostring(user_id) .. ")",
+				"",
+				tostring(message)
+			)
+		end
+		if type(self.deps.auth.set_roster) == "function" then
+			self.deps.auth:set_roster(roster:member_ids())
+		end
+		if self.deps.on_roster_changed ~= nil then
+			pcall(self.deps.on_roster_changed)
+		end
+		target = resolved_name .. " (" .. tostring(user_id) .. ")"
+		value = if action == "team_add" then "admin added" else "admin removed"
+		result = {
+			ok = true,
+			message = if action == "team_add" then "Pessoa adicionada à equipe." else "Pessoa removida da equipe.",
+		}
 	elseif action == "admin_item" then
 		local user_id = request.user_id
 		local category = request.category
@@ -364,7 +474,7 @@ function AdminService.execute(self: any, player: any, request: any): any
 			return self:_reject(player, action, target, value, tostring(message or "match unavailable"))
 		end
 	elseif action == "add_bot" then
-		local name = if type(request.name) == "string" then request.name else "Admin Bot"
+		local name = if type(request.name) == "string" then request.name else "Bot DomWorld"
 		if #name > 20 or string.match(name, "^[%w _%-]+$") == nil then
 			return self:_reject(player, action, name, "", "invalid bot name")
 		end

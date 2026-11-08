@@ -30,8 +30,8 @@ GlobeNotice.TEXT_SHORT = {
 	data = "Map data didn't load, so territory colours can't be drawn. Everything else works.",
 }
 GlobeNotice.OWNER_HINT = {
-	disabled = "Admin: enable \u{201C}Mesh / Image APIs\u{201D} for this experience (Game Settings \u{203A} Security).",
-	memory = "Admin: other Studio windows share this device's editable memory; close some to test.",
+	disabled = "Configuração: ative \u{201C}Mesh / Image APIs\u{201D} para esta experiência (Game Settings \u{203A} Security).",
+	memory = "Teste local: outras janelas do Studio compartilham esta memória; feche algumas para testar.",
 }
 
 local function in_studio(): boolean

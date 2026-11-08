@@ -44,6 +44,7 @@ end
 function AdminPanel.new(initial: any, get_state: RemoteFunction, action_remote: RemoteFunction, world: any)
 	local self = setmetatable({}, AdminPanel)
 	self.state = initial
+	self.shortcut_key = if type(initial.shortcut_key) == "string" then initial.shortcut_key else "F10"
 	self.get_state_remote = get_state
 	self.action_remote = action_remote
 	self.world = world
@@ -69,21 +70,6 @@ function AdminPanel._build(self: any)
 		DisplayOrder = 80,
 	}, player_gui) :: ScreenGui
 	self.gui = gui
-	local open = create("TextButton", {
-		Name = "AdminToggle",
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -18, 0, 68),
-		Size = UDim2.fromOffset(96, 44),
-		BackgroundColor3 = C.surface,
-		Text = "ADMIN  F10",
-		TextColor3 = C.primary,
-		TextSize = 12,
-		Font = FONT_BOLD,
-		AutoButtonColor = false,
-	}, gui) :: TextButton
-	corner(open)
-	stroke(open, C.primary, 0.35)
-	self.open_button = open
 	local panel = create("Frame", {
 		Name = "Panel",
 		AnchorPoint = Vector2.new(0.5, 0.5),
@@ -110,7 +96,7 @@ function AdminPanel._build(self: any)
 		Position = UDim2.fromOffset(0, 0),
 		Size = UDim2.new(1, -112, 1, 0),
 		Font = FONT_BOLD,
-		Text = "DOMWORLD  /  ADMIN",
+		Text = "DOMWORLD  /  CONTROLE",
 		TextColor3 = C.text,
 		TextSize = 16,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -144,9 +130,14 @@ function AdminPanel._build(self: any)
 		MAPA = { name = "map", glyph = "▦" },
 		PARTIDA = { name = "schedule", glyph = "◷" },
 		REGISTRO = { name = "info", glyph = "≡" },
+		EQUIPE = { name = "users", glyph = "◇" },
 	}
-	for index, tab in { "CONTA", "MAPA", "PARTIDA", "REGISTRO" } do
-		local button = self:_button(tabs, tab, UDim2.new(), UDim2.new(0.25, -5, 1, 0))
+	local tab_names = { "CONTA", "MAPA", "PARTIDA", "REGISTRO" }
+	if self.state.role == "owner" then
+		table.insert(tab_names, "EQUIPE")
+	end
+	for index, tab in tab_names do
+		local button = self:_button(tabs, tab, UDim2.new(), UDim2.new(1 / #tab_names, -5, 1, 0))
 		button.LayoutOrder = index
 		button.Text = ""
 		self.tab_buttons[tab] = button
@@ -220,19 +211,14 @@ function AdminPanel._build(self: any)
 		TextTruncate = Enum.TextTruncate.AtEnd,
 	}, panel) :: TextLabel
 	self.status = status
-	open.Activated:Connect(function()
-		panel.Visible = not panel.Visible
-		if panel.Visible then
-			self:_refresh()
-		end
-	end)
 	table.insert(
 		self._connections,
 		UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
 			if processed or UserInputService:GetFocusedTextBox() ~= nil then
 				return
 			end
-			if input.KeyCode == Enum.KeyCode.F10 then
+			local shortcut = Enum.KeyCode[self.shortcut_key]
+			if shortcut ~= nil and input.KeyCode == shortcut then
 				panel.Visible = not panel.Visible
 				if panel.Visible then
 					self:_refresh()
@@ -362,6 +348,8 @@ function AdminPanel._render(self: any)
 		self:_render_map()
 	elseif self.tab == "PARTIDA" then
 		self:_render_match()
+	elseif self.tab == "EQUIPE" and self.state.role == "owner" then
+		self:_render_team()
 	else
 		self:_render_logs()
 	end
@@ -752,11 +740,82 @@ function AdminPanel._render_map(self: any)
 			self:_invoke({ action = "remove_bot", owner_id = selected.id })
 		end, 146)
 	end
-	local bot_name = self:_input("Nome de bot · adicionar somente na fase de entrada", "Admin Bot")
+	local bot_name = self:_input("Nome de bot · adicionar somente na fase de entrada", "Bot DomWorld")
 	local row5 = self:_row()
 	self:_row_button(row5, "ADICIONAR BOT", function()
 		self:_invoke({ action = "add_bot", name = bot_name.Text })
 	end, 144)
+end
+
+function AdminPanel._render_team(self: any)
+	if self.state.role ~= "owner" then
+		return
+	end
+	self:_label("EQUIPE · ACESSO PERMANENTE", 22, C.primary)
+	if self.state.roster_available ~= true then
+		self:_label(
+			"A lista persistente não está disponível. Verifique o acesso ao DataStore e atualize.",
+			42,
+			C.warning
+		)
+		return
+	end
+	local person = self:_input("Nome de usuário ou UserId", self.team_input or "")
+	person:GetPropertyChangedSignal("Text"):Connect(function()
+		self.team_input = person.Text
+	end)
+	local add_row = self:_row()
+	self:_row_button(add_row, "ADICIONAR À EQUIPE", function()
+		local value = string.gsub(person.Text, "^%s*(.-)%s*$", "%1")
+		if value == "" then
+			self.status.Text = "Informe um nome de usuário ou UserId."
+			return
+		end
+		local numeric = tonumber(value)
+		self:_invoke(
+			if numeric ~= nil
+				then { action = "team_add", user_id = numeric }
+				else { action = "team_add", username = value }
+		)
+	end, 190)
+	local rows = self.state.roster or {}
+	if #rows == 0 then
+		self:_label("Equipe vazia.")
+	end
+	for _, entry in rows do
+		local row = self:_row()
+		local added = if entry.added_at > 0 then os.date("%d/%m/%Y", entry.added_at) else "data desconhecida"
+		create("TextLabel", {
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, -154, 1, 0),
+			Font = FONT_MEDIUM,
+			Text = string.format(
+				"%s · %d · desde %s · por %s (%d)",
+				entry.username,
+				entry.user_id,
+				added,
+				entry.added_by_name,
+				entry.added_by_user_id
+			),
+			TextColor3 = C.text,
+			TextSize = 11,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+		}, row)
+		local key = "team:" .. tostring(entry.user_id)
+		local remove_text = if self.confirm == key then "CONFIRMAR" else "REMOVER"
+		self:_row_button(row, remove_text, function()
+			if self.confirm ~= key or os.clock() - self.confirm_at >= 10 then
+				self.confirm = key
+				self.confirm_at = os.clock()
+				self.status.Text = "Clique novamente em até 10 segundos para remover este acesso."
+				self:_render()
+				return
+			end
+			self.confirm = nil
+			self:_invoke({ action = "team_remove", user_id = entry.user_id })
+		end, 138)
+	end
 end
 
 function AdminPanel._render_match(self: any)
@@ -889,6 +948,7 @@ function AdminPanel._refresh(self: any)
 		end)
 		if ok and type(state) == "table" and state.ok == true then
 			self.state = state
+			self.shortcut_key = if type(state.shortcut_key) == "string" then state.shortcut_key else self.shortcut_key
 			if self.selected_owner == nil and #state.match.owners > 0 then
 				self.selected_owner = state.match.owners[1].id
 			end

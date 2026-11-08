@@ -1220,11 +1220,6 @@ function TitleScreen._refresh_greeting(self)
 	local s0 = self.ctx.session
 	local rank = if s0 ~= nil and s0.general == true then "General" else "Commander"
 	local text = if n ~= "Commander" and n ~= "" then ("Welcome, " .. rank .. " " .. n) else ("Welcome, " .. rank)
-	-- game admins (the server told this client which players are bots): say so, so it's easy to check
-	local s = self.ctx.session
-	if s ~= nil and s.admin_bots ~= nil then
-		text ..= "  ·  Admin"
-	end
 	self._greet:set_text(text)
 end
 

@@ -48,6 +48,7 @@ local ServerPerf = require(script.Parent.ServerPerf) :: any
 local AdminAuth = require(script.Parent.AdminAuth) :: any
 local AdminConfig = require(script.Parent.AdminConfig) :: any
 local AdminService = require(script.Parent.AdminService) :: any
+local AdminRoster = require(script.Parent.AdminRoster) :: any
 local DsGate = require(script.Parent.DsGate) :: any
 local Handoff = require(script.Parent.Handoff) :: any
 local Purchases = require(script.Parent.Purchases) :: any
@@ -1214,18 +1215,31 @@ function ServerMain.start()
 			end
 		end
 	end
-	-- Admin authorization is a server-side UserId allowlist (Studio playtests are open to testers).
-	-- The allowlist is empty by default. Only verified admins receive AF_Admin and bot identities.
+	-- Admin roles are server-side. Dynamic team membership is loaded from its own DataStore.
 	local admins: { [Player]: boolean } = {}
 	local admin_sent: { [Player]: string } = {}
+	local got_roster_store, roster_store = pcall(function()
+		return DsGate.wrap(DataStoreService:GetDataStore("AdminRoster"))
+	end)
+	local admin_roster =
+		AdminRoster.new(if got_roster_store then roster_store else nil, task.wait, AdminConfig.OwnerUserIds)
+	local roster_loaded, roster_error = admin_roster:load()
+	if not roster_loaded then
+		warn("[AdminRoster] persistent team is unavailable: " .. tostring(roster_error))
+	end
 	local admin_auth = AdminAuth.new(AdminConfig, RunService:IsStudio())
+	admin_auth:set_roster(admin_roster:member_ids())
 	local admin_service: any = nil
 	local function check_admin(player: Player)
-		local yes = admin_auth:is_admin(player)
+		local role = admin_auth:role(player)
+		local yes = role ~= nil
 		player:SetAttribute("AF_Admin", yes)
+		player:SetAttribute("AF_AdminRole", role or "")
 		if yes then
 			admins[player] = true
-			print(string.format("[Admin] %s (%d): authorized by AdminConfig", player.Name, player.UserId))
+		else
+			admins[player] = nil
+			admin_sent[player] = nil
 		end
 	end
 	--- Bot players of the running match (owner ids) to each admin, whenever the match changes.
@@ -1396,6 +1410,21 @@ function ServerMain.start()
 			return Players:GetPlayerByUserId(user_id)
 		end,
 		purchases = Purchases,
+		roster = admin_roster,
+		user_id_from_name = function(username: string): number
+			return Players:GetUserIdFromNameAsync(username)
+		end,
+		name_from_user_id = function(user_id: number): string
+			return Players:GetNameFromUserIdAsync(user_id)
+		end,
+		on_roster_changed = function()
+			admin_auth:set_roster(admin_roster:member_ids())
+			for _, player in Players:GetPlayers() do
+				check_admin(player)
+			end
+			table.clear(admin_sent)
+			push_admin_bots()
+		end,
 		match = {
 			admin_state = function(): any
 				return server:admin_state()
