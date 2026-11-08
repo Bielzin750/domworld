@@ -400,13 +400,14 @@ function Arsenal._row(self, it: any, order: number, rh: number, u: number): any
 		BackgroundColor3 = c3(it.color[2]):Lerp(NIGHT, 0.35),
 		BackgroundTransparency = 0.12,
 		BorderSizePixel = 0,
-		Image = if shot ~= nil then shot.id else (UITheme.icon(it.icon) or ""),
+		Image = if shot ~= nil then shot.id else "",
 		ScaleType = Enum.ScaleType.Fit,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromScale(0.86, 0.86),
 		ZIndex = 43,
 	}, tile)
+	local has_atlas_icon = if shot == nil then UITheme.apply_icon(render, it.icon, WHITE) else false
 	new("UICorner", { CornerRadius = UDim.new(0.18, 0) }, render)
 	new("UIStroke", { Color = NIGHT, Thickness = 1.25, Transparency = 0.15 }, render)
 	new("TextLabel", {
@@ -417,7 +418,7 @@ function Arsenal._row(self, it: any, order: number, rh: number, u: number): any
 		Text = string.upper(string.sub(it.key, 1, 1)),
 		TextColor3 = WHITE,
 		TextScaled = true,
-		Visible = shot == nil or shot.id == "",
+		Visible = if shot ~= nil then shot.id == "" else not has_atlas_icon,
 		ZIndex = 44,
 	}, render)
 	-- (a long name shrinks to fit rather than being cut: "Reinforcements" on a phone)
@@ -577,7 +578,7 @@ function Arsenal._build_detail(self)
 		end
 	end
 	local shot = if type(Art.renders) == "table" then Art.renders[it.key] else nil
-	local image = if shot ~= nil then shot.id else (UITheme.icon(it.icon) or "")
+	local image = if shot ~= nil then shot.id else ""
 	local sh = (if demo ~= nil then 0.36 else 0.8) * ph
 	local sw = if shot ~= nil then sh * shot.w / shot.h else sh * 0.6
 	local max_w = pw * (if demo ~= nil then 0.28 else 0.8)
@@ -594,6 +595,7 @@ function Arsenal._build_detail(self)
 		Size = UDim2.fromOffset(sw, sh),
 		ZIndex = 45,
 	}, root)
+	local has_atlas_icon = if shot == nil then UITheme.apply_icon(sticker, it.icon, WHITE) else false
 	new("TextLabel", {
 		Name = "ProceduralMark",
 		BackgroundTransparency = 1,
@@ -602,6 +604,7 @@ function Arsenal._build_detail(self)
 		Text = string.upper(string.sub(it.key, 1, 1)),
 		TextColor3 = WHITE,
 		TextScaled = true,
+		Visible = if shot ~= nil then shot.id == "" else not has_atlas_icon,
 		ZIndex = 46,
 	}, sticker)
 	local flash = new("Frame", {
@@ -931,17 +934,27 @@ local function words(row: Instance, text: string, size: number, color: Color3, u
 	}, row)
 end
 
-local function pic(row: Instance, image: string, size: number, color: Color3, u: number, order: number, glyph: string)
+local function pic(
+	row: Instance,
+	icon_name: string,
+	size: number,
+	color: Color3,
+	u: number,
+	order: number,
+	glyph: string
+)
 	local icon = new("ImageLabel", {
 		BackgroundColor3 = color:Lerp(NIGHT, 0.7),
-		BackgroundTransparency = if image == "" then 0.08 else 1,
+		BackgroundTransparency = 0.08,
 		BorderSizePixel = 0,
-		Image = image,
+		Image = "",
 		ImageColor3 = color,
 		Size = UDim2.fromOffset(size * u, size * u),
 		LayoutOrder = order,
 		ZIndex = 45,
 	}, row)
+	local has_atlas_icon = UITheme.apply_icon(icon, icon_name, color)
+	icon.BackgroundTransparency = if has_atlas_icon then 1 else 0.08
 	new("UICorner", { CornerRadius = UDim.new(0.5, 0) }, icon)
 	new("UIStroke", { Color = color, Thickness = 1, Transparency = 0.15 }, icon)
 	new("TextLabel", {
@@ -952,7 +965,7 @@ local function pic(row: Instance, image: string, size: number, color: Color3, u:
 		Text = glyph,
 		TextColor3 = color,
 		TextScaled = true,
-		Visible = image == "",
+		Visible = not has_atlas_icon,
 		ZIndex = 46,
 	}, icon)
 	return icon
@@ -979,7 +992,7 @@ function Arsenal._build_cta(self)
 	local y = 0
 	if inv.unlocks[it.key] then
 		local own = button(d.cta, "Owned", y, bh, u, OWNED_GREEN, OWNED_GREEN)
-		pic(own.row, UITheme.icon("check") or "", 18, OWNED_GREEN, u, 1, "✓")
+		pic(own.row, "check", 18, OWNED_GREEN, u, 1, "✓")
 		words(own.row, "OWNED", if compact then 15 else 17, OWNED_GREEN, u, 2, bh)
 		own.button.Active = false
 		y += bh + 8
@@ -1011,11 +1024,11 @@ function Arsenal._build_cta(self)
 			words(alt.row, "...", if compact then 12 else 14, col, u, 1, sh)
 		elseif confirm then
 			words(alt.row, "PRESS AGAIN TO SPEND", if compact then 12 else 14, col, u, 1, sh)
-			pic(alt.row, UITheme.icon("star") or "", 15, col, u, 2, "S")
+			pic(alt.row, "star", 15, col, u, 2, "S")
 			words(alt.row, Arsenal.commas(it.stars), if compact then 12 else 14, col, u, 3, sh)
 		else
 			words(alt.row, "OR UNLOCK WITH", if compact then 12 else 14, col, u, 1, sh)
-			pic(alt.row, UITheme.icon("star") or "", 15, col, u, 2, "S")
+			pic(alt.row, "star", 15, col, u, 2, "S")
 			words(alt.row, Arsenal.commas(it.stars), if compact then 12 else 14, col, u, 3, sh)
 		end
 		alt.button.Activated:Connect(function()
@@ -1049,7 +1062,7 @@ function Arsenal._build_cta(self)
 			LayoutOrder = 1,
 			ZIndex = 44,
 		}, row)
-		pic(row, UITheme.icon("star") or "", 12, GOLD, u, 2, "S")
+		pic(row, "star", 12, GOLD, u, 2, "S")
 		new("TextLabel", {
 			BackgroundTransparency = 1,
 			Text = string.format("%s of %s", Arsenal.commas(stars), Arsenal.commas(it.stars)),

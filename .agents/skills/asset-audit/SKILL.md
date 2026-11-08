@@ -27,6 +27,7 @@ Exit `0` = clean. Exit `1` = problems found.
 3. No `proprietary/` directory exists.
 4. No references to OpenFront or RoWorld CDNs/asset hosts.
 5. `ativos/domworld/README.md` exists and states the art license (CC BY-SA 4.0), and `LICENSE-ASSETS` exists.
+6. Every `.svg` or `.png` under `ativos/domworld/icones/` has a matching, fully populated row in `docs/ICON_CREDITS.md` (file, source URL, author, license, and `Sim`/`Não` for required credit). Unsupported files in that icon directory are rejected.
 
 ## How to fix findings
 

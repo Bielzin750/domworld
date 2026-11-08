@@ -1,54 +1,22 @@
 --!strict
--- Material Icons Outlined atlas metadata; image mode stays off until the owner uploads the sheet.
+-- Sprite positions are generated from docs/ICONS_NEEDED.md; missing icons keep the UI glyph fallback.
+-- Modified for DomWorld, 2026 — see git history for details.
+
+local IS_ROBLOX = (game :: any) ~= nil
+local IconSpriteMap = if IS_ROBLOX then require(script.Parent.IconSpriteMap) else (require :: any)("./IconSpriteMap")
 
 local Icons = {}
 
 Icons.SPRITESHEET_ID = "YOUR_SPRITESHEET_ID"
 Icons.CELL_SIZE = 128
-Icons.COLUMNS = 5
+Icons.COLUMNS = 8
 
-local names = {
-	"play",
-	"matches",
-	"shop",
-	"inventory",
-	"profile",
-	"settings",
-	"globe",
-	"group",
-	"help",
-	"schedule",
-	"flag",
-	"rank",
-	"shield",
-	"attack",
-	"wallet",
-	"star",
-	"close",
-	"check",
-	"info",
-	"map",
-}
-
-local indexByName: { [string]: number } = {}
-for index, name in ipairs(names) do
-	indexByName[name] = index - 1
-end
-
-local aliases = {
-	app_icon = nil,
+local aliases: { [string]: string } = {
 	account_balance_wallet = "wallet",
 	admin_panel_settings = "settings",
-	attack = "attack",
-	clock = "schedule",
-	defense = "shield",
 	groups = "group",
-	hud_leaderboard = "matches",
-	leaderboard = "matches",
-	map = "map",
 	public = "globe",
 	storefront = "shop",
-	users = "group",
 }
 
 function Icons.image_enabled(): boolean
@@ -61,13 +29,14 @@ function Icons.get(name: string): { Image: string, ImageRectOffset: Vector2, Ima
 		return nil
 	end
 	local canonical = aliases[name] or name
-	local index = indexByName[canonical]
-	if index == nil then
+	local sprite = IconSpriteMap[canonical]
+	if sprite == nil or not sprite.available or sprite.index < 0 then
 		return nil
 	end
-	local id = Icons.SPRITESHEET_ID
+	local index = sprite.index
 	local x = index % Icons.COLUMNS
 	local y = math.floor(index / Icons.COLUMNS)
+	local id = Icons.SPRITESHEET_ID
 	return {
 		Image = "rbxassetid://" .. id,
 		ImageRectOffset = Vector2.new(x * Icons.CELL_SIZE, y * Icons.CELL_SIZE),

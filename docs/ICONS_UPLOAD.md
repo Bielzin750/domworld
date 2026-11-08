@@ -1,14 +1,11 @@
-# Enviar o atlas de ícones ao Roblox
+# Adicionar ícones ao DomWorld
 
-O ID é criado na conta Roblox do proprietário da experiência. O repositório não contém um ID de upload.
+1. Escolha os arquivos usando `docs/ICONS_NEEDED.md` e `docs/ICON_SOURCING_RULES.md`.
+2. Solte `<id>.svg` ou `<id>.png` em `ativos/domworld/icones/entrada/` e preencha a linha em `docs/ICON_CREDITS.md`.
+3. Na raiz, rode `python tools/build_icon_sheet.py`. O script valida créditos, converte SVG, gera `build/DomWorld-Icons.png` e atualiza `src/shared/UI/IconSpriteMap.luau`. Sem entradas, ele gera o atlas transparente e os slots indisponíveis.
+4. Envie o atlas pelo Asset Manager na conta/grupo DomWorld. O `game_icon` gera também `build/DomWorld-Game-Icon.png` separado para o Creator Dashboard.
+5. Cole o ID numérico do spritesheet em `Icons.SPRITESHEET_ID` em `src/shared/UI/Icons.luau`, registre em `docs/OWN_ASSET_IDS.txt` e confira no Studio.
 
-1. Gere `assets/domworld/icons/material-icons-outlined.png` seguindo `docs/ICONS.md`.
-2. Abra a experiência DomWorld no Roblox Studio conectado à conta ou ao grupo que será titular do jogo.
-3. Abra o Asset Manager pelo menu **Window** ou pela aba **Home**.
-4. Na categoria **Images**, use **Import** e selecione o PNG. Confirme que o criador indicado é a conta ou grupo do DomWorld.
-5. Quando o envio terminar, clique com o botão direito no asset e escolha **Copy Asset ID**. Se o botão não estiver disponível no Asset Manager, use **File → Import**, habilite o envio para o Roblox e copie o ID no asset importado.
-6. Substitua `YOUR_SPRITESHEET_ID` em `src/shared/UI/Icons.luau` pelo ID numérico, sem prefixo. O módulo monta `rbxassetid://` e o recorte do sprite.
-7. Adicione o ID, uma por linha, a `docs/OWN_ASSET_IDS.txt`; depois rode a auditoria de assets.
-8. Abra o jogo em Play e confira ícones do lobby, HUD e painel de créditos. Se o asset estiver aguardando moderação, o fallback textual continua disponível.
+PNG é processado com a biblioteca padrão. Para SVG, instale CairoSVG opcionalmente com `python -m pip install cairosvg`; essa instalação não altera as dependências do repositório. Sem CairoSVG, PNG continua funcionando e o script explica a instalação necessária ao encontrar SVG.
 
-O fluxo do Importer e a cópia do ID seguem a [documentação oficial do Roblox Creator Hub](https://create.roblox.com/docs/studio/importer). O Asset Manager importa e armazena imagens da experiência atual, conforme [Asset Manager e ferramentas de assets](https://create.roblox.com/docs/studio/overview#asset-manager).
+O atlas usa células 128×128, oito colunas e ordem estável conforme `ICONS_NEEDED.md`. Veja `docs/icon_slots.html` para uma folha de contato; ela exibe o fallback atual, pois as imagens finais ainda não foram escolhidas.

@@ -61,6 +61,8 @@ local function optional(parent: Instance?, path: { string }): any
 	return mod
 end
 
+local Icons = optional(ReplicatedStorage, { "DomWorld", "UI", "Icons" })
+
 local call_warned: { [string]: boolean } = {}
 
 --- Calls obj:method(...) if it exists. A failing view / UI call is reported once per method and never
@@ -113,9 +115,12 @@ type Hud = { gui: ScreenGui, bar: Frame, buttons: { [string]: any }, tip: TextLa
 
 local hud: Hud? = nil
 
-local function icon_id(_name: string): string?
-	-- The top bar uses its text/shape fallback until DomWorld uploads original images.
-	return nil
+local function icon_id(name: string): any
+	if Icons == nil or type(Icons.get) ~= "function" then
+		return nil
+	end
+	local ok, sprite = pcall(Icons.get, name)
+	return if ok then sprite else nil
 end
 
 local function make_procedural_icon(parent: Instance, name: string): Frame?
@@ -238,9 +243,11 @@ local function make_button(h: Hud, key: string, icon: string, tooltip: string, o
 	local shape = make_procedural_icon(b, icon)
 	local entry = { button = b, icon = img, glyph = glyph, shape = shape, tooltip = tooltip }
 	local function set_icon(name: string)
-		local id = icon_id(name)
-		if id then
-			img.Image = id
+		local sprite = icon_id(name)
+		if sprite ~= nil then
+			img.Image = sprite.Image
+			img.ImageRectOffset = sprite.ImageRectOffset
+			img.ImageRectSize = sprite.ImageRectSize
 			img.Visible = true
 			glyph.Visible = false
 		else

@@ -27,6 +27,22 @@ local ThemeTokens: any = if IS_ROBLOX
 	else (require :: any)("../../shared/UI/Theme")
 UITheme.tokens = ThemeTokens
 
+local Icons: any = nil
+local function icon_registry(): any
+	if Icons == nil then
+		Icons = if IS_ROBLOX
+			then require(
+				(game :: any)
+					:GetService("ReplicatedStorage")
+					:WaitForChild("DomWorld")
+					:WaitForChild("UI")
+					:WaitForChild("Icons")
+			)
+			else (require :: any)("../../shared/UI/Icons")
+	end
+	return Icons
+end
+
 --- Shared Core module by name (ReplicatedStorage.DomWorld.Core in Roblox, src/shared/Core in Lune),
 --- required once and kept. A require later in a session can fail: in some live sessions every require
 --- after some moment errors "Cannot require a RobloxScript module from a non RobloxScript context"
@@ -1299,9 +1315,30 @@ function UITheme.crate_art(): any
 end
 
 function UITheme.icon(_icon_name: string): string?
-	-- Image assets were intentionally removed. Widgets.Icon renders this name with a built-in
-	-- geometric/text glyph; legacy ImageLabels receive nil and never request asset id 0.
+	-- A raw image string cannot carry a spritesheet rectangle. Use apply_icon for ImageLabels;
+	-- Widgets.Icon already applies the atlas and keeps its own glyph fallback.
 	return nil
+end
+
+--- Applies a generated atlas cell to an ImageLabel; returns false so the caller can keep its glyph.
+function UITheme.apply_icon(image: ImageLabel, icon_name: string, color: Color3?): boolean
+	local ok, sprite = pcall(function()
+		icon_registry()
+		return Icons.get(icon_name)
+	end)
+	if not ok or sprite == nil then
+		image.Image = ""
+		image.ImageRectOffset = Vector2.new(0, 0)
+		image.ImageRectSize = Vector2.new(0, 0)
+		return false
+	end
+	image.Image = sprite.Image
+	image.ImageRectOffset = sprite.ImageRectOffset
+	image.ImageRectSize = sprite.ImageRectSize
+	if color ~= nil then
+		image.ImageColor3 = color
+	end
+	return true
 end
 
 -- =============================================================================================

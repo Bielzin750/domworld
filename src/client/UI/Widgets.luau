@@ -2109,14 +2109,15 @@ function Icon.set_icon(self, icon_name: string)
 	self.icon_name = icon_name
 	local is_brand = icon_name == "app_icon"
 	local sprite = Icons.get(icon_name)
-	if is_brand then
+	local use_brand_fallback = is_brand and sprite == nil
+	if use_brand_fallback then
 		Icon._build_logo(self)
 	end
 	self._brand.Visible = false
 	if self._logo ~= nil then
-		self._logo.Visible = is_brand
+		self._logo.Visible = use_brand_fallback
 	end
-	self._image.Visible = not is_brand and sprite ~= nil
+	self._image.Visible = sprite ~= nil
 	self._glyph.Visible = not is_brand and sprite == nil and icon_name ~= ""
 	if sprite ~= nil then
 		self._image.Image = sprite.Image

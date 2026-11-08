@@ -151,13 +151,14 @@ function ShopSlot._build(self)
 		BackgroundColor3 = Color3.fromRGB(255, 218, 112),
 		BackgroundTransparency = 0,
 		BorderSizePixel = 0,
-		Image = UITheme.icon("arsenal") or "",
+		Image = "",
 		ImageColor3 = INK,
 		ScaleType = Enum.ScaleType.Fit,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Visible = false,
 		ZIndex = 3,
 	}, body)
+	local has_atlas_icon = UITheme.apply_icon(self._shield, "arsenal", INK)
 	new("UICorner", { CornerRadius = UDim.new(0.28, 0) }, self._shield)
 	new("UIStroke", { Color = INK, Thickness = 1.5, Transparency = 0.1 }, self._shield)
 	new("TextLabel", {
@@ -170,6 +171,7 @@ function ShopSlot._build(self)
 		Text = "A",
 		TextColor3 = INK,
 		TextScaled = true,
+		Visible = not has_atlas_icon,
 		ZIndex = 4,
 	}, self._shield)
 	self._cap = new("TextLabel", {

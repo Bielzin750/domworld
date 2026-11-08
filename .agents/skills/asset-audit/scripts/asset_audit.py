@@ -17,6 +17,7 @@ TEXT_EXT = {".lua", ".luau", ".py", ".ts", ".tsx", ".js", ".json", ".toml", ".md
 ART_DIRS = ("ativos", "assets")
 ID_RE = re.compile(r"rbxassetid://(\d+)|asset/?\?id=(\d+)", re.I)
 HOST_RE = re.compile(r"(openfront\.(io|dev|com)|roworld\.[a-z]{2,}|cdn\.openfront)", re.I)
+ICON_FILE_RE = re.compile(r"([a-z0-9_]+)\.(svg|png)", re.I)
 DOC_PREFIXES = ("docs/", "README.md", "NOTICE.md", "CHANGELOG.md", "LICENSE")
 
 problems, notes = [], []
@@ -40,6 +41,47 @@ unknown_ids = {}
 host_hits = []
 leftover_files = []
 proprietary_dirs = []
+icon_credit_hits = []
+
+icon_root = ROOT / "ativos" / "domworld" / "icones"
+credit_path = ROOT / "docs" / "ICON_CREDITS.md"
+credit_rows = {}
+if credit_path.is_file():
+    for line in credit_path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        if not line.startswith("|"):
+            continue
+        cells = [cell.strip().strip("`") for cell in line.strip().strip("|").split("|")]
+        if len(cells) >= 6 and cells[0] != "ID do ícone" and re.fullmatch(r"[a-z0-9_]+", cells[0]):
+            credit_rows[cells[0]] = cells[1:6]
+else:
+    notes.append("docs/ICON_CREDITS.md not found; icon input files cannot be credited.")
+
+if icon_root.is_dir():
+    for p in icon_root.rglob("*"):
+        if not p.is_file() or p.name == ".gitkeep":
+            continue
+        if p.suffix.lower() not in {".svg", ".png"}:
+            icon_credit_hits.append(f"{rel(p)}: unsupported file in icon input folder")
+            continue
+        row = credit_rows.get(p.stem.lower())
+        if row is None:
+            icon_credit_hits.append(f"{rel(p)}: no ICON_CREDITS.md row for this icon ID")
+            continue
+        file_cell, source, author, license_name, attribution = [cell.strip() for cell in row]
+        expected = {m.group(0).lower() for m in ICON_FILE_RE.finditer(file_cell)}
+        missing = []
+        if p.name.lower() not in expected:
+            missing.append("expected filename")
+        if not source:
+            missing.append("source URL")
+        if not author:
+            missing.append("author")
+        if not license_name:
+            missing.append("license")
+        if attribution.lower() not in {"sim", "não", "nao"}:
+            missing.append("credit required (Sim/Não)")
+        if missing:
+            icon_credit_hits.append(f"{rel(p)}: ICON_CREDITS.md missing/invalid: {', '.join(missing)}")
 
 for dirpath, dirnames, filenames in os.walk(ROOT):
     dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
@@ -77,6 +119,8 @@ if proprietary_dirs:
     problems.append("proprietary/ directory present: " + ", ".join(proprietary_dirs))
 if host_hits:
     problems.append(f"{len(host_hits)} reference(s) to third-party asset hosts")
+if icon_credit_hits:
+    problems.append(f"{len(icon_credit_hits)} icon file(s) lack a complete ICON_CREDITS.md entry")
 
 art_readme = None
 for a in ART_DIRS:
@@ -106,6 +150,10 @@ if host_hits:
     print("\nThird-party host references (max 40):")
     for h in host_hits[:40]:
         print("  " + h)
+if icon_credit_hits:
+    print("\nIcon credit problems (max 40):")
+    for hit in icon_credit_hits[:40]:
+        print("  " + hit)
 
 if problems:
     print("\nFAIL:")
