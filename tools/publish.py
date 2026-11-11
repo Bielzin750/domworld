@@ -2,10 +2,12 @@
 """Build the shipping place with Rojo and publish it to Roblox via Open Cloud.
 
 Usage:
-  .venv/bin/python tools/publish.py --universe <universeId> --place <placeId> [--saved] [--meta]
+  python tools/publish.py --universe <universeId> --place <placeId> [--saved] [--meta]
+  python tools/publish.py --build-only
 
   --saved   upload as a Saved version (not live) instead of Published
   --meta    also set the experience's display name and description (Open Cloud v2 universes)
+  --build-only   build the release place without uploading it
 
 IDs can also come from build/publish.json: {"universe": 123, "place": 456}.
 The API key is read from .secrets/roblox_api_key (needs universe-places:write for that experience;
@@ -18,6 +20,7 @@ Before the first publish, in the Creator Dashboard (only the owner can do these)
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import urllib.error
@@ -25,6 +28,7 @@ import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "build", "DomWorld-release.rbxl")
+KEY_PATH = os.path.join(ROOT, ".secrets", "roblox_api_key")
 TITLE = "DomWorld"
 DESCRIPTION = (
 	"DomWorld is a real-time territorial strategy game for Roblox. Expand your territory, manage resources, "
@@ -35,12 +39,38 @@ DESCRIPTION = (
 
 
 def key():
-    return open(os.path.join(ROOT, ".secrets", "roblox_api_key")).read().strip()
+    try:
+        with open(KEY_PATH, encoding="utf-8") as secret_file:
+            value = secret_file.read().strip()
+    except FileNotFoundError:
+        sys.exit("missing .secrets/roblox_api_key; create it locally with an Open Cloud key")
+    if not value:
+        sys.exit(".secrets/roblox_api_key is empty")
+    return value
 
 
-def request(method, url, data=None, headers=None):
+def build_release():
+    # release.project.json must be default.project.json + globIgnorePaths (Dev harnesses excluded).
+    with open(os.path.join(ROOT, "default.project.json"), encoding="utf-8") as project_file:
+        dev = json.load(project_file)
+    with open(os.path.join(ROOT, "release.project.json"), encoding="utf-8") as project_file:
+        rel = json.load(project_file)
+    rel_cmp = {k: v for k, v in rel.items() if k != "globIgnorePaths"}
+    if dev != rel_cmp:
+        sys.exit("release.project.json drifted from default.project.json; copy the tree over first")
+
+    executable_name = "rojo.exe" if os.name == "nt" else "rojo"
+    bundled_rojo = os.path.join(ROOT, ".bin", "rojo", executable_name)
+    rojo = bundled_rojo if os.path.isfile(bundled_rojo) else shutil.which("rojo")
+    if rojo is None:
+        sys.exit(f"Rojo executable not found; expected {bundled_rojo} or rojo on PATH")
+    subprocess.check_call([rojo, "build", "release.project.json", "-o", OUT], cwd=ROOT)
+    return OUT
+
+
+def request(method, url, data=None, headers=None, api_key=None):
     req = urllib.request.Request(url, data=data, method=method)
-    req.add_header("x-api-key", key())
+    req.add_header("x-api-key", api_key or key())
     for k, v in (headers or {}).items():
         req.add_header(k, v)
     try:
@@ -56,27 +86,34 @@ def main():
     ap.add_argument("--place", type=int)
     ap.add_argument("--saved", action="store_true")
     ap.add_argument("--meta", action="store_true")
+    ap.add_argument("--build-only", action="store_true", help="build the release place without publishing")
     a = ap.parse_args()
+    if a.build_only:
+        path = build_release()
+        print(f"release build ready: {path}")
+        return
+
     cfg_path = os.path.join(ROOT, "build", "publish.json")
-    cfg = json.load(open(cfg_path)) if os.path.exists(cfg_path) else {}
+    if os.path.exists(cfg_path):
+        with open(cfg_path, encoding="utf-8") as cfg_file:
+            cfg = json.load(cfg_file)
+    else:
+        cfg = {}
     universe = a.universe or cfg.get("universe")
     place = a.place or cfg.get("place")
     if not universe or not place:
         sys.exit("need --universe and --place (or build/publish.json)")
 
-    # release.project.json must be default.project.json + globIgnorePaths (Dev harnesses excluded).
-    dev = json.load(open(os.path.join(ROOT, "default.project.json")))
-    rel = json.load(open(os.path.join(ROOT, "release.project.json")))
-    rel_cmp = {k: v for k, v in rel.items() if k != "globIgnorePaths"}
-    if dev != rel_cmp:
-        sys.exit("release.project.json drifted from default.project.json; copy the tree over first")
-    subprocess.check_call([os.path.join(ROOT, ".bin", "rojo"), "build", "release.project.json", "-o", OUT], cwd=ROOT)
+    if universe < 1 or place < 1:
+        sys.exit("universe and place IDs must be positive integers")
+    api_key = key()
+    build_release()
     data = open(OUT, "rb").read()
     vtype = "Saved" if a.saved else "Published"
     status, body = request(
         "POST",
         f"https://apis.roblox.com/universes/v1/{universe}/places/{place}/versions?versionType={vtype}",
-        data, {"Content-Type": "application/octet-stream"})
+        data, {"Content-Type": "application/octet-stream"}, api_key)
     print(f"place upload ({vtype}, {len(data) / 1e6:.1f} MB): HTTP {status} {body[:300]}")
     if status != 200:
         sys.exit(1)
@@ -86,7 +123,7 @@ def main():
         status, body = request(
             "PATCH",
             f"https://apis.roblox.com/cloud/v2/universes/{universe}?updateMask=displayName,description",
-            payload, {"Content-Type": "application/json"})
+            payload, {"Content-Type": "application/json"}, api_key)
         print(f"universe metadata: HTTP {status} {body[:300]}")
 
 

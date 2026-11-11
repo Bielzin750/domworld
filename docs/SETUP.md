@@ -26,6 +26,20 @@ rojo serve default.project.json
 
 No Roblox Studio, abra o plugin Rojo, escolha **Connect** e use `localhost:34872`. Depois pressione **Play**. O modo **Solo Easy** funciona localmente sem IDs de universo/place e sem o serviço de lobbies.
 
+Para preparar a build de produção pelo publicador incluído, configure localmente
+`build/publish.json` com `{"universe": 0, "place": 0}` (substitua os zeros pelos IDs da experiência
+DomWorld) e salve a chave Open Cloud em `.secrets/roblox_api_key`. A chave precisa de
+`universe-places:write`; `--meta` também requer `universe:write`. Ambos os caminhos são ignorados pelo
+Git. Primeiro valide a build sem publicar:
+
+```powershell
+python tools/publish.py --build-only
+```
+
+Quando os IDs e a chave estiverem configurados, `python tools/publish.py` envia uma versão publicada;
+`python tools/publish.py --saved` envia uma versão salva sem torná-la live. Não passe a chave na linha
+de comando nem a inclua no repositório.
+
 ## 3. Serviço de lobbies local
 
 Requisitos: Node.js 20 ou superior.
