@@ -1,5 +1,51 @@
 # Decisões técnicas
 
+## Mapa quadriculado magenta/ciano (2026-11-10)
+
+### Evidência e causa raiz
+
+A imagem anexada mostra a partida na seleção de local: o tooltip informa terreno e vizinhos, mas a
+superfície inteira é o padrão de textura quebrada. Reproduzi o problema no Studio local antes da
+correção; o Output informou `EditableImage is not accessible` e também registrou a falha em
+`MapView.surface.step`.
+
+Antes da correção, `src/client/Map/MapSurface.luau` associava o `EditableImage` ao `ImageLabel` logo
+após criá-lo. A primeira escrita de pixels ocorria depois, em `MapSurface.step`, e uma falha era
+capturada pelo `guard` de `src/client/Map/MapView.luau`, que apenas avisava no Output. O rótulo que
+já continha a imagem inválida continuava visível. A experiência podia, portanto, exibir a textura
+quadriculada mesmo com os dados do mapa disponíveis.
+
+H2 é a causa confirmada: o Roblox bloqueou a API `EditableImage` nesta configuração do Studio. A
+documentação do Roblox explica que a API depende de permissão da experiência em jogos publicados e
+que a criação também pode falhar pelo orçamento de memória do dispositivo. Fonte consultada:
+[EditableImage — Roblox Creator Hub](https://create.roblox.com/docs/reference/engine/classes/EditableImage).
+
+### Hipóteses avaliadas
+
+- **H1 — remoção de assets/IDs em `081a016`: descartada como causa da superfície-base.** O commit
+  removeu arte e referências de assets, inclusive elementos de overlays, mas não alterou
+  `src/client/Map/MapSurface.luau`. `docs/ASSET_MAP.md` registra que o mapa de runtime continua a
+  ser renderizado por código; os bytes do terreno são convertidos em cores no cliente.
+- **H2 — permissão de `EditableImage`: confirmada.** O Output do Studio contém a mensagem de API
+  inacessível; o código anterior só descobria a falha na escrita, já depois de exibir o rótulo.
+- **H3 — regressão de UI (`Theme`, escala, cor, transparência, ZIndex): sem evidência.** A inspeção
+  do histórico recente de `MapSurface.luau` não encontrou mudança correspondente nas propriedades
+  visuais da imagem. O último commit que mostrava corretamente o mapa não pôde ser identificado:
+  não há captura versionada nem registro visual associado a um commit.
+- **H4 — dados inválidos: descartada como explicação para esta reprodução.** A tela já apresentava
+  tooltip de terreno e vizinhança; o teste existente `map2d_render` cobre as cores do terreno. O
+  caminho de terreno aloca `W * H * 4` bytes e gera cores RGBA por `terrain_pixel`.
+
+### Decisão
+
+Antes de criar ou exibir a imagem, testar criação, escrita e associação ao `ImageLabel` dentro de
+`pcall`. Em caso de falha, gerar uma superfície de `Frame`s limitada a 2.048 células, que usa o mesmo
+buffer composto e mantém a câmera, os tooltips e a interação existentes. Se ambos os caminhos
+falharem, remover os visuais inválidos, mostrar fundo neutro, registrar a causa no Output e avisar
+pela interface. Nenhuma mecânica ou dado persistido muda. A grade é de menor resolução que o
+renderizador `EditableImage`; ela é um caminho de compatibilidade, não substitui o modo detalhado
+quando a API está disponível.
+
 ## Avatares, equipe administrativa e moedas (2026-11-07)
 
 ### Avatares

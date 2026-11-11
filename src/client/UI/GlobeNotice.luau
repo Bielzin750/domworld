@@ -1,12 +1,8 @@
 --!nonstrict
 -- Modified for DomWorld, 2026 — see git history for details.
--- Territory-map notice (review_code.md R2-3). The globe draws territory colours with Editable
--- images / meshes; when the device's editable budget is exhausted, or the experience's Mesh / Image
--- APIs permission is off in a published place, it falls back to the static globe (WorldView
--- territory_status().state == "unavailable"). Instead of a silent console warning the player gets
--- this small card: non-blocking (the game keeps running underneath), styled like the Coach tip
--- card, dismissible, hidden again by itself when territories come back. Studio testers and configured
--- administrators also see how to enable the APIs.
+-- Territory-map notice (review_code.md R2-3). If EditableImage and its bounded Frame fallback both
+-- fail, MapView shows a neutral backdrop and sends this non-blocking card. Studio testers and
+-- configured administrators also see how to enable the APIs when Roblox reports them disabled.
 --
 -- API: GlobeNotice.new(ctx), set_status(status), apply_layout(blockers: { Rect }), card (GlassPanel).
 
@@ -17,17 +13,19 @@ local UICtx = require("./UICtx")
 
 local GlobeNotice = W.class(W.Control)
 
-GlobeNotice.TITLE = "Territory map unavailable"
+GlobeNotice.TITLE = "Map rendering unavailable"
 GlobeNotice.TEXT = {
-	memory = "This device is out of graphics memory for territory colours, so nations' land isn't coloured. You can keep playing: the map comes back as soon as memory frees up.",
-	disabled = "Territory rendering is unavailable on this server, so nations' land isn't coloured. You can keep playing; everything else works.",
-	data = "The globe's map data didn't load, so nations' land isn't coloured. You can keep playing; everything else works.",
+	memory = "This device ran out of graphics memory for the map. A neutral background is shown; you can keep playing.",
+	disabled = "Map drawing is unavailable here. A neutral background is shown; you can keep playing.",
+	data = "Map data didn't load. A neutral background is shown; you can keep playing.",
+	render = "The map could not be drawn. A neutral background is shown; you can keep playing while this is investigated.",
 }
 --- Phones (compact layout): the same, shorter.
 GlobeNotice.TEXT_SHORT = {
-	memory = "Out of graphics memory for territory colours. Keep playing: the map returns when memory frees up.",
-	disabled = "Territory colours can't be drawn on this server. Everything else works.",
-	data = "Map data didn't load, so territory colours can't be drawn. Everything else works.",
+	memory = "Map memory ran out. A neutral background is shown.",
+	disabled = "Map drawing is unavailable. A neutral background is shown.",
+	data = "Map data didn't load. A neutral background is shown.",
+	render = "Map drawing failed. The neutral background is shown; you can keep playing.",
 }
 GlobeNotice.OWNER_HINT = {
 	disabled = "Configuração: ative \u{201C}Mesh / Image APIs\u{201D} para esta experiência (Game Settings \u{203A} Security).",

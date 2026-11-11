@@ -300,8 +300,15 @@ function MapView._show_map(self: any, map: any)
 	end)
 	if not ok then
 		report("map", err)
+		guard(
+			"surface.failure",
+			self.surface.show_failure,
+			self.surface,
+			"map data or renderer initialization failed: " .. tostring(err),
+			"data"
+		)
 	end
-	self:_set_status(if self.surface.ok then "ok" else "unavailable", if self.surface.ok then "" else "memory")
+	self:_sync_surface_status()
 	if self._attract then
 		self.rig:set_scale_immediate(self.rig:min_scale() * 2.2)
 	end
@@ -313,6 +320,11 @@ function MapView._set_status(self: any, state: string, reason: string)
 	end
 	self._status = { state = state, tier = "map", reason = reason }
 	self.territory_status_changed:Fire(self._status)
+end
+
+function MapView._sync_surface_status(self: any)
+	local ok = self.surface.ok == true
+	self:_set_status(if ok then "ok" else "unavailable", if ok then "" else self.surface.failure_reason or "render")
 end
 
 --- Add an overlay layer (module with new(parent, view)); kept in update / bind order.
@@ -930,7 +942,11 @@ function MapView.update(self: any, dt: number)
 		self._surface_hover_want = nil
 		guard("surface.set_hover", self.surface.set_hover, self.surface, want)
 	end
-	guard("surface.step", self.surface.step, self.surface)
+	local surface_step_ok, surface_step_error = guard("surface.step", self.surface.step, self.surface)
+	if not surface_step_ok then
+		guard("surface.failure", self.surface.show_failure, self.surface, tostring(surface_step_error))
+	end
+	self:_sync_surface_status()
 	guard("surface.layout", self.surface.layout, self.surface, self.rig)
 	local t2 = clock()
 	guard("markers", markers_step, self, t0)

@@ -6,6 +6,8 @@
 -- image tiles of at most 1024 x 1024 (the client EditableImage limit), each shown by one ImageLabel
 -- that MapView moves every frame. Only one displayed EditableImage updates per frame (Roblox), so
 -- dirty rows are uploaded round-robin: one image tile per frame, all of its dirty 32-row bands.
+-- When EditableImage is inaccessible, a bounded low-resolution Frame grid draws the same composite;
+-- if both paths fail, the surface becomes a neutral backdrop and MapView reports the failure.
 --   terrain    terrain_pixel of the map's terrain bytes
 --              (map.tile_bytes: bit7 land, bit6 shoreline, bits0-4 magnitude), colours from
 --              OCEAN .. MOUNTAIN (e.g. highland #DCCB9E);
@@ -58,6 +60,9 @@ MapSurface.DEFENSE_FILL_DARKEN = 0.85
 --- Client EditableImage limit (px per side).
 MapSurface.IMAGE_MAX = 1024
 MapSurface.BAND_ROWS = 32
+MapSurface.FRAME_FALLBACK_MAX_CELLS = 2048
+MapSurface.FRAME_FALLBACK_SAMPLE_SIDE = 4
+MapSurface.FRAME_FALLBACK_UPDATES_PER_STEP = 256
 --- Full rebuild work per frame (tiles).
 MapSurface.REBUILD_TILES_PER_STEP = 90000
 --- Repaint work per frame (tiles). The tiles a change may have altered wait in a queue, each of them
@@ -126,6 +131,80 @@ local function pack(r: number, g: number, b: number, a: number): number
 	return r + g * 256 + b * 65536 + a * 16777216
 end
 MapSurface.pack = pack
+
+function MapSurface.fallback_grid_size(width: number, height: number): (number, number)
+	if width < 1 or height < 1 then
+		return 1, 1
+	end
+	local scale = math.min(1, math.sqrt(MapSurface.FRAME_FALLBACK_MAX_CELLS / (width * height)))
+	local cols = math.max(1, math.min(width, math.floor(width * scale)))
+	local rows = math.max(1, math.min(height, math.floor(height * scale)))
+	while cols * rows > MapSurface.FRAME_FALLBACK_MAX_CELLS do
+		if cols >= rows then
+			cols -= 1
+		else
+			rows -= 1
+		end
+	end
+	return cols, rows
+end
+
+--- A bounded, opaque average of the composited map pixels represented by one fallback cell.
+function MapSurface.fallback_pixel(
+	composite: buffer,
+	width: number,
+	height: number,
+	cell_x: number,
+	cell_y: number,
+	cols: number,
+	rows: number
+): number
+	if width < 1 or height < 1 or cols < 1 or rows < 1 or buffer.len(composite) < width * height * 4 then
+		return pack(0x3c, 0x3c, 0x3c, 255)
+	end
+	cell_x = math.clamp(cell_x, 0, cols - 1)
+	cell_y = math.clamp(cell_y, 0, rows - 1)
+	local x0 = math.floor(cell_x * width / cols)
+	local x1 = math.max(x0 + 1, math.floor((cell_x + 1) * width / cols))
+	local y0 = math.floor(cell_y * height / rows)
+	local y1 = math.max(y0 + 1, math.floor((cell_y + 1) * height / rows))
+	local samples = MapSurface.FRAME_FALLBACK_SAMPLE_SIDE
+	local red, green, blue, count = 0, 0, 0, 0
+	for sy = 0, samples - 1 do
+		local y = math.min(y1 - 1, y0 + math.floor((sy + 0.5) * (y1 - y0) / samples))
+		for sx = 0, samples - 1 do
+			local x = math.min(x1 - 1, x0 + math.floor((sx + 0.5) * (x1 - x0) / samples))
+			local pixel = readu32(composite, (y * width + x) * 4)
+			red += pixel % 256
+			green += (pixel // 256) % 256
+			blue += (pixel // 65536) % 256
+			count += 1
+		end
+	end
+	return pack(red / count, green / count, blue / count, 255)
+end
+
+--- Try the image renderer first, then the frame renderer; keep both failures as diagnostics.
+function MapSurface.choose_renderer(
+	create_editable: () -> any,
+	create_frames: () -> any
+): (string, any, string?, string?)
+	local image_ok, image_value, image_reason = pcall(create_editable)
+	if image_ok and image_value ~= nil then
+		return "editable", image_value, nil, nil
+	end
+	local image_error = if image_ok
+		then tostring(image_reason or "EditableImage returned nil")
+		else tostring(image_value)
+	local frames_ok, frames_value, frames_reason = pcall(create_frames)
+	if frames_ok and frames_value ~= nil then
+		return "frames", frames_value, image_error, nil
+	end
+	local frames_error = if frames_ok
+		then tostring(frames_reason or "Frame fallback returned nil")
+		else tostring(frames_value)
+	return "unavailable", nil, image_error, frames_error
+end
 
 local function rgb_to_hsl(r: number, g: number, b: number): (number, number, number)
 	local mx, mn = math.max(r, g, b), math.min(r, g, b)
@@ -362,6 +441,15 @@ export type MapSurface = typeof(setmetatable(
 		tile_bytes: buffer?,
 		comp: buffer,
 		tiles: { ImgTile },
+		render_mode: string,
+		failure_reason: string,
+		fallback_canvas: Frame?,
+		fallback_frames: { Frame },
+		fallback_cols: number,
+		fallback_rows: number,
+		fallback_dirty: { boolean },
+		fallback_queue: { number },
+		fallback_head: number,
 		cols: number,
 		rows: number,
 		tile_w: number,
@@ -388,14 +476,32 @@ export type MapSurface = typeof(setmetatable(
 	MapSurface
 ))
 
-local function create_image(w: number, h: number): EditableImage?
-	local ok, img = pcall(function()
-		return AssetService:CreateEditableImage({ Size = Vector2.new(w, h) })
+local function create_image(w: number, h: number): (EditableImage?, string?)
+	local img: EditableImage? = nil
+	local ok, err = pcall(function()
+		if AssetService == nil then
+			error("AssetService is unavailable", 0)
+		end
+		img = AssetService:CreateEditableImage({ Size = Vector2.new(w, h) })
+		if img == nil then
+			error("CreateEditableImage returned nil (device EditableImage memory budget exhausted)", 0)
+		end
+		local probe = buffer.create(4)
+		writeu32(probe, 0, pack(0x3c, 0x3c, 0x3c, 255))
+		img:WritePixelsBuffer(Vector2.new(0, 0), Vector2.new(1, 1), probe)
+		local label = Instance.new("ImageLabel")
+		label.ImageContent = Content.fromObject(img)
+		label:Destroy()
 	end)
 	if ok and img ~= nil then
-		return img
+		return img, nil
 	end
-	return nil
+	if img ~= nil then
+		pcall(function()
+			(img :: EditableImage):Destroy()
+		end)
+	end
+	return nil, if ok then "CreateEditableImage returned nil" else tostring(err)
 end
 
 function MapSurface.new(parent: Instance): MapSurface
@@ -412,12 +518,21 @@ function MapSurface.new(parent: Instance): MapSurface
 		N = 0,
 		map = nil,
 		ok = false,
+		render_mode = "none",
+		failure_reason = "render",
 		--- terrain composited (set_map finished)
 		ready = false,
 		terrain = buffer.create(0),
 		tile_bytes = nil :: buffer?,
 		comp = buffer.create(0),
 		tiles = {},
+		fallback_canvas = nil :: Frame?,
+		fallback_frames = {} :: { Frame },
+		fallback_cols = 0,
+		fallback_rows = 0,
+		fallback_dirty = {} :: { boolean },
+		fallback_queue = {} :: { number },
+		fallback_head = 1,
 		cols = 0,
 		rows = 0,
 		tile_w = 0,
@@ -468,14 +583,250 @@ function MapSurface.new(parent: Instance): MapSurface
 	return self
 end
 
-function MapSurface._free_tiles(self: MapSurface)
+local function safe_destroy(instance: Instance?)
+	if instance ~= nil then
+		pcall(function()
+			instance:Destroy()
+		end)
+	end
+end
+
+function MapSurface._free_image_tiles(self: MapSurface)
 	for _, t in self.tiles do
-		t.label:Destroy()
-		if t.img then
-			t.img:Destroy()
-		end
+		safe_destroy(t.label)
+		safe_destroy(t.img)
 	end
 	table.clear(self.tiles)
+end
+
+function MapSurface._free_frame_fallback(self: MapSurface)
+	safe_destroy(self.fallback_canvas)
+	self.fallback_canvas = nil
+	table.clear(self.fallback_frames)
+	table.clear(self.fallback_dirty)
+	table.clear(self.fallback_queue)
+	self.fallback_cols, self.fallback_rows, self.fallback_head = 0, 0, 1
+end
+
+function MapSurface._free_tiles(self: MapSurface)
+	self:_free_image_tiles()
+	self:_free_frame_fallback()
+	self.render_mode = "none"
+	self.root.BackgroundTransparency = 1
+end
+
+function MapSurface._create_image_tiles(self: MapSurface): ({ ImgTile }?, string?)
+	local W, H = self.W, self.H
+	local cols = math.ceil(W / MapSurface.IMAGE_MAX)
+	local rows = math.ceil(H / MapSurface.IMAGE_MAX)
+	local tw, th = math.ceil(W / cols), math.ceil(H / rows)
+	self.cols, self.rows, self.tile_w, self.tile_h = cols, rows, tw, th
+	local tiles: { ImgTile } = {}
+	local function discard()
+		for _, tile in tiles do
+			safe_destroy(tile.label)
+			safe_destroy(tile.img)
+		end
+		table.clear(tiles)
+	end
+	for r = 0, rows - 1 do
+		for c = 0, cols - 1 do
+			local x0, y0 = c * tw, r * th
+			local w, h = math.min(tw, W - x0), math.min(th, H - y0)
+			local img, image_error = create_image(w, h)
+			if img == nil then
+				discard()
+				return nil, string.format("EditableImage tile %d,%d: %s", c, r, tostring(image_error))
+			end
+			local label_ok, label_or_error = pcall(function()
+				local label = Instance.new("ImageLabel")
+				label.Name = string.format("Map_%d_%d", c, r)
+				label.BackgroundColor3 = MapSurface.BACKGROUND
+				label.BackgroundTransparency = 1
+				label.BorderSizePixel = 0
+				label.ResampleMode = Enum.ResamplerMode.Pixelated
+				label.ScaleType = Enum.ScaleType.Stretch
+				label.Active = false
+				label.ZIndex = 1
+				label.ImageContent = Content.fromObject(img)
+				return label
+			end)
+			if not label_ok then
+				safe_destroy(img)
+				discard()
+				return nil, string.format("EditableImage tile %d,%d content: %s", c, r, tostring(label_or_error))
+			end
+			local label = label_or_error :: ImageLabel
+			local nb = math.ceil(h / BAND_ROWS)
+			table.insert(tiles, {
+				x0 = x0,
+				y0 = y0,
+				w = w,
+				h = h,
+				img = img,
+				label = label,
+				bands = table.create(nb, true),
+				dirty = true,
+				scratch = buffer.create(w * BAND_ROWS * 4),
+			})
+		end
+	end
+	return tiles, nil
+end
+
+function MapSurface._create_frame_fallback(self: MapSurface): boolean
+	local cols, rows = MapSurface.fallback_grid_size(self.W, self.H)
+	local canvas: Frame? = nil
+	local frames: { Frame } = {}
+	local ok, err = pcall(function()
+		local root = Instance.new("Frame")
+		canvas = root
+		root.Name = "MapFrameFallback"
+		root.BackgroundColor3 = MapSurface.BACKGROUND
+		root.BackgroundTransparency = 0
+		root.BorderSizePixel = 0
+		root.ClipsDescendants = true
+		root.Active = false
+		root.Position = UDim2.fromScale(0, 0)
+		root.Size = UDim2.fromScale(1, 1)
+		root.ZIndex = 1
+		for gy = 0, rows - 1 do
+			for gx = 0, cols - 1 do
+				local index = gy * cols + gx + 1
+				local pixel = MapSurface.fallback_pixel(self.comp, self.W, self.H, gx, gy, cols, rows)
+				local cell = Instance.new("Frame")
+				cell.Name = string.format("Cell_%d", index)
+				cell.BackgroundColor3 = Color3.fromRGB(pixel % 256, (pixel // 256) % 256, (pixel // 65536) % 256)
+				cell.BorderSizePixel = 0
+				cell.Active = false
+				cell.Position = UDim2.fromScale(gx / cols, gy / rows)
+				cell.Size = UDim2.fromScale(1 / cols, 1 / rows)
+				cell.ZIndex = 1
+				cell.Parent = root
+				frames[index] = cell
+			end
+		end
+		root.Parent = self.root
+	end)
+	if not ok then
+		safe_destroy(canvas)
+		error(tostring(err), 0)
+	end
+	self.fallback_canvas = canvas
+	self.fallback_frames = frames
+	self.fallback_cols, self.fallback_rows = cols, rows
+	self.fallback_dirty = table.create(cols * rows, false)
+	self.fallback_queue = {}
+	self.fallback_head = 1
+	return true
+end
+
+function MapSurface.show_failure(self: MapSurface, detail: string, reason: string?)
+	self:_free_tiles()
+	self.ok = false
+	self.ready = false
+	self.render_mode = "unavailable"
+	local lower_detail = string.lower(detail)
+	self.failure_reason = reason
+		or if string.find(lower_detail, "not accessible", 1, true)
+				or string.find(lower_detail, "security", 1, true)
+			then "disabled"
+			else "render"
+	self.root.BackgroundColor3 = MapSurface.BACKGROUND
+	self.root.BackgroundTransparency = 0
+	warn("[DomWorld] map: rendering failed at MapSurface; showing neutral background. " .. detail)
+end
+
+function MapSurface._activate_frame_fallback(self: MapSurface, detail: string)
+	self:_free_image_tiles()
+	self:_free_frame_fallback()
+	self.render_mode = "none"
+	local ok, fallback_or_error = pcall(function()
+		return self:_create_frame_fallback()
+	end)
+	if ok and fallback_or_error then
+		self.render_mode = "frames"
+		self.ok = true
+		self.failure_reason = ""
+		self.root.BackgroundTransparency = 1
+		warn(
+			"[DomWorld] map: EditableImage update failed at MapSurface.step ("
+				.. detail
+				.. "); using bounded Frame fallback"
+		)
+		return
+	end
+	self:show_failure(
+		"EditableImage update failed: " .. detail .. "; Frame fallback failed: " .. tostring(fallback_or_error),
+		"render"
+	)
+end
+
+function MapSurface._queue_fallback_cell(self: MapSurface, index: number)
+	if self.render_mode ~= "frames" or self.fallback_canvas == nil then
+		return
+	end
+	if not self.fallback_dirty[index] then
+		self.fallback_dirty[index] = true
+		table.insert(self.fallback_queue, index)
+	end
+end
+
+function MapSurface._mark_fallback_pixel(self: MapSurface, tile: number)
+	if self.render_mode ~= "frames" or self.fallback_canvas == nil or self.W < 1 or self.H < 1 then
+		return
+	end
+	local x, y = tile % self.W, tile // self.W
+	local gx = math.min(self.fallback_cols - 1, x * self.fallback_cols // self.W)
+	local gy = math.min(self.fallback_rows - 1, y * self.fallback_rows // self.H)
+	self:_queue_fallback_cell(gy * self.fallback_cols + gx + 1)
+end
+
+function MapSurface._mark_all_fallback(self: MapSurface)
+	if self.render_mode ~= "frames" or self.fallback_canvas == nil then
+		return
+	end
+	table.clear(self.fallback_queue)
+	table.clear(self.fallback_dirty)
+	self.fallback_head = 1
+	for index = 1, self.fallback_cols * self.fallback_rows do
+		self:_queue_fallback_cell(index)
+	end
+end
+
+function MapSurface._update_frame_fallback(self: MapSurface, limit: number?)
+	if self.render_mode ~= "frames" or self.fallback_canvas == nil then
+		return
+	end
+	local queue = self.fallback_queue
+	local first = self.fallback_head
+	local last = math.min(#queue, first + (limit or MapSurface.FRAME_FALLBACK_UPDATES_PER_STEP) - 1)
+	for cursor = first, last do
+		local index = queue[cursor]
+		self.fallback_dirty[index] = false
+		local gx = (index - 1) % self.fallback_cols
+		local gy = (index - 1) // self.fallback_cols
+		local pixel =
+			MapSurface.fallback_pixel(self.comp, self.W, self.H, gx, gy, self.fallback_cols, self.fallback_rows)
+		local frame = self.fallback_frames[index]
+		if frame ~= nil then
+			frame.BackgroundColor3 = Color3.fromRGB(pixel % 256, (pixel // 256) % 256, (pixel // 65536) % 256)
+		end
+	end
+	if last >= #queue then
+		table.clear(queue)
+		self.fallback_head = 1
+	else
+		self.fallback_head = last + 1
+		if self.fallback_head > 256 then
+			local remaining = {}
+			for cursor = self.fallback_head, #queue do
+				table.insert(remaining, queue[cursor])
+			end
+			self.fallback_queue = remaining
+			self.fallback_head = 1
+		end
+	end
 end
 
 --- Show map `map` (W / H + tile_bytes, or the legacy Earth): builds the terrain (yields between
@@ -515,52 +866,39 @@ function MapSurface.set_map(self: MapSurface, map: any)
 	buffer.copy(comp, 0, terrain, 0, N * 4)
 	self.comp = comp
 	self.defended = buffer.create(N)
-	-- image tiles: an even split into pieces of at most IMAGE_MAX per side
-	local cols = math.ceil(W / MapSurface.IMAGE_MAX)
-	local rows = math.ceil(H / MapSurface.IMAGE_MAX)
-	local tw, th = math.ceil(W / cols), math.ceil(H / rows)
-	self.cols, self.rows, self.tile_w, self.tile_h = cols, rows, tw, th
-	local all_ok = true
-	for r = 0, rows - 1 do
-		for c = 0, cols - 1 do
-			local x0, y0 = c * tw, r * th
-			local w, h = math.min(tw, W - x0), math.min(th, H - y0)
-			local img = create_image(w, h)
-			all_ok = all_ok and img ~= nil
-			local l = Instance.new("ImageLabel")
-			l.Name = string.format("Map_%d_%d", c, r)
-			l.BackgroundColor3 = MapSurface.BACKGROUND
-			l.BackgroundTransparency = if img then 1 else 0
-			l.BorderSizePixel = 0
-			l.ResampleMode = Enum.ResamplerMode.Pixelated
-			l.ScaleType = Enum.ScaleType.Stretch
-			l.Active = false
-			l.ZIndex = 1
-			if img then
-				l.ImageContent = Content.fromObject(img)
-			end
-			l.Parent = self.root
-			local nb = math.ceil(h / BAND_ROWS)
-			local t: ImgTile = {
-				x0 = x0,
-				y0 = y0,
-				w = w,
-				h = h,
-				img = img,
-				label = l,
-				bands = table.create(nb, true),
-				dirty = true,
-				scratch = buffer.create(w * BAND_ROWS * 4),
-			}
-			table.insert(self.tiles, t)
+	local mode, value, image_error, fallback_error = MapSurface.choose_renderer(function()
+		return self:_create_image_tiles()
+	end, function()
+		return self:_create_frame_fallback()
+	end)
+	self.render_mode = mode
+	if mode == "editable" then
+		self.tiles = value :: { ImgTile }
+		for _, tile in self.tiles do
+			tile.label.Parent = self.root
 		end
+		self.ok = true
+		self.failure_reason = ""
+	elseif mode == "frames" then
+		self.ok = true
+		self.failure_reason = ""
+		warn(
+			"[DomWorld] map: EditableImage unavailable ("
+				.. tostring(image_error)
+				.. "); using bounded Frame fallback ("
+				.. tostring(self.fallback_cols)
+				.. "x"
+				.. tostring(self.fallback_rows)
+				.. ")"
+		)
+	else
+		self:show_failure(
+			"EditableImage failed: " .. tostring(image_error) .. "; Frame fallback failed: " .. tostring(fallback_error),
+			"render"
+		)
 	end
-	self.ok = all_ok
-	if not all_ok then
-		warn("[DomWorld] map: EditableImage unavailable (memory budget) — parts of the map cannot be drawn")
-	end
-	self.ready = true
-	if self._state ~= nil then
+	self.ready = mode ~= "unavailable"
+	if self._state ~= nil and self.ready then
 		self:rebuild_all()
 	end
 end
@@ -569,6 +907,27 @@ end
 --- tiles meet without seams.
 function MapSurface.layout(self: MapSurface, cam: any)
 	local vp = cam._vp
+	if self.fallback_canvas ~= nil then
+		local sx0, sy0 = cam:map_to_screen(0, 0)
+		local sx1, sy1 = cam:map_to_screen(self.W, self.H)
+		sx0, sy0, sx1, sy1 = math.round(sx0), math.round(sy0), math.round(sx1), math.round(sy1)
+		local canvas = self.fallback_canvas
+		local visible = sx1 > 0 and sy1 > 0 and sx0 < vp.X and sy0 < vp.Y
+		if canvas.Visible ~= visible then
+			canvas.Visible = visible
+		end
+		if visible then
+			local position = UDim2.fromOffset(sx0, sy0)
+			local size = UDim2.fromOffset(sx1 - sx0, sy1 - sy0)
+			if canvas.Position ~= position then
+				canvas.Position = position
+			end
+			if canvas.Size ~= size then
+				canvas.Size = size
+			end
+		end
+		return
+	end
 	for _, t in self.tiles do
 		local sx0, sy0 = cam:map_to_screen(t.x0, t.y0)
 		local sx1, sy1 = cam:map_to_screen(t.x0 + t.w, t.y0 + t.h)
@@ -842,6 +1201,7 @@ local function composite(self: MapSurface, i: number)
 			math.floor(r + 0.5) + math.floor(gg + 0.5) * 256 + math.floor(b + 0.5) * 65536 + 4278190080
 		)
 	end
+	self:_mark_fallback_pixel(i)
 end
 
 local function mark(self: MapSurface, x: number, y: number)
@@ -941,6 +1301,7 @@ local function paint_queue(self: MapSurface, head: number, last: number)
 				end
 			end
 		end
+		self:_mark_fallback_pixel(i)
 		local t = tiles[(y // th) * cols + (x // tw) + 1]
 		if t then
 			t.bands[(y - t.y0) // BAND_ROWS + 1] = true
@@ -1406,6 +1767,7 @@ function MapSurface.mark_all(self: MapSurface)
 		end
 		t.dirty = true
 	end
+	self:_mark_all_fallback()
 end
 
 --- Per-frame work: continue a full rebuild, repaint the tiles that wait for it (`budget_s`; at most
@@ -1471,6 +1833,10 @@ function MapSurface.step(self: MapSurface, budget_tiles: number?, repaint_tiles:
 			self:mark_all()
 		end
 	end
+	if self.render_mode == "frames" then
+		self:_update_frame_fallback()
+		return
+	end
 	local n = #self.tiles
 	for k = 1, n do
 		local idx = (self._rr + k - 1) % n + 1
@@ -1480,20 +1846,26 @@ function MapSurface.step(self: MapSurface, budget_tiles: number?, repaint_tiles:
 			t.dirty = false
 			local img = t.img :: EditableImage
 			local row_bytes = t.w * 4
-			for b = 1, #t.bands do
-				if t.bands[b] then
-					t.bands[b] = false
-					local ly0 = (b - 1) * BAND_ROWS
-					local rows = math.min(BAND_ROWS, t.h - ly0)
-					local scratch = t.scratch
-					if rows < BAND_ROWS then
-						scratch = buffer.create(t.w * rows * 4)
+			local write_ok, write_error = pcall(function()
+				for b = 1, #t.bands do
+					if t.bands[b] then
+						t.bands[b] = false
+						local ly0 = (b - 1) * BAND_ROWS
+						local rows = math.min(BAND_ROWS, t.h - ly0)
+						local scratch = t.scratch
+						if rows < BAND_ROWS then
+							scratch = buffer.create(t.w * rows * 4)
+						end
+						for r = 0, rows - 1 do
+							buffer.copy(scratch, r * row_bytes, self.comp, ((t.y0 + ly0 + r) * W + t.x0) * 4, row_bytes)
+						end
+						img:WritePixelsBuffer(Vector2.new(0, ly0), Vector2.new(t.w, rows), scratch)
 					end
-					for r = 0, rows - 1 do
-						buffer.copy(scratch, r * row_bytes, self.comp, ((t.y0 + ly0 + r) * W + t.x0) * 4, row_bytes)
-					end
-					img:WritePixelsBuffer(Vector2.new(0, ly0), Vector2.new(t.w, rows), scratch)
 				end
+			end)
+			if not write_ok then
+				self:_activate_frame_fallback(tostring(write_error))
+				return
 			end
 			self.uploaded = true
 			return
